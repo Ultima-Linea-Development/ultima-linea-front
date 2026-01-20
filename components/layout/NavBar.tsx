@@ -9,7 +9,7 @@ type NavBarProps = {
 export default function NavBar({ children, className }: NavBarProps) {
   return (
     <div
-      className={cn("flex h-16 items-center justify-between", className)}
+      className={cn("flex h-12 items-center justify-between relative", className)}
     >
       {children}
     </div>

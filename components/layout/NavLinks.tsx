@@ -7,5 +7,9 @@ type NavLinksProps = {
 };
 
 export default function NavLinks({ children, className }: NavLinksProps) {
-  return <div className={cn("flex gap-1", className)}>{children}</div>;
+  return (
+    <div className={cn("flex gap-1 absolute left-1/2 -translate-x-1/2 h-full", className)}>
+      {children}
+    </div>
+  );
 }

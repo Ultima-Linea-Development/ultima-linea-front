@@ -1,4 +1,4 @@
-import { Archivo } from "next/font/google";
+import { Archivo, Archivo_Black } from "next/font/google";
 
 export const archivo = Archivo({
   variable: "--font-archivo",
@@ -7,4 +7,11 @@ export const archivo = Archivo({
   display: "swap",
 });
 
-export const fontVariable = archivo.variable;
+export const archivoBlack = Archivo_Black({
+  variable: "--font-archivo-black",
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+});
+
+export const fontVariable = `${archivo.variable} ${archivoBlack.variable}`;

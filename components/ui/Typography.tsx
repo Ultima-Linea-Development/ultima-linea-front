@@ -21,12 +21,12 @@ type TypographyProps = {
 };
 
 const variantStyles: Record<TypographyVariant, string> = {
-  h1: "text-4xl font-bold tracking-[-0.02em]",
-  h2: "text-3xl font-bold tracking-[-0.02em]",
-  h3: "text-2xl font-bold tracking-[-0.01em]",
-  h4: "text-xl font-semibold",
-  h5: "text-lg font-semibold",
-  h6: "text-base font-semibold",
+  h1: "text-4xl font-bold tracking-[-0.02em] [font-family:var(--font-archivo-black)]",
+  h2: "text-3xl font-bold tracking-[-0.02em] [font-family:var(--font-archivo-black)]",
+  h3: "text-2xl font-bold tracking-[-0.01em] [font-family:var(--font-archivo-black)]",
+  h4: "text-xl font-semibold [font-family:var(--font-archivo-black)]",
+  h5: "text-lg font-semibold [font-family:var(--font-archivo-black)]",
+  h6: "text-base font-semibold [font-family:var(--font-archivo-black)]",
   body: "text-base font-normal",
   body2: "text-sm font-normal",
   small: "text-sm font-normal",

@@ -52,6 +52,7 @@ export const breakpoints = {
 export const typography = {
   fontFamily: {
     sans: "var(--font-archivo)",
+    heading: "var(--font-archivo-black)",
   },
   fontSize: {
     xs: "0.75rem",

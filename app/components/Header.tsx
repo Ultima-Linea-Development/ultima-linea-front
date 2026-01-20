@@ -3,17 +3,19 @@ import NavBar from "@/components/layout/NavBar";
 import NavLinks from "@/components/layout/NavLinks";
 import NavLink from "@/components/navigation/NavLink";
 import Logo from "@/components/brand/Logo";
+import SearchInput from "@/components/ui/SearchInput";
 
 export default function Header() {
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-gray-200 background uppercase">
-      <Container>
+    <nav className="sticky top-0 z-50 w-full border-b border-gray-200 background uppercase bg-white">
+      <Container className="py-4">
         <NavBar>
           <Logo />
           <NavLinks>
             <NavLink href="/">Inicio</NavLink>
             <NavLink href="/contact">Contacto</NavLink>
           </NavLinks>
+          <SearchInput />
         </NavBar>
       </Container>
     </nav>

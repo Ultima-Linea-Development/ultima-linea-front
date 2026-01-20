@@ -1,40 +1,35 @@
 import Container from "@/components/layout/Container";
-import Grid from "@/components/layout/Grid";
-import Section from "@/components/layout/Section";
+import Box from "@/components/layout/Box";
 import FooterLink from "@/components/navigation/FooterLink";
 import Typography from "@/components/ui/Typography";
+import Logo from "@/components/brand/Logo";
 
 export default function Footer() {
   return (
     <footer className="mt-auto border-t border-border bg-background py-8">
       <Container>
-        <Grid cols={3} gap={8}>
-          <Section>
-            <Typography variant="h6" className="mb-2">
-              Última Línea
-            </Typography>
-            <Typography variant="body2" className="text-muted-foreground">
-              Tu tienda de confianza para los mejores productos.
-            </Typography>
-          </Section>
+        <Box display="grid" cols={3} gap={8}>
+          <Box display="flex" direction="col" gap="2">
+            <Logo />
+          </Box>
 
-          <Section>
+          <Box display="flex" direction="col" gap="2">
             <Typography variant="h6" className="mb-2">
               Enlaces
             </Typography>
-            <Section>
+            <Box display="flex" direction="col" gap="2">
               <FooterLink href="#">Inicio</FooterLink>
               <FooterLink href="#">Productos</FooterLink>
               <FooterLink href="#">Acerca de</FooterLink>
               <FooterLink href="#">Contacto</FooterLink>
-            </Section>
-          </Section>
+            </Box>
+          </Box>
 
-          <Section>
+          <Box display="flex" direction="col" gap="2">
             <Typography variant="h6" className="mb-2">
               Contacto
             </Typography>
-            <Section>
+            <Box display="flex" direction="col" gap="2">
               <Typography variant="body2" className="text-muted-foreground">
                 Email: info@ultimalinea.com
               </Typography>
@@ -44,9 +39,9 @@ export default function Footer() {
               <Typography variant="body2" className="text-muted-foreground">
                 Dirección: Calle Principal 123
               </Typography>
-            </Section>
-          </Section>
-        </Grid>
+            </Box>
+          </Box>
+        </Box>
 
         <div className="mt-8 border-t border-border pt-6 text-center">
           <Typography variant="body2" className="text-muted-foreground">

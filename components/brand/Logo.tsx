@@ -7,10 +7,9 @@ export default function Logo() {
       <Image
         src="/ultima-linea-logo.png"
         alt="Última Línea"
-        width={140}
-        height={50}
+        width={40}
+        height={40}
         priority
-        className="h-auto"
       />
     </Link>
   );

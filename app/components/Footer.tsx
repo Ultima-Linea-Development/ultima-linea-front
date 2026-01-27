@@ -3,10 +3,12 @@ import Box from "@/components/layout/Box";
 import FooterLink from "@/components/navigation/FooterLink";
 import Typography from "@/components/ui/Typography";
 import Logo from "@/components/brand/Logo";
+import Footer from "@/components/ui/Footer";
+import Div from "@/components/ui/Div";
 
-export default function Footer() {
+export default function FooterComponent() {
   return (
-    <footer className="mt-auto border-t border-border bg-background py-8">
+    <Footer marginTop="auto" border="top" padding="md">
       <Container>
         <Box display="grid" cols={3} gap={8}>
           <Box display="flex" direction="col" gap="2">
@@ -14,7 +16,7 @@ export default function Footer() {
           </Box>
 
           <Box display="flex" direction="col" gap="2">
-            <Typography variant="h6" className="mb-2">
+            <Typography variant="h6" mb={2}>
               Enlaces
             </Typography>
             <Box display="flex" direction="col" gap="2">
@@ -26,30 +28,30 @@ export default function Footer() {
           </Box>
 
           <Box display="flex" direction="col" gap="2">
-            <Typography variant="h6" className="mb-2">
+            <Typography variant="h6" mb={2}>
               Contacto
             </Typography>
             <Box display="flex" direction="col" gap="2">
-              <Typography variant="body2" className="text-muted-foreground">
+              <Typography variant="body2" color="muted">
                 Email: info@ultimalinea.com
               </Typography>
-              <Typography variant="body2" className="text-muted-foreground">
+              <Typography variant="body2" color="muted">
                 Teléfono: +1 234 567 890
               </Typography>
-              <Typography variant="body2" className="text-muted-foreground">
+              <Typography variant="body2" color="muted">
                 Dirección: Calle Principal 123
               </Typography>
             </Box>
           </Box>
         </Box>
 
-        <div className="mt-8 border-t border-border pt-6 text-center">
-          <Typography variant="body2" className="text-muted-foreground">
+        <Div mt={8} border="top" pt={6} textAlign="center">
+          <Typography variant="body2" color="muted">
             © {new Date().getFullYear()} Última Línea. Todos los derechos
             reservados.
           </Typography>
-        </div>
+        </Div>
       </Container>
-    </footer>
+    </Footer>
   );
 }

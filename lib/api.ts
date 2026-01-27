@@ -1,4 +1,15 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const getApiBaseUrl = () => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  
+  if (typeof window !== "undefined") {
+    const isDevelopment = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (isDevelopment && baseUrl.startsWith("http")) {
+      return "/api-proxy";
+    }
+  }
+  
+  return baseUrl;
+};
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
@@ -24,7 +35,7 @@ async function request<T>(
     token,
   } = options;
 
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${getApiBaseUrl()}${endpoint}`;
   const requestHeaders: HeadersInit = {
     "Content-Type": "application/json",
     ...headers,
@@ -102,6 +113,7 @@ export type LoginResponse = {
 
 export type Product = {
   id: string;
+  slug?: string;
   name: string;
   description?: string;
   team?: string;
@@ -121,6 +133,14 @@ export type ProductFilters = {
   league?: string;
   category?: "club" | "national" | "retro";
   season?: string;
+};
+
+export type PaginatedProductsResponse = {
+  products: Product[];
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
 };
 
 export type SearchResponse = {
@@ -173,10 +193,11 @@ export const productsApi = {
     if (filters?.season) params.append("season", filters.season);
 
     const query = params.toString();
-    return api.get<Product[]>(`/products${query ? `?${query}` : ""}`);
+    return api.get<PaginatedProductsResponse>(`/products${query ? `?${query}` : ""}`);
   },
 
   getById: (id: string) => api.get<Product>(`/products/${id}`),
+  getBySlug: (slug: string) => api.get<Product>(`/products/slug/${slug}`),
 
   search: (query: string) => {
     const params = new URLSearchParams();

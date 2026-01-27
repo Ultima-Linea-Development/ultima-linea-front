@@ -1,9 +1,10 @@
 import { IconType } from "react-icons";
-import { MdSearch } from "react-icons/md";
+import { MdOutlineSearch, MdOutlineShoppingBag } from "react-icons/md";
 import { ComponentProps } from "react";
 
 export const Icons = {
-  search: MdSearch,
+  search: MdOutlineSearch,
+  cart: MdOutlineShoppingBag,
 } as const;
 
 export type IconName = keyof typeof Icons;

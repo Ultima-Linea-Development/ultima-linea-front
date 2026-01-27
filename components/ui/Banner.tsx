@@ -1,19 +1,36 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import Div from "@/components/ui/Div";
+import Box from "@/components/layout/Box";
+import Typography from "@/components/ui/Typography";
 
 type BannerProps = {
   image: string;
   alt?: string;
   className?: string;
+  title?: string;
+  titleBackground?: "black" | "white";
 };
 
 export default function Banner({
   image,
   alt = "Banner",
   className,
+  title,
+  titleBackground = "white",
 }: BannerProps) {
+  const backgroundStyles = {
+    black: "bg-black/70",
+    white: "bg-white",
+  };
+
+  const textStyles = {
+    black: "text-white",
+    white: "text-black",
+  };
+
   return (
-    <div className={cn("relative w-full h-[700px]", className)}>
+    <Box className={cn("relative w-full h-[700px]", className)}>
       <Image
         src={image}
         alt={alt}
@@ -21,6 +38,19 @@ export default function Banner({
         className="object-cover"
         priority
       />
-    </div>
+      {title && (
+        <Box className="absolute inset-0 flex items-center justify-center">
+          <Box
+            className={cn(
+              "px-8 py-4 max-w-2xl",
+              backgroundStyles[titleBackground],
+              textStyles[titleBackground]
+            )}
+          >
+            <Typography variant="h1" uppercase align="center">{title}</Typography>
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 }

@@ -1,10 +1,13 @@
 import Typography from "@/components/ui/Typography";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import Div from "@/components/ui/Div";
+import Box from "@/components/layout/Box";
+import { generateSlug } from "@/lib/utils";
 
 type ProductCardProps = {
   id: string;
+  slug?: string;
   name: string;
   team: string;
   price: string;
@@ -14,21 +17,34 @@ type ProductCardProps = {
 
 export default function ProductCard({
   id,
+  slug,
   name,
   team,
   price,
   image,
   className,
 }: ProductCardProps) {
+  const productSlug = slug || generateSlug(name);
+  const productPath = `${productSlug}-${id}`;
   return (
-    <Link href={`/product/${id}`}>
-      <div
-        className={cn(
-          "flex flex-col overflow-hidden border border-transparent bg-card transition-colors hover:border-black cursor-pointer",
-          className
-        )}
+    <Link href={`/product/${productPath}`}>
+      <Box
+        display="flex"
+        direction="col"
+        className={className}
       >
-        <div className="relative aspect-square w-full bg-muted">
+        <Div
+          position="relative"
+          overflow="hidden"
+          border="all"
+          background="muted"
+          transition={true}
+          cursor="pointer"
+          aspect="square"
+          width="full"
+          borderColor="transparent"
+          hoverBorder="black"
+        >
           <Image
             src={image}
             alt={`${name} - ${team}`}
@@ -36,19 +52,19 @@ export default function ProductCard({
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
-        </div>
-        <div className="p-4 space-y-2">
-          <Typography variant="h6" className="text-base">
+        </Div>
+        <Div p={4} spacing="md">
+          <Typography variant="h6">
             {price}
           </Typography>
           <Typography variant="body2">
             {name.length > 50 ? `${name.substring(0, 50)}...` : name}
           </Typography>
-          <Typography variant="body2" className="text-gray-500">
+          <Typography variant="body2" color="gray">
             {team}
           </Typography>
-        </div>
-      </div>
+        </Div>
+      </Box>
     </Link>
   );
 }

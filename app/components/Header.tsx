@@ -4,10 +4,15 @@ import NavLinks from "@/components/layout/NavLinks";
 import NavLink from "@/components/navigation/NavLink";
 import Logo from "@/components/brand/Logo";
 import SearchInput from "@/components/ui/SearchInput";
+import Nav from "@/components/ui/Nav";
+import Icon from "@/components/ui/Icons";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import Box from "@/components/layout/Box";
 
 export default function Header() {
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-gray-200 background uppercase bg-white">
+    <Nav position="sticky" border="bottom" background="white" uppercase={true}>
       <Container className="py-4">
         <NavBar>
           <Logo />
@@ -15,9 +20,16 @@ export default function Header() {
             <NavLink href="/">Inicio</NavLink>
             <NavLink href="/contact">Contacto</NavLink>
           </NavLinks>
-          <SearchInput />
+          <Box display="flex" align="center" gap="4">
+            <SearchInput />
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/cart">
+                <Icon name="cart" size={28} />
+              </Link>
+            </Button>
+          </Box>
         </NavBar>
       </Container>
-    </nav>
+    </Nav>
   );
 }

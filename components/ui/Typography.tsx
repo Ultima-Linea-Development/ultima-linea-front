@@ -13,10 +13,17 @@ type TypographyVariant =
   | "small"
   | "caption";
 
+type TextAlign = "left" | "center" | "right" | "justify";
+type TextColor = "muted" | "destructive" | "gray" | "default";
+type MarginBottom = 1 | 2 | 3 | 4 | 5 | 6 | 8;
+
 type TypographyProps = {
   variant?: TypographyVariant;
   as?: ElementType;
-  className?: string;
+  uppercase?: boolean;
+  align?: TextAlign;
+  color?: TextColor;
+  mb?: MarginBottom;
   children: ReactNode;
 };
 
@@ -46,16 +53,53 @@ const defaultElements: Record<TypographyVariant, ElementType> = {
   caption: "span",
 };
 
+const alignStyles: Record<TextAlign, string> = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+  justify: "text-justify",
+};
+
+const colorStyles: Record<TextColor, string> = {
+  muted: "text-muted-foreground",
+  destructive: "text-destructive",
+  gray: "text-gray-500",
+  default: "",
+};
+
+const marginBottomStyles: Record<MarginBottom, string> = {
+  1: "mb-1",
+  2: "mb-2",
+  3: "mb-3",
+  4: "mb-4",
+  5: "mb-5",
+  6: "mb-6",
+  8: "mb-8",
+};
+
 export default function Typography({
   variant = "body",
   as,
-  className,
+  uppercase,
+  align,
+  color,
+  mb,
   children,
 }: TypographyProps) {
   const Component = as || defaultElements[variant];
   const baseStyles = variantStyles[variant];
 
   return (
-    <Component className={cn(baseStyles, className)}>{children}</Component>
+    <Component
+      className={cn(
+        baseStyles,
+        uppercase && "uppercase",
+        align && alignStyles[align],
+        color && colorStyles[color],
+        mb && marginBottomStyles[mb]
+      )}
+    >
+      {children}
+    </Component>
   );
 }

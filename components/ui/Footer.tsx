@@ -19,11 +19,11 @@ const marginTopStyles: Record<FooterMarginTop, string> = {
 
 const borderStyles: Record<FooterBorder, string> = {
   none: "",
-  top: "border-t border-border",
+  top: "border-t border-zinc-200",
 };
 
 const paddingStyles: Record<FooterPadding, string> = {
-  none: "",
+  none: "", 
   md: "py-8",
 };
 

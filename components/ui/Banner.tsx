@@ -9,7 +9,8 @@ type BannerProps = {
   alt?: string;
   className?: string;
   title?: string;
-  titleBackground?: "black" | "white";
+  titleBackground?: "black" | "white" | "transparent";
+  titleColor?: "white" | "black";
 };
 
 export default function Banner({
@@ -18,15 +19,17 @@ export default function Banner({
   className,
   title,
   titleBackground = "white",
+  titleColor = "black",
 }: BannerProps) {
   const backgroundStyles = {
     black: "bg-black/70",
     white: "bg-white",
+    transparent: "bg-transparent",
   };
 
   const textStyles = {
-    black: "text-white",
-    white: "text-black",
+    white: "text-white",
+    black: "text-black",
   };
 
   return (
@@ -44,10 +47,12 @@ export default function Banner({
             className={cn(
               "px-8 py-4 max-w-2xl",
               backgroundStyles[titleBackground],
-              textStyles[titleBackground]
+              textStyles[titleColor]
             )}
           >
-            <Typography variant="h1" uppercase align="center">{title}</Typography>
+            <Typography variant="h1" uppercase align="center">
+              {title}
+            </Typography>
           </Box>
         </Box>
       )}

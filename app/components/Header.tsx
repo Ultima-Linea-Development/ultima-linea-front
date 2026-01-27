@@ -1,7 +1,11 @@
+"use client";
+
 import Container from "@/components/layout/Container";
 import NavBar from "@/components/layout/NavBar";
 import NavLinks from "@/components/layout/NavLinks";
 import NavLink from "@/components/navigation/NavLink";
+import MobileMenu from "@/components/layout/MobileMenu";
+import MobileSearch from "@/components/layout/MobileSearch";
 import Logo from "@/components/brand/Logo";
 import SearchInput from "@/components/ui/SearchInput";
 import Nav from "@/components/ui/Nav";
@@ -21,12 +25,21 @@ export default function Header() {
             <NavLink href="/contact">Contacto</NavLink>
           </NavLinks>
           <Box display="flex" align="center" gap="4">
-            <SearchInput />
+            <div className="hidden md:block">
+              <SearchInput />
+            </div>
+            <MobileSearch />
             <Button variant="ghost" size="icon" asChild>
               <Link href="/cart">
                 <Icon name="cart" size={28} />
               </Link>
             </Button>
+            <MobileMenu>
+              <NavLinks mobile>
+                <NavLink href="/" mobile>Inicio</NavLink>
+                <NavLink href="/contact" mobile>Contacto</NavLink>
+              </NavLinks>
+            </MobileMenu>
           </Box>
         </NavBar>
       </Container>

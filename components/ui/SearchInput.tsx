@@ -10,9 +10,11 @@ import Box from "@/components/layout/Box";
 
 type SearchInputProps = {
   className?: string;
+  onBlur?: () => void;
+  onSubmit?: () => void;
 };
 
-export default function SearchInput({ className }: SearchInputProps) {
+export default function SearchInput({ className, onBlur, onSubmit }: SearchInputProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
 
@@ -20,6 +22,7 @@ export default function SearchInput({ className }: SearchInputProps) {
     e.preventDefault();
     if (query.trim()) {
       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+      onSubmit?.();
     }
   };
 
@@ -36,6 +39,7 @@ export default function SearchInput({ className }: SearchInputProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onBlur={onBlur}
             placeholder="Buscar..."
           />
         </Div>

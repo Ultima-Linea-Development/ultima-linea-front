@@ -17,12 +17,13 @@ export default function Home() {
     <>
       <Banner 
         image="/banner-home.png" 
-        title="Camisetas de Fútbol Retro y Actuales"
-        titleBackground="white"
+        // title="Camisetas de Fútbol Retro y Actuales"
+        // titleBackground="transparent"
+        // titleColor="white"
       />
       <Container>
         <Box display="flex" direction="col" justify="start" align="start" gap="2">
-          <Suspense fallback={<Spinner className="mx-auto" />}>
+          <Suspense fallback={<Spinner />}>
             <ProductsList />
           </Suspense>
         </Box>

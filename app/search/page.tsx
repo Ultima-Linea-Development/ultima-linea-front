@@ -93,7 +93,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <Container>
       <Box display="flex" direction="col" justify="start" align="start" gap="2">
-        <Suspense fallback={<Spinner className="mx-auto" />}>
+        <Suspense fallback={<Spinner />}>
           <SearchResults query={query} />
         </Suspense>
       </Box>

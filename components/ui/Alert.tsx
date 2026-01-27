@@ -24,9 +24,8 @@ const paddingStyles: Record<AlertPadding, string> = {
   md: "p-3",
 };
 
-const borderStyles: Record<boolean, string> = {
-  true: "border",
-  false: "",
+const getBorderStyle = (border: boolean): string => {
+  return border ? "border" : "";
 };
 
 const roundedStyles: Record<AlertRounded, string> = {
@@ -52,7 +51,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
         className={cn(
           variantStyles[variant],
           paddingStyles[padding],
-          border && borderStyles[border],
+          getBorderStyle(border),
           roundedStyles[rounded]
         )}
         {...props}

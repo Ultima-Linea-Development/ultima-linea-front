@@ -168,9 +168,8 @@ const aspectStyles: Record<DivAspect, string> = {
   none: "",
 };
 
-const transitionStyles: Record<boolean, string> = {
-  true: "transition-colors",
-  false: "",
+const getTransitionStyle = (transition: boolean): string => {
+  return transition ? "transition-colors" : "";
 };
 
 const Div = forwardRef<HTMLDivElement, DivProps>(
@@ -220,7 +219,7 @@ const Div = forwardRef<HTMLDivElement, DivProps>(
           overflow && overflowStyles[overflow],
           cursor && cursorStyles[cursor],
           aspect && aspectStyles[aspect],
-          transition !== undefined && transitionStyles[transition],
+          transition !== undefined && getTransitionStyle(transition),
           borderColor && borderColorStyles[borderColor],
           hoverBorder && hoverBorderStyles[hoverBorder]
         )}

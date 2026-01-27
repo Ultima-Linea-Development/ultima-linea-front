@@ -7,7 +7,7 @@ type InputPaddingX = 2 | 3 | 4 | 6;
 type InputBackground = "gray" | "default";
 type InputSize = "sm" | "default";
 
-type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & {
+type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "size"> & {
   width?: InputWidth;
   py?: InputPaddingY;
   px?: InputPaddingX;
@@ -64,7 +64,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           paddingYStyles[py],
           paddingXStyles[px],
           backgroundStyles[background],
-          sizeStyles[size],
+          size && sizeStyles[size as InputSize],
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         )}
         {...props}

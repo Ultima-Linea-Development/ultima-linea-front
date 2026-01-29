@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Container from "@/components/layout/Container";
 import Box from "@/components/layout/Box";
@@ -12,6 +12,7 @@ import Label from "@/components/ui/Label";
 import Div from "@/components/ui/Div";
 import Alert from "@/components/ui/Alert";
 import { authApi } from "@/lib/api";
+import { isAdmin } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,6 +20,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin()) {
+      router.push("/admin");
+    }
+  }, [router]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,6 +42,10 @@ export default function LoginPage() {
       }
 
       localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      
+      document.cookie = `token=${response.data.token}; path=/; max-age=86400; SameSite=Lax`;
+      
       router.push("/admin");
     } catch (err) {
       setError("Error de conexión. Intenta nuevamente.");

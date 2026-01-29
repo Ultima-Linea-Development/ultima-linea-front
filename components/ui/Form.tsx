@@ -29,7 +29,7 @@ const Form = forwardRef<HTMLFormElement, FormProps>(
     return (
       <form
         ref={ref}
-        className={cn(spacingStyles[spacing], marginTopStyles[mt], className)}
+        className={cn("w-full", spacingStyles[spacing], marginTopStyles[mt], className)}
         {...props}
       />
     );

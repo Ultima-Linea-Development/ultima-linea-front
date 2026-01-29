@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "./components/Header";
-import FooterComponent from "./components/Footer";
-import Main from "@/components/ui/Main";
 import { fontVariable } from "@/lib/fonts";
+import ConditionalLayout from "@/components/layout/ConditionalLayout";
 
 export const metadata: Metadata = {
   title: {
@@ -24,9 +22,7 @@ export default function RootLayout({
       <body
         className={`${fontVariable} flex min-h-screen flex-col antialiased`}
       >
-        <Header />
-        <Main flex={true}>{children}</Main>
-        <FooterComponent />
+        <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>
   );

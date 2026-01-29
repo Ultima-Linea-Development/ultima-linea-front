@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import Div from "@/components/ui/Div";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 

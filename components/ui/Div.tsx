@@ -17,7 +17,7 @@ type DivTransition = boolean;
 type DivBorderColor = "transparent" | "black" | "default";
 type DivHoverBorder = "black" | "none";
 
-type DivProps = Omit<HTMLAttributes<HTMLDivElement>, "className"> & {
+type DivProps = HTMLAttributes<HTMLDivElement> & {
   position?: DivPosition;
   p?: DivPadding;
   pt?: DivPadding;
@@ -195,6 +195,7 @@ const Div = forwardRef<HTMLDivElement, DivProps>(
       borderColor,
       hoverBorder,
       children,
+      className,
       ...props
     },
     ref
@@ -221,7 +222,8 @@ const Div = forwardRef<HTMLDivElement, DivProps>(
           aspect && aspectStyles[aspect],
           transition !== undefined && getTransitionStyle(transition),
           borderColor && borderColorStyles[borderColor],
-          hoverBorder && hoverBorderStyles[hoverBorder]
+          hoverBorder && hoverBorderStyles[hoverBorder],
+          className
         )}
         {...props}
       >

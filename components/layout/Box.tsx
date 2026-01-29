@@ -11,7 +11,7 @@ type FlexBoxProps = BaseBoxProps & {
   direction?: "row" | "col";
   justify?: "start" | "end" | "center" | "between" | "around";
   align?: "start" | "end" | "center" | "stretch";
-  gap?: "0" | "1" | "2" | "4" | "8";
+  gap?: "0" | "1" | "2" | "4" | "6" | "8";
 };
 
 type GridBoxProps = BaseBoxProps & {
@@ -46,6 +46,7 @@ const flexGapClasses = {
   "1": "gap-1",
   "2": "gap-2",
   "4": "gap-4",
+  "6": "gap-6",
   "8": "gap-8",
 };
 

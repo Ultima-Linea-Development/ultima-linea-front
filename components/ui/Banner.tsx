@@ -1,7 +1,24 @@
+"use client";
+
 import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
+
+const MD_BREAKPOINT = 768;
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(min-width: ${MD_BREAKPOINT}px)`);
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return isDesktop;
+}
 
 type BannerProps = {
   image: string;
@@ -31,6 +48,18 @@ export default function Banner({
   aspectRatioMobile = "4/3",
   fillViewport = false,
 }: BannerProps) {
+  const isDesktop = useIsDesktop();
+  const [desktopAspect, setDesktopAspect] = useState<string | null>(null);
+  const onDesktopLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const target = e.currentTarget;
+      if (target.naturalWidth && target.naturalHeight) {
+        setDesktopAspect(`${target.naturalWidth}/${target.naturalHeight}`);
+      }
+    },
+    []
+  );
+
   const backgroundStyles = {
     black: "bg-black/70",
     white: "bg-white",
@@ -58,31 +87,31 @@ export default function Banner({
           "relative w-full",
           fillViewport ? "h-full" : "w-full"
         )}
-        style={
-          !fillViewport
-            ? ({
-                "--aspect-mobile": aspectRatioMobile,
-                "--aspect-desktop": aspectRatio,
-              } as React.CSSProperties)
-            : undefined
-        }
       >
         <div
           className={cn(
             "relative w-full",
-            fillViewport
-              ? "h-full min-h-0"
-              : "aspect-[var(--aspect-mobile)] md:aspect-[var(--aspect-desktop)]"
+            fillViewport && "h-full min-h-0"
           )}
+          style={
+            !fillViewport
+              ? {
+                  aspectRatio: isDesktop
+                    ? (desktopAspect ?? aspectRatio)
+                    : aspectRatioMobile,
+                }
+              : undefined
+          }
         >
           <Image
             src={image}
             alt={alt}
             fill
             className={cn(
-              fillViewport ? "object-cover" : "object-contain",
+              "object-contain",
               imageMobile && "hidden md:block"
             )}
+            onLoad={onDesktopLoad}
             priority
           />
           {imageMobile && (
@@ -90,7 +119,7 @@ export default function Banner({
               src={imageMobile}
               alt={alt}
               fill
-              className="object-cover block md:hidden"
+              className="object-contain block md:hidden"
               priority
             />
           )}

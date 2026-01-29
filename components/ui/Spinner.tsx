@@ -17,7 +17,7 @@ export default function Spinner({ className }: SpinnerProps) {
       aria-label="Cargando"
     >
       <Image
-        src="/ultima-linea-logo.png"
+        src="/images/brand/ultima-linea-logo.png"
         alt="Última Línea"
         width={40}
         height={40}

@@ -5,6 +5,7 @@ import Typography from "@/components/ui/Typography";
 
 type BannerProps = {
   image: string;
+  imageMobile?: string;
   alt?: string;
   className?: string;
   title?: string;
@@ -14,6 +15,7 @@ type BannerProps = {
 
 export default function Banner({
   image,
+  imageMobile,
   alt = "Banner",
   className,
   title,
@@ -37,9 +39,18 @@ export default function Banner({
         src={image}
         alt={alt}
         fill
-        className="object-cover"
+        className={cn("object-cover", imageMobile && "hidden md:block")}
         priority
       />
+      {imageMobile && (
+        <Image
+          src={imageMobile}
+          alt={alt}
+          fill
+          className="object-cover block md:hidden"
+          priority
+        />
+      )}
       {title && (
         <Box className="absolute inset-0 flex items-center justify-center">
           <Box

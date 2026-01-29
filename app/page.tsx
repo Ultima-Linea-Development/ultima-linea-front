@@ -15,11 +15,9 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
-      <Banner 
-        image="/banner-home.png" 
-        // title="Camisetas de Fútbol Retro y Actuales"
-        // titleBackground="transparent"
-        // titleColor="white"
+      <Banner
+        image="/images/banners/banner-home.png"
+        imageMobile="/images/banners/banner-home-mobile.png"
       />
       <Container>
         <Box display="flex" direction="col" justify="start" align="start" gap="2">

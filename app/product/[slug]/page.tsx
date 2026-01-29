@@ -29,8 +29,7 @@ export async function generateMetadata({
   const title = product.name;
   const description =
     product.description ||
-    `${product.name}${product.team ? ` - ${product.team}` : ""}${
-      product.season ? ` ${product.season}` : ""
+    `${product.name}${product.team ? ` - ${product.team}` : ""}${product.season ? ` ${product.season}` : ""
     } en Última Línea`;
 
   return {
@@ -48,23 +47,35 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   const product = response.data;
-  const mainImage = product.image_urls?.[0] || "";
+  const imageUrls = product.image_urls ?? [];
 
   return (
     <Container>
-      <Box display="grid" cols={2} gap={8} className="mt-8">
-        <Div position="relative" aspect="square" overflow="hidden" border="all" rounded="md">
-          {mainImage && (
-            <Image
-              src={mainImage}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
-            />
-          )}
-        </Div>
+      <Box
+        display="grid"
+        cols={2}
+        gap={8}
+        className="mt-8 md:grid-cols-[1.5fr_1fr] lg:grid-cols-[2fr_1fr]"
+      >
+        <Box display="grid" cols={2} gap={2} className="min-w-0">
+          {imageUrls.map((url, index) => (
+            <Div
+              key={url}
+              position="relative"
+              aspect="square"
+              overflow="hidden"
+            >
+              <Image
+                src={url}
+                alt={`${product.name} - imagen ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 45vw, 35vw"
+                priority={index === 0}
+              />
+            </Div>
+          ))}
+        </Box>
 
         <Box display="flex" direction="col" gap="4">
           <Box display="flex" direction="col" gap="2">

@@ -41,9 +41,9 @@ async function SearchResults({ query }: { query: string }) {
     );
   }
 
-  const { count, results } = response.data;
+  const { total, results } = response.data;
 
-  if (count === 0) {
+  if (total === 0) {
     return (
       <Div textAlign="center" py={8}>
         <Typography variant="h3" mb={2}>
@@ -66,10 +66,10 @@ async function SearchResults({ query }: { query: string }) {
           "{query}"
         </Typography>
         <Typography variant="body2" color="muted">
-          [{count}]
+          [{total}]
         </Typography>
       </Box>
-      <Box display="grid" cols={3} gap={8}>
+      <Box display="grid" cols={4} gap={8} className="w-full">
         {results.map((product) => (
           <ProductCard
             key={product.id}
@@ -79,6 +79,7 @@ async function SearchResults({ query }: { query: string }) {
             team={product.team || ""}
             price={formatPrice(product.price)}
             image={product.image_urls[0] || ""}
+            hoverImage={product.image_urls?.[1]}
           />
         ))}
       </Box>
@@ -91,8 +92,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const query = params.q || "";
 
   return (
-    <Container>
-      <Box display="flex" direction="col" justify="start" align="start" gap="2">
+    <Container fullWidth>
+      <Box display="flex" direction="col" justify="start" align="start" gap="2" className="w-full">
         <Suspense fallback={<Spinner />}>
           <SearchResults query={query} />
         </Suspense>

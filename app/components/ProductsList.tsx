@@ -54,7 +54,7 @@ async function ProductsList() {
   return (
     <Container>
       <Typography variant="h2" uppercase={true} mb={2}>Últimos ingresos</Typography>
-      <Box display="grid" cols={3} gap={8}>
+      <Box display="grid" cols={4} gap={8}>
         {activeProducts.map((product: Product) => (
           <ProductCard
             key={product.id}
@@ -64,6 +64,7 @@ async function ProductsList() {
             team={product.team || ""}
             price={formatPrice(product.price)}
             image={product.image_urls[0] || ""}
+            hoverImage={product.image_urls?.[1]}
           />
         ))}
       </Box>

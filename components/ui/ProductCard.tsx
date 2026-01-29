@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Div from "@/components/ui/Div";
 import Box from "@/components/layout/Box";
-import { generateSlug } from "@/lib/utils";
+import { cn, generateSlug } from "@/lib/utils";
 
 type ProductCardProps = {
   id: string;
@@ -12,6 +12,7 @@ type ProductCardProps = {
   team: string;
   price: string;
   image: string;
+  hoverImage?: string;
   className?: string;
 };
 
@@ -22,36 +23,49 @@ export default function ProductCard({
   team,
   price,
   image,
+  hoverImage,
   className,
 }: ProductCardProps) {
   const productSlug = slug || generateSlug(name);
   const productPath = `${productSlug}-${id}`;
   return (
-    <Link href={`/product/${productPath}`}>
+    <Link href={`/product/${productPath}`} className="block w-full h-full">
       <Box
         display="flex"
         direction="col"
-        className={className}
+        className={cn(
+          "border border-transparent transition-colors hover:border-black w-full h-full",
+          className
+        )}
       >
         <Div
           position="relative"
           overflow="hidden"
-          border="all"
           background="muted"
           transition={true}
           cursor="pointer"
           aspect="square"
           width="full"
-          borderColor="transparent"
-          hoverBorder="black"
         >
-          <Image
-            src={image}
-            alt={`${name} - ${team}`}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          <div className="group absolute inset-0">
+            <Image
+              src={image}
+              alt={`${name} - ${team}`}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+            {hoverImage && (
+              <Image
+                src={hoverImage}
+                alt=""
+                fill
+                className="object-cover opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                aria-hidden
+              />
+            )}
+          </div>
         </Div>
         <Div p={4} spacing="md">
           <Typography variant="h6">

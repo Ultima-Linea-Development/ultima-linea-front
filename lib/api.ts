@@ -144,8 +144,8 @@ export type PaginatedProductsResponse = {
 };
 
 export type SearchResponse = {
-  count: number;
   query: string;
+  total: number;
   results: Product[];
 };
 
@@ -157,6 +157,7 @@ export type CreateProductRequest = {
   season?: string;
   price: number;
   stock: number;
+  size?: string;
   image_urls: string[];
   category?: "club" | "national" | "retro";
   is_active?: boolean;

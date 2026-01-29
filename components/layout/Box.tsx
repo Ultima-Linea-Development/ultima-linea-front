@@ -17,7 +17,7 @@ type FlexBoxProps = BaseBoxProps & {
 type GridBoxProps = BaseBoxProps & {
   display: "grid";
   cols?: 1 | 2 | 3 | 4;
-  gap?: 0 | 4 | 8;
+  gap?: 0 | 2 | 4 | 8;
 };
 
 type DefaultBoxProps = BaseBoxProps & {
@@ -56,8 +56,9 @@ const colsClasses = {
   4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
 };
 
-const gridGapClasses: Record<0 | 4 | 8, string> = {
+const gridGapClasses: Record<0 | 2 | 4 | 8, string> = {
   0: "gap-0",
+  2: "gap-2",
   4: "gap-4",
   8: "gap-8",
 };

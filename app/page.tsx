@@ -18,6 +18,7 @@ export default function Home() {
       <Banner
         image="/images/banners/banner-home.png"
         imageMobile="/images/banners/banner-home-mobile.png"
+        fillViewport
       />
       <Container>
         <Box display="flex" direction="col" justify="start" align="start" gap="2">

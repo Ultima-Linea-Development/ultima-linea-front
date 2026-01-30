@@ -12,10 +12,11 @@ type AdminShellProps = {
 
 export default function AdminShell({ children }: AdminShellProps) {
   return (
-    <Box display="flex" className="h-full">
+    <Box display="flex" className="h-full flex-col md:flex-row">
+      {/* Sidebar: solo desktop */}
       <aside
         className={cn(
-          "w-64 border-r border-border bg-background p-6 h-full overflow-y-auto flex flex-col"
+          "hidden md:flex md:w-64 md:flex-col md:border-r md:border-border md:bg-background md:p-6 md:h-full md:overflow-y-auto"
         )}
       >
         <Box display="flex" direction="col" gap="8" className="flex-1">
@@ -23,15 +24,31 @@ export default function AdminShell({ children }: AdminShellProps) {
             <Logo />
           </Box>
           <nav className="flex flex-col gap-1">
-            <AdminNavLink href="/admin">Inicio</AdminNavLink>
-            <AdminNavLink href="/admin/products">Productos</AdminNavLink>
+            <AdminNavLink href="/admin/products">Catálogo</AdminNavLink>
           </nav>
         </Box>
         <Box className="mt-auto pt-4 border-t border-border">
           <AdminLogoutLink />
         </Box>
       </aside>
-      <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+      {/* Main: espacio para bottom bar en mobile */}
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6">
+        {children}
+      </main>
+
+      {/* Barra inferior: solo mobile */}
+      <aside
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-40 flex md:hidden flex-row items-center justify-around border-t border-border bg-background p-2 h-16",
+          "pb-[env(safe-area-inset-bottom,0)]"
+        )}
+      >
+        <nav className="flex flex-row items-center justify-around gap-1 w-full [&>a]:flex-1 [&>a]:justify-center [&>a]:text-center [&>a]:min-w-0 [&>a]:py-2 [&>a]:!text-center">
+          <AdminNavLink href="/admin/products">Catálogo</AdminNavLink>
+          <AdminLogoutLink />
+        </nav>
+      </aside>
     </Box>
   );
 }

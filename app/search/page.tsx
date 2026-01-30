@@ -50,7 +50,7 @@ async function SearchResults({ query }: { query: string }) {
           No se encontraron resultados
         </Typography>
         <Typography variant="body" color="muted">
-          No hay productos que coincidan con &quot;{query}&quot;
+          No hay artículos que coincidan con &quot;{query}&quot;
         </Typography>
       </Div>
     );

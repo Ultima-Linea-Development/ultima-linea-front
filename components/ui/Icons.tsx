@@ -1,5 +1,12 @@
 import { IconType } from "react-icons";
-import { MdOutlineSearch, MdOutlineShoppingBag, MdMenu, MdClose } from "react-icons/md";
+import {
+  MdOutlineSearch,
+  MdOutlineShoppingBag,
+  MdMenu,
+  MdClose,
+  MdOutlineEdit,
+  MdOutlineDelete,
+} from "react-icons/md";
 import { ComponentProps } from "react";
 
 export const Icons = {
@@ -7,6 +14,8 @@ export const Icons = {
   cart: MdOutlineShoppingBag,
   menu: MdMenu,
   close: MdClose,
+  edit: MdOutlineEdit,
+  delete: MdOutlineDelete,
 } as const;
 
 export type IconName = keyof typeof Icons;

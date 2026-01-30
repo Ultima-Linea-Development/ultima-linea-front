@@ -137,6 +137,8 @@ export type ProductFilters = {
   league?: string;
   category?: "club" | "national" | "retro";
   season?: string;
+  page?: number;
+  per_page?: number;
 };
 
 export type PaginatedProductsResponse = {
@@ -196,6 +198,8 @@ export const productsApi = {
     if (filters?.league) params.append("league", filters.league);
     if (filters?.category) params.append("category", filters.category);
     if (filters?.season) params.append("season", filters.season);
+    if (filters?.page != null) params.append("page", String(filters.page));
+    if (filters?.per_page != null) params.append("per_page", String(filters.per_page));
 
     const query = params.toString();
     return api.get<PaginatedProductsResponse>(`/products${query ? `?${query}` : ""}`);

@@ -126,7 +126,7 @@ export default function ImageUploadDropzone({
           Arrastrá imágenes aquí o hacé clic para elegir
         </Typography>
         <Typography variant="body2" color="muted">
-          JPG, PNG o WebP. Máx. {MAX_FILES} imágenes. Se suben al crear el producto.
+          JPG, PNG o WebP. Máx. {MAX_FILES} imágenes.
         </Typography>
       </div>
 

@@ -63,9 +63,9 @@ export default function Modal({ open, onClose, title, children, className }: Mod
       >
         <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 shrink-0">
           {title ? (
-            <Typography id="modal-title" variant="h2">
-              {title}
-            </Typography>
+            <span id="modal-title">
+              <Typography variant="h2">{title}</Typography>
+            </span>
           ) : (
             <span />
           )}

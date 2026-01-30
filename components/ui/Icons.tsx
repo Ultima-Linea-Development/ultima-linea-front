@@ -6,6 +6,8 @@ import {
   MdClose,
   MdOutlineEdit,
   MdOutlineDelete,
+  MdChevronLeft,
+  MdChevronRight,
 } from "react-icons/md";
 import { ComponentProps } from "react";
 
@@ -16,6 +18,8 @@ export const Icons = {
   close: MdClose,
   edit: MdOutlineEdit,
   delete: MdOutlineDelete,
+  chevronLeft: MdChevronLeft,
+  chevronRight: MdChevronRight,
 } as const;
 
 export type IconName = keyof typeof Icons;

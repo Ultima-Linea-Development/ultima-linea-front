@@ -4,7 +4,7 @@ import Container from "@/components/layout/Container";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import Div from "@/components/ui/Div";
-import Image from "next/image";
+import ProductImageGallery from "@/components/ui/ProductImageGallery";
 import { formatPrice } from "@/lib/utils";
 import { notFound } from "next/navigation";
 
@@ -57,24 +57,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
         gap={8}
         className="mt-8 md:grid-cols-[1.5fr_1fr] lg:grid-cols-[2fr_1fr]"
       >
-        <Box display="grid" cols={2} gap={2} className="min-w-0">
-          {imageUrls.map((url, index) => (
-            <Div
-              key={url}
-              position="relative"
-              aspect="square"
-              overflow="hidden"
-            >
-              <Image
-                src={url}
-                alt={`${product.name} - imagen ${index + 1}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 45vw, 35vw"
-                priority={index === 0}
-              />
-            </Div>
-          ))}
+        <Box className="min-w-0">
+          <ProductImageGallery
+            imageUrls={imageUrls}
+            productName={product.name}
+          />
         </Box>
 
         <Box display="flex" direction="col" gap="4">

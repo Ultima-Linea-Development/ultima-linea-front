@@ -13,21 +13,16 @@ import Div from "@/components/ui/Div";
 import Alert from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
 import AdminShell from "@/components/admin/AdminShell";
+import ImageUploadDropzone from "@/components/ui/ImageUploadDropzone";
 import { isAdmin, getUserFromToken, clearAuth, getToken } from "@/lib/auth";
-import { adminProductsApi, type CreateProductRequest } from "@/lib/api";
+import { adminProductsApi, adminUploadApi, type CreateProductRequest } from "@/lib/api";
+import { generateSlug } from "@/lib/utils";
 
 const CATEGORY_OPTIONS: Array<{ value: CreateProductRequest["category"]; label: string }> = [
   { value: "club", label: "Club" },
   { value: "national", label: "Selección" },
   { value: "retro", label: "Retro" },
 ];
-
-function parseImageUrls(value: string): string[] {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -45,7 +40,7 @@ export default function AdminProductsPage() {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [size, setSize] = useState("");
-  const [imageUrlsText, setImageUrlsText] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [category, setCategory] = useState<CreateProductRequest["category"]>("club");
 
   useEffect(() => {
@@ -91,27 +86,46 @@ export default function AdminProductsPage() {
       return;
     }
 
-    const image_urls = parseImageUrls(imageUrlsText);
-    if (image_urls.length === 0) {
-      setError("Agregá al menos una URL de imagen.");
+    if (imageFiles.length === 0) {
+      setError("Subí al menos una imagen.");
       setIsSubmitting(false);
       return;
     }
 
-    const payload: CreateProductRequest = {
-      name: name.trim(),
-      description: description.trim() || undefined,
-      team: team.trim() || undefined,
-      league: league.trim() || undefined,
-      season: season.trim() || undefined,
-      price: priceNum,
-      stock: stockNum,
-      size: size.trim() || undefined,
-      image_urls,
-      category,
-    };
+    const teamSlug = generateSlug(team) || "producto";
+    const productSlug = generateSlug(name) || `producto-${Date.now()}`;
+
+    const formData = new FormData();
+    formData.append("team_slug", teamSlug);
+    formData.append("product_slug", productSlug);
+    imageFiles.forEach((file) => formData.append("images", file));
 
     try {
+      const uploadResponse = await adminUploadApi.uploadProductImages(formData, token);
+
+      if (uploadResponse.error || !uploadResponse.data?.urls?.length) {
+        const msg =
+          uploadResponse.status === 401
+            ? "Sesión expirada o token inválido. Volvé a iniciar sesión."
+            : uploadResponse.error || "Error al subir las imágenes.";
+        setError(msg);
+        setIsSubmitting(false);
+        return;
+      }
+
+      const payload: CreateProductRequest = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        team: team.trim() || undefined,
+        league: league.trim() || undefined,
+        season: season.trim() || undefined,
+        price: priceNum,
+        stock: stockNum,
+        size: size.trim() || undefined,
+        image_urls: uploadResponse.data.urls,
+        category,
+      };
+
       const response = await adminProductsApi.create(payload, token);
 
       if (response.error || !response.data) {
@@ -129,7 +143,7 @@ export default function AdminProductsPage() {
       setPrice("");
       setStock("");
       setSize("");
-      setImageUrlsText("");
+      setImageFiles([]);
       setCategory("club");
     } catch {
       setError("Error de conexión. Intentá de nuevo.");
@@ -305,21 +319,14 @@ export default function AdminProductsPage() {
             </Div>
           </Box>
 
-          <Div spacing="md">
-            <Label htmlFor="image_urls" display="block" spacing="sm">
-              <Typography variant="body2" mb={1}>
-                URLs de imágenes (una por línea) *
-              </Typography>
-              <textarea
-                id="image_urls"
-                value={imageUrlsText}
-                onChange={(e) => setImageUrlsText(e.target.value)}
-                required
-                rows={4}
-                placeholder="https://storage.ultimalinea.com.ar/products/test/test-1.png"
-                className="w-full py-2 px-4 bg-gray-200 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-y"
-              />
-            </Label>
+          <Div spacing="md" className="space-y-2">
+            <Typography variant="body2" mb={1}>
+              Imágenes del producto *
+            </Typography>
+            <ImageUploadDropzone
+              files={imageFiles}
+              onFilesChange={setImageFiles}
+            />
           </Div>
 
           {error && (

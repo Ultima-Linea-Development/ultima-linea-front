@@ -1,15 +1,19 @@
 const getApiBaseUrl = () => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-  
+
   if (typeof window !== "undefined") {
     const isDevelopment = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (isDevelopment && baseUrl.startsWith("http")) {
       return "/api-proxy";
     }
   }
-  
+
   return baseUrl;
 };
+
+/** URL del backend sin proxy. Usar para upload (FormData); el proxy no reenvía bien multipart. */
+const getDirectApiUrl = () =>
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";
@@ -207,6 +211,45 @@ export const productsApi = {
   },
 };
 
+export type UploadProductImagesResponse = {
+  urls: string[];
+};
+
+async function requestFormData<T>(
+  endpoint: string,
+  formData: FormData,
+  token?: string
+): Promise<ApiResponse<T>> {
+  const url = `${getDirectApiUrl()}${endpoint}`;
+  const headers: HeadersInit = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return {
+        error: data.error || data.message || `Error ${response.status}`,
+        status: response.status,
+      };
+    }
+
+    return { data: data as T, status: response.status };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Error de conexión",
+      status: 0,
+    };
+  }
+}
+
 export const adminProductsApi = {
   create: (product: CreateProductRequest, token: string) =>
     api.post<Product>("/admin/products", product, token),
@@ -216,6 +259,11 @@ export const adminProductsApi = {
 
   delete: (id: string, token: string) =>
     api.delete<{ message: string }>(`/admin/products/${id}`, token),
+};
+
+export const adminUploadApi = {
+  uploadProductImages: (formData: FormData, token: string) =>
+    requestFormData<UploadProductImagesResponse>("/admin/upload/product-images", formData, token),
 };
 
 export const adminProfileApi = {

@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "photo.yupoo.com" },
+      { protocol: "https", hostname: "storage.ultimalinea.com.ar" },
+      { protocol: "http", hostname: "localhost" },
     ],
     unoptimized: true,
   },

@@ -6,9 +6,8 @@ const resolvePublicApiUrl = () =>
     ? DEFAULT_PRODUCTION_API_URL
     : "http://localhost:8080");
 
-const baseUrl = resolvePublicApiUrl();
-
 export const getApiBaseUrl = () => {
+  const baseUrl = resolvePublicApiUrl();
   if (typeof window !== "undefined") {
     const isDevelopment = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (isDevelopment && baseUrl.startsWith("http")) {
@@ -60,7 +59,7 @@ async function request<T>(
     headers: requestHeaders,
   };
 
-  if (method === "GET") {
+  if (method === "GET" && typeof window === "undefined") {
     (config as any).next = { revalidate: 60 };
   }
 

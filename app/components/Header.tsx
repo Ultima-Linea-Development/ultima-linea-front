@@ -9,10 +9,11 @@ import MobileSearch from "@/components/layout/MobileSearch";
 import Logo from "@/components/brand/Logo";
 import SearchInput from "@/components/ui/SearchInput";
 import Nav from "@/components/ui/Nav";
-import Icon from "@/components/ui/Icons";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+// import Icon from "@/components/ui/Icons";
+// import { Button } from "@/components/ui/button";
+// import Link from "next/link";
 import Box from "@/components/layout/Box";
+import { WHATSAPP_CONSULT_URL } from "@/lib/whatsapp";
 
 export default function Header() {
   return (
@@ -22,22 +23,26 @@ export default function Header() {
           <Logo />
           <NavLinks>
             <NavLink href="/">Inicio</NavLink>
-            <NavLink href="/contact">Contacto</NavLink>
+            <NavLink href={WHATSAPP_CONSULT_URL} external>
+              Contacto
+            </NavLink>
           </NavLinks>
           <Box display="flex" align="center" gap="4">
             <div className="hidden md:block">
               <SearchInput />
             </div>
             <MobileSearch />
-            <Button variant="ghost" size="icon" asChild>
+            {/* <Button variant="ghost" size="icon" asChild>
               <Link href="/cart">
                 <Icon name="cart" size={28} />
               </Link>
-            </Button>
+            </Button> */}
             <MobileMenu>
               <NavLinks mobile>
                 <NavLink href="/" mobile>Inicio</NavLink>
-                <NavLink href="/contact" mobile>Contacto</NavLink>
+                <NavLink href={WHATSAPP_CONSULT_URL} mobile external>
+                  Contacto
+                </NavLink>
               </NavLinks>
             </MobileMenu>
           </Box>

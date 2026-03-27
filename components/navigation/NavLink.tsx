@@ -8,9 +8,15 @@ type NavLinkProps = {
   href: string;
   children: React.ReactNode;
   mobile?: boolean;
+  external?: boolean;
 };
 
-export default function NavLink({ href, children, mobile = false }: NavLinkProps) {
+export default function NavLink({
+  href,
+  children,
+  mobile = false,
+  external = false,
+}: NavLinkProps) {
   const mobileMenu = useMobileMenu();
 
   const handleClick = () => {
@@ -22,6 +28,8 @@ export default function NavLink({ href, children, mobile = false }: NavLinkProps
   return (
     <Link
       href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
       onClick={handleClick}
       className={cn(
         "font-semibold text-md relative flex items-center px-4 rounded-none cursor-pointer",

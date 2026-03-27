@@ -7,15 +7,51 @@ import Paragraph from "@/components/ui/Paragraph";
 import { productsApi, type Product } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 
+const CATALOG_PAGE_SIZE = 100;
+
+function dedupeProductsById(products: Product[]): Product[] {
+  const seen = new Set<string>();
+  const out: Product[] = [];
+  for (const p of products) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push(p);
+  }
+  return out;
+}
+
+async function fetchFullCatalog() {
+  const first = await productsApi.getAll({ page: 1, per_page: CATALOG_PAGE_SIZE });
+  if (first.error || !first.data) return first;
+
+  const { products, total_pages, total } = first.data;
+  if (total_pages <= 1) return first;
+
+  const merged = [...products];
+  for (let page = 2; page <= total_pages; page++) {
+    const r = await productsApi.getAll({ page, per_page: CATALOG_PAGE_SIZE });
+    if (r.error || !r.data) return r;
+    merged.push(...r.data.products);
+  }
+
+  return {
+    data: {
+      products: merged,
+      page: 1,
+      per_page: merged.length,
+      total,
+      total_pages: 1,
+    },
+    status: first.status,
+  };
+}
+
 async function ProductsList() {
   const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   let response;
   try {
-    const [responseResult] = await Promise.all([
-      productsApi.getAll(),
-      delay(500),
-    ]);
+    const [responseResult] = await Promise.all([fetchFullCatalog(), delay(500)]);
     response = responseResult;
   } catch (error) {
     await delay(500);
@@ -38,7 +74,7 @@ async function ProductsList() {
     );
   }
 
-  const products = response.data.products || [];
+  const products = dedupeProductsById(response.data.products || []);
   const activeProducts = products.filter(
     (product) => product.is_active
   );

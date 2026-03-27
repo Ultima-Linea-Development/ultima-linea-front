@@ -1,12 +1,46 @@
 import type { Metadata } from "next";
-import { productsApi } from "@/lib/api";
+import type { ReactNode } from "react";
+import { productsApi, type Product } from "@/lib/api";
 import Container from "@/components/layout/Container";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import Div from "@/components/ui/Div";
 import ProductImageGallery from "@/components/ui/ProductImageGallery";
 import { formatPrice } from "@/lib/utils";
+import { getSiteOrigin } from "@/lib/site-origin";
+import { buildWhatsAppConsultUrl } from "@/lib/whatsapp";
+import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
+
+const categoryDisplay: Record<NonNullable<Product["category"]>, string> = {
+  club: "Club",
+  national: "Selección",
+  retro: "Retro",
+};
+
+function ProductAttributeRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <Box
+      display="flex"
+      justify="between"
+      align="center"
+      className="w-full gap-4 py-3 first:pt-0 last:pb-0"
+    >
+      <span className="shrink-0 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </span>
+      <span className="min-w-0 text-right text-sm font-medium leading-snug text-foreground">
+        {children}
+      </span>
+    </Box>
+  );
+}
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -48,6 +82,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const product = response.data;
   const imageUrls = product.image_urls ?? [];
+  const origin = await getSiteOrigin();
+  const productHref = origin ? `${origin}/product/${slug}` : "";
+  const whatsappMessage = productHref
+    ? `Hola, quisiera hacer una consulta sobre el producto: ${product.name}\n${productHref}`
+    : `Hola, quisiera hacer una consulta sobre el producto: ${product.name}`;
+  const whatsappProductUrl = buildWhatsAppConsultUrl(whatsappMessage);
 
   return (
     <Container>
@@ -64,10 +104,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
           />
         </Box>
 
-        <Box display="flex" direction="col" gap="4">
+        <Box display="flex" direction="col" gap="4" className="w-full min-w-0">
           <Box display="flex" direction="col" gap="2">
-            <Typography variant="h1">{product.name}</Typography>
-            <Typography variant="h4" color="gray">
+            <Typography variant="h1" uppercase>
+              {product.name}
+            </Typography>
+            <Typography variant="h3" as="p">
               {formatPrice(product.price)}
             </Typography>
           </Box>
@@ -78,36 +120,37 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </Div>
           )}
 
-          <Div spacing="md" border="top" pt={4}>
-            {product.team && (
-              <Box display="flex" justify="between">
-                <Typography variant="body2" color="gray">Equipo:</Typography>
-                <Typography variant="body2">{product.team}</Typography>
-              </Box>
-            )}
-            {product.league && (
-              <Box display="flex" justify="between">
-                <Typography variant="body2" color="gray">Liga:</Typography>
-                <Typography variant="body2">{product.league}</Typography>
-              </Box>
-            )}
-            {product.season && (
-              <Box display="flex" justify="between">
-                <Typography variant="body2" color="gray">Temporada:</Typography>
-                <Typography variant="body2">{product.season}</Typography>
-              </Box>
-            )}
-            {product.category && (
-              <Box display="flex" justify="between">
-                <Typography variant="body2" color="gray">Categoría:</Typography>
-                <Typography variant="body2" uppercase>{product.category}</Typography>
-              </Box>
-            )}
-            <Box display="flex" justify="between">
-              <Typography variant="body2" color="gray">Stock:</Typography>
-              <Typography variant="body2">{product.stock} unidades</Typography>
-            </Box>
+          <Div border="top" pt={4} className="w-full min-w-0">
+            <div className="box-border w-full divide-y divide-border/80 border border-border/80 bg-muted/40 px-4 py-5 sm:px-6 sm:py-6">
+              {product.team && (
+                <ProductAttributeRow label="Equipo">{product.team}</ProductAttributeRow>
+              )}
+              {product.league && (
+                <ProductAttributeRow label="Liga">{product.league}</ProductAttributeRow>
+              )}
+              {product.season && (
+                <ProductAttributeRow label="Temporada">{product.season}</ProductAttributeRow>
+              )}
+              {product.category && (
+                <ProductAttributeRow label="Categoría">
+                  {categoryDisplay[product.category]}
+                </ProductAttributeRow>
+              )}
+              <ProductAttributeRow label="Stock">
+                {product.stock} {product.stock === 1 ? "unidad" : "unidades"}
+              </ProductAttributeRow>
+            </div>
           </Div>
+
+          <Button asChild>
+            <a
+              href={whatsappProductUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Consultar sobre el producto
+            </a>
+          </Button>
         </Box>
       </Box>
     </Container>

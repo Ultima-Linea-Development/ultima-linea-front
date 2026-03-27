@@ -6,7 +6,6 @@ import Box from "@/components/layout/Box";
 import Lightbox from "@/components/ui/Lightbox";
 
 const ZOOM_SCALE = 1.75;
-const PAN_FACTOR = 0.75;
 
 type ZoomableImageProps = {
   url: string;
@@ -42,11 +41,10 @@ function ZoomableImage({
   const handleMouseEnter = React.useCallback(() => setIsHovering(true), []);
   const handleMouseLeave = React.useCallback(() => setIsHovering(false), []);
 
-  const translateX = isHovering ? (0.5 - pan.x) * PAN_FACTOR * 100 : 0;
-  const translateY = isHovering ? (0.5 - pan.y) * PAN_FACTOR * 100 : 0;
   const scale = isHovering ? ZOOM_SCALE : 1;
-
-  const transform = `scale(${scale}) translate(${translateX}%, ${translateY}%)`;
+  const transformOrigin = isHovering
+    ? `${pan.x * 100}% ${pan.y * 100}%`
+    : "50% 50%";
 
   return (
     <button
@@ -64,7 +62,10 @@ function ZoomableImage({
         alt={alt}
         fill
         className="object-cover transition-transform duration-200 ease-out"
-        style={{ transform }}
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin,
+        }}
         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 45vw, 35vw"
         priority={priority}
         draggable={false}

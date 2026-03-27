@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import Header from "@/app/components/Header";
-import FooterComponent from "@/app/components/Footer";
+import WhatsAppFloatingButton from "@/app/components/WhatsAppFloatingButton";
+// import FooterComponent from "@/app/components/Footer";
 import Main from "@/components/ui/Main";
 
 export default function ConditionalLayout({
@@ -21,7 +22,8 @@ export default function ConditionalLayout({
     <>
       <Header />
       <Main flex={true}>{children}</Main>
-      <FooterComponent />
+      <WhatsAppFloatingButton />
+      {/* <FooterComponent /> */}
     </>
   );
 }

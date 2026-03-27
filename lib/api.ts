@@ -1,19 +1,25 @@
-const getApiBaseUrl = () => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const DEFAULT_PRODUCTION_API_URL = "https://api.ultimalinea.com.ar";
 
+const resolvePublicApiUrl = () =>
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "production"
+    ? DEFAULT_PRODUCTION_API_URL
+    : "http://localhost:8080");
+
+const baseUrl = resolvePublicApiUrl();
+
+export const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
     const isDevelopment = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (isDevelopment && baseUrl.startsWith("http")) {
       return "/api-proxy";
     }
   }
-
   return baseUrl;
 };
 
 /** URL del backend sin proxy. Usar para upload (FormData); el proxy no reenvía bien multipart. */
-const getDirectApiUrl = () =>
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+export const getDirectApiUrl = () => resolvePublicApiUrl();
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "DELETE";

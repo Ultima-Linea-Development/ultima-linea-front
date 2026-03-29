@@ -6,8 +6,10 @@ export default function AdminLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className={`${fontVariable} h-screen antialiased overflow-hidden`}>
-      {children}
+    <div
+      className={`${fontVariable} flex h-screen min-h-0 flex-col overflow-hidden antialiased`}
+    >
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
   );
 }

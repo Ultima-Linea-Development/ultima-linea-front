@@ -12,7 +12,11 @@ type AdminShellProps = {
 
 export default function AdminShell({ children }: AdminShellProps) {
   return (
-    <Box display="flex" className="h-full flex-col md:flex-row">
+    <Box
+      display="flex"
+      align="stretch"
+      className="h-full min-h-0 flex-col md:flex-row"
+    >
       {/* Sidebar: solo desktop */}
       <aside
         className={cn(
@@ -33,7 +37,7 @@ export default function AdminShell({ children }: AdminShellProps) {
       </aside>
 
       {/* Main: espacio para bottom bar en mobile */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6">
+      <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6">
         {children}
       </main>
 

@@ -129,7 +129,10 @@ export type Product = {
   league?: string;
   season?: string;
   price: number;
-  stock: number;
+  stock?: number;
+  size?: string;
+  sizes?: string[];
+  stock_by_sizes?: Record<string, number>;
   image_urls: string[];
   category?: "club" | "national" | "retro";
   is_active: boolean;
@@ -167,8 +170,8 @@ export type CreateProductRequest = {
   league?: string;
   season?: string;
   price: number;
-  stock: number;
-  size?: string;
+  sizes: string[];
+  stock_by_sizes: Record<string, number>;
   image_urls: string[];
   category?: "club" | "national" | "retro";
   is_active?: boolean;

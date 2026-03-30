@@ -14,6 +14,12 @@ import ImageUploadDropzone from "@/components/ui/ImageUploadDropzone";
 import type { Product, UpdateProductRequest } from "@/lib/api";
 import { adminUploadApi } from "@/lib/api";
 import { generateSlug } from "@/lib/utils";
+import {
+  productToRows,
+  rowsToPayload,
+  type SizeStockRow,
+} from "@/lib/product-inventory";
+import ProductSizeStockFields from "@/components/admin/ProductSizeStockFields";
 
 const CATEGORY_OPTIONS: Array<{ value: "club" | "national" | "retro"; label: string }> = [
   { value: "club", label: "Club" },
@@ -44,7 +50,8 @@ export default function AdminProductEditForm({
   const [league, setLeague] = useState(product.league ?? "");
   const [season, setSeason] = useState(product.season ?? "");
   const [price, setPrice] = useState(String(product.price));
-  const [stock, setStock] = useState(String(product.stock));
+  const [sizeRows, setSizeRows] = useState<SizeStockRow[]>(() => productToRows(product));
+  const [inventoryError, setInventoryError] = useState("");
   const [category, setCategory] = useState<Product["category"]>(product.category ?? "club");
   const [isActive, setIsActive] = useState(product.is_active);
   const [currentImageUrls, setCurrentImageUrls] = useState<string[]>(product.image_urls ?? []);
@@ -55,7 +62,9 @@ export default function AdminProductEditForm({
     setCurrentImageUrls(product.image_urls ?? []);
     setNewFiles([]);
     setImageError("");
-  }, [product.id, product.image_urls]);
+    setSizeRows(productToRows(product));
+    setInventoryError("");
+  }, [product.id, product.image_urls, product.sizes, product.stock_by_sizes, product.stock, product.size]);
 
   const removeCurrentImage = (index: number) => {
     setCurrentImageUrls((prev) => prev.filter((_, i) => i !== index));
@@ -64,9 +73,14 @@ export default function AdminProductEditForm({
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setImageError("");
+    setInventoryError("");
     const priceNum = Number(price);
-    const stockNum = Number(stock);
-    if (Number.isNaN(priceNum) || priceNum < 0 || Number.isNaN(stockNum) || stockNum < 0) return;
+    if (Number.isNaN(priceNum) || priceNum < 0) return;
+    const inventory = rowsToPayload(sizeRows);
+    if (!inventory) {
+      setInventoryError("Completá al menos un talle con stock válido (número ≥ 0).");
+      return;
+    }
 
     let finalUrls = [...currentImageUrls];
     if (newFiles.length > 0) {
@@ -100,7 +114,8 @@ export default function AdminProductEditForm({
       league: league.trim() || undefined,
       season: season.trim() || undefined,
       price: priceNum,
-      stock: stockNum,
+      sizes: inventory.sizes,
+      stock_by_sizes: inventory.stock_by_sizes,
       category,
       is_active: isActive,
       image_urls: finalUrls,
@@ -216,20 +231,13 @@ export default function AdminProductEditForm({
               />
             </Label>
           </Div>
-          <Div spacing="md" className="min-w-[100px]">
-            <Label htmlFor="edit-stock" display="block" spacing="sm">
-              <Typography variant="body2" mb={1}>
-                Stock *
-              </Typography>
-              <Input
-                id="edit-stock"
-                type="number"
-                min={0}
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
-                required
-              />
-            </Label>
+          <Div spacing="md" className="min-w-0 w-full max-w-md">
+            <ProductSizeStockFields
+              idPrefix="edit"
+              rows={sizeRows}
+              onRowsChange={setSizeRows}
+              disabled={isSubmitting}
+            />
           </Div>
           <Div spacing="md" className="flex items-center gap-2">
             <input
@@ -282,10 +290,10 @@ export default function AdminProductEditForm({
           <ImageUploadDropzone files={newFiles} onFilesChange={setNewFiles} />
         </Div>
 
-        {(error || imageError) && (
+        {(error || imageError || inventoryError) && (
           <Alert variant="destructive">
             <Typography variant="body2" color="destructive">
-              {error || imageError}
+              {error || imageError || inventoryError}
             </Typography>
           </Alert>
         )}

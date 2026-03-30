@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { Product } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { getProductTotalStock } from "@/lib/product-inventory";
 
 const PER_PAGE = 10;
 
@@ -179,7 +180,7 @@ export default function AdminProductsTable({
                     </span>
                   </td>
                   <td className={cellClass}>
-                    <Typography variant="body2">{p.stock}</Typography>
+                    <Typography variant="body2">{getProductTotalStock(p)}</Typography>
                   </td>
                   <td className={cellClass}>
                     <span

@@ -9,6 +9,7 @@ import ProductImageGallery from "@/components/ui/ProductImageGallery";
 import { formatPrice } from "@/lib/utils";
 import { getSiteOrigin } from "@/lib/site-origin";
 import { buildWhatsAppConsultUrl } from "@/lib/whatsapp";
+import { getProductTotalStock, orderedSizeEntries } from "@/lib/product-inventory";
 import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 
@@ -82,6 +83,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const product = response.data;
   const imageUrls = product.image_urls ?? [];
+  const totalStock = getProductTotalStock(product);
+  const sizeEntries = orderedSizeEntries(product);
   const origin = await getSiteOrigin();
   const productHref = origin ? `${origin}/product/${slug}` : "";
   const whatsappMessage = productHref
@@ -137,7 +140,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 </ProductAttributeRow>
               )}
               <ProductAttributeRow label="Stock">
-                {product.stock} {product.stock === 1 ? "unidad" : "unidades"}
+                {sizeEntries.length > 0 ? (
+                  <span className="inline-flex flex-col items-end gap-1 text-right">
+                    <span>
+                      {totalStock} {totalStock === 1 ? "unidad" : "unidades"} en total
+                    </span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {sizeEntries.map(([s, q]) => `${s}: ${q}`).join(" · ")}
+                    </span>
+                  </span>
+                ) : (
+                  <>
+                    {totalStock} {totalStock === 1 ? "unidad" : "unidades"}
+                  </>
+                )}
               </ProductAttributeRow>
             </div>
           </Div>

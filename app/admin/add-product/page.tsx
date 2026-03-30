@@ -16,6 +16,8 @@ import ImageUploadDropzone from "@/components/ui/ImageUploadDropzone";
 import { isAdmin, getUserFromToken, clearAuth, getToken } from "@/lib/auth";
 import { adminProductsApi, adminUploadApi, type CreateProductRequest } from "@/lib/api";
 import { generateSlug } from "@/lib/utils";
+import { emptySizeStockRow, rowsToPayload, type SizeStockRow } from "@/lib/product-inventory";
+import ProductSizeStockFields from "@/components/admin/ProductSizeStockFields";
 
 const CATEGORY_OPTIONS: Array<{ value: CreateProductRequest["category"]; label: string }> = [
   { value: "club", label: "Club" },
@@ -37,8 +39,7 @@ export default function AdminAddProductPage() {
   const [league, setLeague] = useState("");
   const [season, setSeason] = useState("");
   const [price, setPrice] = useState("");
-  const [stock, setStock] = useState("");
-  const [size, setSize] = useState("");
+  const [sizeRows, setSizeRows] = useState<SizeStockRow[]>(() => [emptySizeStockRow()]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [category, setCategory] = useState<CreateProductRequest["category"]>("club");
 
@@ -73,14 +74,14 @@ export default function AdminAddProductPage() {
     }
 
     const priceNum = Number(price);
-    const stockNum = Number(stock);
     if (Number.isNaN(priceNum) || priceNum < 0) {
       setError("Precio debe ser un número válido.");
       setIsSubmitting(false);
       return;
     }
-    if (Number.isNaN(stockNum) || stockNum < 0) {
-      setError("Stock debe ser un número válido.");
+    const inventory = rowsToPayload(sizeRows);
+    if (!inventory) {
+      setError("Completá al menos un talle con stock válido (número ≥ 0).");
       setIsSubmitting(false);
       return;
     }
@@ -119,8 +120,8 @@ export default function AdminAddProductPage() {
         league: league.trim() || undefined,
         season: season.trim() || undefined,
         price: priceNum,
-        stock: stockNum,
-        size: size.trim() || undefined,
+        sizes: inventory.sizes,
+        stock_by_sizes: inventory.stock_by_sizes,
         image_urls: uploadResponse.data.urls,
         category,
       };
@@ -140,8 +141,7 @@ export default function AdminAddProductPage() {
       setLeague("");
       setSeason("");
       setPrice("");
-      setStock("");
-      setSize("");
+      setSizeRows([emptySizeStockRow()]);
       setImageFiles([]);
       setCategory("club");
     } catch {
@@ -284,37 +284,16 @@ export default function AdminAddProductPage() {
                 />
               </Label>
             </Div>
-            <Div spacing="md" className="flex-1 min-w-[120px]">
-              <Label htmlFor="stock" display="block" spacing="sm">
-                <Typography variant="body2" mb={1}>
-                  Stock *
-                </Typography>
-                <Input
-                  id="stock"
-                  type="number"
-                  min={0}
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value)}
-                  required
-                  placeholder="5"
-                />
-              </Label>
-            </Div>
-            <Div spacing="md" className="flex-1 min-w-[120px]">
-              <Label htmlFor="size" display="block" spacing="sm">
-                <Typography variant="body2" mb={1}>
-                  Talle
-                </Typography>
-                <Input
-                  id="size"
-                  type="text"
-                  value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                  placeholder="XL"
-                />
-              </Label>
-            </Div>
           </Box>
+
+          <Div spacing="md">
+            <ProductSizeStockFields
+              idPrefix="add"
+              rows={sizeRows}
+              onRowsChange={setSizeRows}
+              disabled={isSubmitting}
+            />
+          </Div>
 
           <Div spacing="md" className="space-y-2">
             <Typography variant="body2" mb={1}>

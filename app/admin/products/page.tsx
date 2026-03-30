@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Box from "@/components/layout/Box";
@@ -10,10 +10,16 @@ import Alert from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
 import AdminShell from "@/components/admin/AdminShell";
 import AdminProductsTable, { PER_PAGE } from "@/components/admin/AdminProductsTable";
+import AdminCatalogSearch from "@/components/admin/AdminCatalogSearch";
 import AdminProductEditForm from "@/components/admin/AdminProductEditForm";
 import Modal from "@/components/ui/Modal";
 import { isAdmin, getUserFromToken, clearAuth, getToken } from "@/lib/auth";
-import { productsApi, adminProductsApi, type Product, type UpdateProductRequest } from "@/lib/api";
+import {
+  productsApi,
+  adminProductsApi,
+  type Product,
+  type UpdateProductRequest,
+} from "@/lib/api";
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -34,20 +40,58 @@ export default function AdminProductsPage() {
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [bulkConfirmIds, setBulkConfirmIds] = useState<string[] | null>(null);
   const [bulkError, setBulkError] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTick, setSearchTick] = useState(0);
+  const searchCacheRef = useRef<{ query: string; results: Product[] } | null>(null);
 
-  const fetchProducts = useCallback(async (currentPage: number) => {
+  const loadCatalog = useCallback(async () => {
     setError("");
-    const response = await productsApi.getAll({
-      page: currentPage,
-      per_page: PER_PAGE,
-    });
-    if (response.error) {
-      setError(response.error);
-      setProducts(undefined);
+    const q = searchQuery.trim();
+    if (!q) {
+      const response = await productsApi.getAll({
+        page,
+        per_page: PER_PAGE,
+      });
+      if (response.error) {
+        setError(response.error);
+        setProducts(undefined);
+        return;
+      }
+      setProducts(response.data ?? undefined);
       return;
     }
-    setProducts(response.data ?? undefined);
-  }, []);
+    let all = searchCacheRef.current?.query === q ? searchCacheRef.current.results : null;
+    if (!all) {
+      const response = await productsApi.search(q);
+      if (response.error || !response.data) {
+        setError(response.error ?? "Error al buscar");
+        setProducts(undefined);
+        return;
+      }
+      all = response.data.results;
+      searchCacheRef.current = { query: q, results: all };
+    }
+    const total = all.length;
+    const total_pages = Math.max(1, Math.ceil(total / PER_PAGE));
+    const safePage = Math.min(Math.max(1, page), total_pages);
+    const start = (safePage - 1) * PER_PAGE;
+    setProducts({
+      products: all.slice(start, start + PER_PAGE),
+      page: safePage,
+      per_page: PER_PAGE,
+      total,
+      total_pages,
+    });
+    if (safePage !== page) {
+      setPage(safePage);
+    }
+  }, [searchQuery, page]);
+
+  const refreshCatalog = useCallback(async () => {
+    searchCacheRef.current = null;
+    await loadCatalog();
+  }, [loadCatalog]);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -68,8 +112,8 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     if (!isAuthorized) return;
-    fetchProducts(page);
-  }, [isAuthorized, page, fetchProducts]);
+    void loadCatalog();
+  }, [isAuthorized, loadCatalog, searchTick]);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -116,10 +160,10 @@ export default function AdminProductsPage() {
       }
       setEditingProductId(null);
       setEditingProduct(null);
-      await fetchProducts(page);
+      await refreshCatalog();
       setIsEditSubmitting(false);
     },
-    [editingProduct, page, fetchProducts]
+    [editingProduct, refreshCatalog]
   );
 
   const handleCancelEdit = () => {
@@ -164,10 +208,10 @@ export default function AdminProductsPage() {
       if (res.error) failed++;
     }
     setSelectedIds([]);
-    await fetchProducts(page);
+    await refreshCatalog();
     setIsBulkSubmitting(false);
     if (failed > 0) setBulkError(`${failed} de ${count} no se pudieron desactivar.`);
-  }, [selectedIds, page, fetchProducts]);
+  }, [selectedIds, refreshCatalog]);
 
   const handleBulkEliminarClick = () => {
     if (selectedIds.length === 0) return;
@@ -192,10 +236,10 @@ export default function AdminProductsPage() {
     }
     setBulkConfirmIds(null);
     setSelectedIds([]);
-    await fetchProducts(page);
+    await refreshCatalog();
     setIsBulkSubmitting(false);
     if (failed > 0) setBulkError(`${failed} de ${count} no se pudieron eliminar.`);
-  }, [bulkConfirmIds, page, fetchProducts]);
+  }, [bulkConfirmIds, refreshCatalog]);
 
   const handleBulkCancel = () => {
     setBulkConfirmIds(null);
@@ -222,9 +266,9 @@ export default function AdminProductsPage() {
       return;
     }
     setDeleteConfirmProduct(null);
-    await fetchProducts(page);
+    await refreshCatalog();
     setIsDeleteSubmitting(false);
-  }, [deleteConfirmProduct, page, fetchProducts]);
+  }, [deleteConfirmProduct, refreshCatalog]);
 
   const handleConfirmEliminar = useCallback(async () => {
     if (!deleteConfirmProduct) return;
@@ -242,9 +286,24 @@ export default function AdminProductsPage() {
       return;
     }
     setDeleteConfirmProduct(null);
-    await fetchProducts(page);
+    await refreshCatalog();
     setIsDeleteSubmitting(false);
-  }, [deleteConfirmProduct, page, fetchProducts]);
+  }, [deleteConfirmProduct, refreshCatalog]);
+
+  const applySearch = () => {
+    searchCacheRef.current = null;
+    setSearchQuery(searchInput.trim());
+    setPage(1);
+    setSearchTick((t) => t + 1);
+  };
+
+  const clearSearch = () => {
+    searchCacheRef.current = null;
+    setSearchInput("");
+    setSearchQuery("");
+    setPage(1);
+    setSearchTick((t) => t + 1);
+  };
 
   if (isLoading) {
     return (
@@ -273,6 +332,14 @@ export default function AdminProductsPage() {
             <Link href="/admin/add-product">Agregar producto</Link>
           </Button>
         </Box>
+
+        <AdminCatalogSearch
+          value={searchInput}
+          onChange={setSearchInput}
+          onSubmit={applySearch}
+          onClear={clearSearch}
+          hasActiveQuery={Boolean(searchQuery.trim())}
+        />
 
         {error && (
           <Alert variant="destructive">

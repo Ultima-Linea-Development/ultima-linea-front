@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import Link from "next/link";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/lib/api";
-import { formatPrice } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatPrice, generateSlug, cn } from "@/lib/utils";
 import { getProductTotalStock } from "@/lib/product-inventory";
 
 const PER_PAGE = 10;
@@ -162,9 +162,16 @@ export default function AdminProductsTable({
                     )}
                   </td>
                   <td className={cn(cellClass, "min-w-[120px] max-w-[180px]")}>
-                    <span className="line-clamp-2">
-                      <Typography variant="body2">{p.name}</Typography>
-                    </span>
+                    <Link
+                      href={`/product/${(p.slug || generateSlug(p.name))}-${p.id}`}
+                      className="line-clamp-2 block max-w-full text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Typography variant="body2" as="span">
+                        {p.name}
+                      </Typography>
+                    </Link>
                   </td>
                   <td className={cellClass}>
                     <span className="whitespace-nowrap truncate block max-w-[100px] sm:max-w-none">

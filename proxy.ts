@@ -39,7 +39,7 @@ export function proxy(request: NextRequest) {
         const loginUrl = new URL("/login", request.url);
         return NextResponse.redirect(loginUrl);
       }
-    } catch (error) {
+    } catch {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);

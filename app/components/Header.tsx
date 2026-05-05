@@ -23,6 +23,7 @@ export default function Header() {
           <Logo />
           <NavLinks>
             <NavLink href="/">Inicio</NavLink>
+            <NavLink href="/guia-de-talles">Guía de talles</NavLink>
             <NavLink href={WHATSAPP_CONSULT_URL} external>
               Contacto
             </NavLink>
@@ -40,6 +41,9 @@ export default function Header() {
             <MobileMenu>
               <NavLinks mobile>
                 <NavLink href="/" mobile>Inicio</NavLink>
+                <NavLink href="/guia-de-talles" mobile>
+                  Guía de talles
+                </NavLink>
                 <NavLink href={WHATSAPP_CONSULT_URL} mobile external>
                   Contacto
                 </NavLink>

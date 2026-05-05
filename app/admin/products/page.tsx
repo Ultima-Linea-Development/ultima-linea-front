@@ -112,7 +112,9 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     if (!isAuthorized) return;
-    void loadCatalog();
+    queueMicrotask(() => {
+      void loadCatalog();
+    });
   }, [isAuthorized, loadCatalog, searchTick]);
 
   const handlePageChange = (newPage: number) => {
@@ -128,10 +130,13 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     if (!editingProductId) return;
-    setIsLoadingProduct(true);
-    setEditError("");
+    const id = editingProductId;
+    queueMicrotask(() => {
+      setIsLoadingProduct(true);
+      setEditError("");
+    });
     productsApi
-      .getById(editingProductId)
+      .getById(id)
       .then((response) => {
         if (response.error || !response.data) {
           setEditError(response.error ?? "No se pudo cargar el producto.");

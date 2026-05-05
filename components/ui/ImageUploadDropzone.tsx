@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import Typography from "@/components/ui/Typography";
 
@@ -25,13 +25,15 @@ export default function ImageUploadDropzone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const previewUrls = useMemo(
+    () => files.map((f) => URL.createObjectURL(f)),
+    [files]
+  );
 
   useEffect(() => {
-    const urls = files.map((f) => URL.createObjectURL(f));
-    setPreviewUrls(urls);
+    const urls = previewUrls;
     return () => urls.forEach(URL.revokeObjectURL);
-  }, [files]);
+  }, [previewUrls]);
 
   const addFiles = useCallback(
     (newFiles: FileList | null) => {

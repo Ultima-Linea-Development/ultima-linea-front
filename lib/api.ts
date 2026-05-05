@@ -54,13 +54,13 @@ async function request<T>(
     requestHeaders["Authorization"] = `Bearer ${token}`;
   }
 
-  const config: RequestInit = {
+  const config: RequestInit & { next?: { revalidate: number } } = {
     method,
     headers: requestHeaders,
   };
 
   if (method === "GET" && typeof window === "undefined") {
-    (config as any).next = { revalidate: 60 };
+    config.next = { revalidate: 60 };
   }
 
   if (body && method !== "GET") {
@@ -135,6 +135,8 @@ export type Product = {
   stock_by_sizes?: Record<string, number>;
   image_urls: string[];
   category?: "club" | "national" | "retro";
+  /** FAN / PLAYER (API puede enviar mayúsculas) */
+  type?: string;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -174,6 +176,7 @@ export type CreateProductRequest = {
   stock_by_sizes: Record<string, number>;
   image_urls: string[];
   category?: "club" | "national" | "retro";
+  type?: "fan" | "player";
   is_active?: boolean;
 };
 

@@ -63,7 +63,7 @@ async function SearchResults({ query }: { query: string }) {
       </Typography>
       <Box display="flex" direction="row" align="end" gap="2">
         <Typography variant="h2" uppercase={true}>
-          "{query}"
+          &quot;{query}&quot;
         </Typography>
         <Typography variant="body2" color="muted">
           [{total}]

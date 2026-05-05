@@ -47,7 +47,7 @@ export default function LoginPage() {
       document.cookie = `token=${response.data.token}; path=/; max-age=86400; SameSite=Lax`;
       
       router.push("/admin");
-    } catch (err) {
+    } catch {
       setError("Error de conexión. Intenta nuevamente.");
       setLoading(false);
     }

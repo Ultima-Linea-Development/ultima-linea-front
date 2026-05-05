@@ -32,7 +32,7 @@ export function decodeToken(token: string): TokenPayload | null {
     }
 
     return parsed as TokenPayload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

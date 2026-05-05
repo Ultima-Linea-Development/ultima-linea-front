@@ -53,7 +53,7 @@ async function ProductsList() {
   try {
     const [responseResult] = await Promise.all([fetchFullCatalog(), delay(500)]);
     response = responseResult;
-  } catch (error) {
+  } catch {
     await delay(500);
     return (
       <Div textAlign="center" py={8}>

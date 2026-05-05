@@ -13,7 +13,7 @@ import Icon from "@/components/ui/Icons";
 import ImageUploadDropzone from "@/components/ui/ImageUploadDropzone";
 import type { Product, UpdateProductRequest } from "@/lib/api";
 import { adminUploadApi } from "@/lib/api";
-import { generateSlug } from "@/lib/utils";
+import { generateSlug, normalizeShirtType, type ShirtType } from "@/lib/utils";
 import {
   productToRows,
   rowsToPayload,
@@ -25,6 +25,11 @@ const CATEGORY_OPTIONS: Array<{ value: "club" | "national" | "retro"; label: str
   { value: "club", label: "Club" },
   { value: "national", label: "Selección" },
   { value: "retro", label: "Retro" },
+];
+
+const SHIRT_TYPE_OPTIONS: Array<{ value: ShirtType; label: string }> = [
+  { value: "fan", label: "Fan" },
+  { value: "player", label: "Jugador" },
 ];
 
 type AdminProductEditFormProps = {
@@ -53,18 +58,24 @@ export default function AdminProductEditForm({
   const [sizeRows, setSizeRows] = useState<SizeStockRow[]>(() => productToRows(product));
   const [inventoryError, setInventoryError] = useState("");
   const [category, setCategory] = useState<Product["category"]>(product.category ?? "club");
+  const [shirtType, setShirtType] = useState<ShirtType>(
+    () => normalizeShirtType(product.type) ?? "fan"
+  );
   const [isActive, setIsActive] = useState(product.is_active);
   const [currentImageUrls, setCurrentImageUrls] = useState<string[]>(product.image_urls ?? []);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [imageError, setImageError] = useState("");
 
   useEffect(() => {
-    setCurrentImageUrls(product.image_urls ?? []);
-    setNewFiles([]);
-    setImageError("");
-    setSizeRows(productToRows(product));
-    setInventoryError("");
-  }, [product.id, product.image_urls, product.sizes, product.stock_by_sizes, product.stock, product.size]);
+    queueMicrotask(() => {
+      setCurrentImageUrls(product.image_urls ?? []);
+      setNewFiles([]);
+      setImageError("");
+      setSizeRows(productToRows(product));
+      setInventoryError("");
+      setShirtType(normalizeShirtType(product.type) ?? "fan");
+    });
+  }, [product]);
 
   const removeCurrentImage = (index: number) => {
     setCurrentImageUrls((prev) => prev.filter((_, i) => i !== index));
@@ -117,6 +128,7 @@ export default function AdminProductEditForm({
       sizes: inventory.sizes,
       stock_by_sizes: inventory.stock_by_sizes,
       category,
+      type: shirtType,
       is_active: isActive,
       image_urls: finalUrls,
     };
@@ -207,6 +219,25 @@ export default function AdminProductEditForm({
                 className="w-full py-2 px-4 bg-gray-200 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {CATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </Label>
+          </Div>
+          <Div spacing="md" className="flex-1 min-w-[120px]">
+            <Label htmlFor="edit-shirt-type" display="block" spacing="sm">
+              <Typography variant="body2" mb={1}>
+                Tipo
+              </Typography>
+              <select
+                id="edit-shirt-type"
+                value={shirtType}
+                onChange={(e) => setShirtType(e.target.value as ShirtType)}
+                className="w-full py-2 px-4 bg-gray-200 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                {SHIRT_TYPE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>

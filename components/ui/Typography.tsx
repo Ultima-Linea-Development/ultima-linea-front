@@ -20,10 +20,12 @@ type MarginBottom = 1 | 2 | 3 | 4 | 5 | 6 | 8;
 type TypographyProps = {
   variant?: TypographyVariant;
   as?: ElementType;
+  id?: string;
   uppercase?: boolean;
   align?: TextAlign;
   color?: TextColor;
   mb?: MarginBottom;
+  className?: string;
   children: ReactNode;
 };
 
@@ -80,10 +82,12 @@ const marginBottomStyles: Record<MarginBottom, string> = {
 export default function Typography({
   variant = "body",
   as,
+  id,
   uppercase,
   align,
   color,
   mb,
+  className,
   children,
 }: TypographyProps) {
   const Component = as || defaultElements[variant];
@@ -91,12 +95,14 @@ export default function Typography({
 
   return (
     <Component
+      id={id}
       className={cn(
         baseStyles,
         uppercase && "uppercase",
         align && alignStyles[align],
         color && colorStyles[color],
-        mb && marginBottomStyles[mb]
+        mb && marginBottomStyles[mb],
+        className
       )}
     >
       {children}

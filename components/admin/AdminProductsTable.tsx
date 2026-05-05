@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
@@ -152,11 +153,16 @@ export default function AdminProductsTable({
                   )}
                   <td className={cellClass}>
                     {p.image_urls?.[0] ? (
-                      <img
-                        src={p.image_urls[0]}
-                        alt=""
-                        className="h-10 w-10 sm:h-12 sm:w-12 object-cover shrink-0"
-                      />
+                      <div className="relative h-10 w-10 shrink-0 sm:h-12 sm:w-12">
+                        <Image
+                          src={p.image_urls[0]}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          sizes="48px"
+                          unoptimized
+                        />
+                      </div>
                     ) : (
                       <span className="text-muted-foreground text-xs">—</span>
                     )}

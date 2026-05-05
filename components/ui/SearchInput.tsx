@@ -7,6 +7,7 @@ import Input from "@/components/ui/Input";
 import Form from "@/components/ui/Form";
 import Div from "@/components/ui/Div";
 import Box from "@/components/layout/Box";
+import { cn } from "@/lib/utils";
 
 type SearchInputProps = {
   className?: string;
@@ -27,21 +28,24 @@ export default function SearchInput({ className, onBlur, onSubmit }: SearchInput
   };
 
   return (
-    <Form onSubmit={handleSubmit} className="w-full">
+    <Form onSubmit={handleSubmit} className={cn("w-full", className)}>
       <Box display="flex" direction="row" align="center" gap="2" className="w-full">
         <Div position="relative" width="full">
-          <Icon
-            name="search"
-            size={28}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-          />
           <Input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onBlur={onBlur}
             placeholder="Buscar..."
+            style={{ paddingRight: "2.75rem" }}
           />
+          <button
+            type="submit"
+            className="absolute right-1 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 text-gray-500 transition-colors hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label="Buscar"
+          >
+            <Icon name="search" size={28} />
+          </button>
         </Div>
       </Box>
     </Form>

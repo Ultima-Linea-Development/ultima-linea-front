@@ -9,6 +9,7 @@ type FooterProps = Omit<HTMLAttributes<HTMLElement>, "className"> & {
   marginTop?: FooterMarginTop;
   border?: FooterBorder;
   padding?: FooterPadding;
+  className?: string;
   children: ReactNode;
 };
 
@@ -33,6 +34,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(
       marginTop = "auto",
       border = "top",
       padding = "md",
+      className,
       children,
       ...props
     },
@@ -45,7 +47,8 @@ const Footer = forwardRef<HTMLElement, FooterProps>(
           marginTopStyles[marginTop],
           borderStyles[border],
           paddingStyles[padding],
-          "bg-background"
+          "bg-background",
+          className
         )}
         {...props}
       >

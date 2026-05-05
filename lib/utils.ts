@@ -14,6 +14,22 @@ export function formatPrice(price: number): string {
   }).format(price);
 }
 
+export type ShirtType = "fan" | "player";
+
+export function normalizeShirtType(
+  value: string | undefined | null
+): ShirtType | undefined {
+  if (value == null || value === "") return undefined;
+  const v = String(value).trim().toLowerCase();
+  if (v === "fan") return "fan";
+  if (v === "player") return "player";
+  return undefined;
+}
+
+export function labelShirtType(value: ShirtType): string {
+  return value === "fan" ? "Fan" : "Jugador";
+}
+
 export function generateSlug(text: string): string {
   return text
     .toLowerCase()

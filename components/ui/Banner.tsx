@@ -108,7 +108,7 @@ export default function Banner({
             alt={alt}
             fill
             className={cn(
-              "object-contain",
+              fillViewport ? "object-cover object-top" : "object-contain",
               imageMobile && "hidden md:block"
             )}
             onLoad={onDesktopLoad}
@@ -119,7 +119,10 @@ export default function Banner({
               src={imageMobile}
               alt={alt}
               fill
-              className="object-contain block md:hidden"
+              className={cn(
+                fillViewport ? "object-cover object-top" : "object-contain",
+                "block md:hidden"
+              )}
               priority
             />
           )}

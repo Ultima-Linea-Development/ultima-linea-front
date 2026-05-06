@@ -50,7 +50,7 @@ export default function MobileMenu({ children }: MobileMenuProps) {
         />
         <div
           className={cn(
-            "fixed top-[80px] right-0 w-[340px] max-w-[85vw] h-[calc(100vh-80px)] bg-white border-l border-gray-200 z-[60] md:hidden",
+            "fixed top-[80px] right-0 w-full h-[calc(100vh-80px)] bg-white z-[60] md:hidden",
             "shadow-lg transition-transform duration-300 ease-in-out",
             isOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
           )}

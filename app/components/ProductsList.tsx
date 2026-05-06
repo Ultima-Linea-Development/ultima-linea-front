@@ -90,7 +90,7 @@ async function ProductsList() {
   return (
     <Container>
       <Typography variant="h2" uppercase={true} mb={2}>Últimos ingresos</Typography>
-      <Box display="grid" cols={4} gap={8}>
+      <Box display="grid" cols={4} gap={8} className="grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {activeProducts.map((product: Product) => (
           <ProductCard
             key={product.id}

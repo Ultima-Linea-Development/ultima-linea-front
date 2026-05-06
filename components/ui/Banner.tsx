@@ -34,6 +34,8 @@ type BannerProps = {
   aspectRatioMobile?: string;
   /** Si true, el banner ocupa la altura disponible del viewport (menos header) y la imagen rellena con object-cover. */
   fillViewport?: boolean;
+  /** Si false, desactiva fillViewport en mobile manteniéndolo en desktop. */
+  fillViewportOnMobile?: boolean;
 };
 
 export default function Banner({
@@ -47,14 +49,26 @@ export default function Banner({
   aspectRatio = "21/9",
   aspectRatioMobile = "4/3",
   fillViewport = false,
+  fillViewportOnMobile = true,
 }: BannerProps) {
   const isDesktop = useIsDesktop();
+  const effectiveFillViewport = fillViewport && (fillViewportOnMobile || isDesktop);
   const [desktopAspect, setDesktopAspect] = useState<string | null>(null);
+  const [mobileAspect, setMobileAspect] = useState<string | null>(null);
   const onDesktopLoad = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement>) => {
       const target = e.currentTarget;
       if (target.naturalWidth && target.naturalHeight) {
         setDesktopAspect(`${target.naturalWidth}/${target.naturalHeight}`);
+      }
+    },
+    []
+  );
+  const onMobileLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const target = e.currentTarget;
+      if (target.naturalWidth && target.naturalHeight) {
+        setMobileAspect(`${target.naturalWidth}/${target.naturalHeight}`);
       }
     },
     []
@@ -75,8 +89,8 @@ export default function Banner({
     <Box
       className={cn(
         "relative w-full overflow-visible",
-        fillViewport && "h-[calc(100dvh-5rem)]",
-        !fillViewport && "h-auto",
+        effectiveFillViewport && "h-[calc(100dvh-5rem)]",
+        !effectiveFillViewport && "h-auto",
         "max-md:w-screen max-md:min-w-screen max-md:box-border",
         "max-md:ml-[calc(50%-50vw)] max-md:mr-[calc(50%-50vw)]",
         className
@@ -85,20 +99,20 @@ export default function Banner({
       <div
         className={cn(
           "relative w-full",
-          fillViewport ? "h-full" : "w-full"
+          effectiveFillViewport ? "h-full" : "w-full"
         )}
       >
         <div
           className={cn(
             "relative w-full",
-            fillViewport && "h-full min-h-0"
+            effectiveFillViewport && "h-full min-h-0"
           )}
           style={
-            !fillViewport
+            !effectiveFillViewport
               ? {
                   aspectRatio: isDesktop
                     ? (desktopAspect ?? aspectRatio)
-                    : aspectRatioMobile,
+                    : (mobileAspect ?? aspectRatioMobile),
                 }
               : undefined
           }
@@ -108,7 +122,7 @@ export default function Banner({
             alt={alt}
             fill
             className={cn(
-              fillViewport ? "object-cover object-top" : "object-contain",
+              effectiveFillViewport ? "object-cover object-top" : "object-contain",
               imageMobile && "hidden md:block"
             )}
             onLoad={onDesktopLoad}
@@ -120,9 +134,10 @@ export default function Banner({
               alt={alt}
               fill
               className={cn(
-                fillViewport ? "object-cover object-top" : "object-contain",
+                effectiveFillViewport ? "object-cover object-top" : "object-contain",
                 "block md:hidden"
               )}
+              onLoad={onMobileLoad}
               priority
             />
           )}

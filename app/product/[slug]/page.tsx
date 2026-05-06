@@ -132,7 +132,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <Container>
-      <Box className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[1.5fr_1fr] lg:grid-cols-[2fr_1fr] md:grid-rows-[auto_1fr]">
+      <Box className="grid grid-cols-1 gap-8 md:mt-8 md:grid-cols-[1.5fr_1fr] lg:grid-cols-[2fr_1fr] md:grid-rows-[auto_1fr]">
         <Box
           display="flex"
           direction="col"

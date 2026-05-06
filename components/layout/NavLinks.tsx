@@ -17,7 +17,12 @@ export default function NavLinks({ children, className, mobile = false }: NavLin
   }
 
   return (
-    <div className={cn("hidden md:flex gap-1 absolute left-1/2 -translate-x-1/2 h-full", className)}>
+    <div
+      className={cn(
+        "hidden md:flex gap-1 absolute h-full md:left-14 md:translate-x-0 lg:left-1/2 lg:-translate-x-1/2",
+        className
+      )}
+    >
       {children}
     </div>
   );

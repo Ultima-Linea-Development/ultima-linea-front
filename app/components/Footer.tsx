@@ -13,8 +13,7 @@ import {
   WHATSAPP_ARREPENTIMIENTO_URL,
   WHATSAPP_CONSULT_URL,
 } from "@/lib/whatsapp";
-
-const INSTAGRAM_URL = "https://www.instagram.com/ultimalineastore/";
+import { INSTAGRAM_URL } from "@/lib/social";
 
 const linkDark =
   "text-zinc-300 no-underline transition-colors hover:text-white";
@@ -32,9 +31,11 @@ export default function FooterComponent() {
       className="border-t border-zinc-800 bg-black text-zinc-100"
     >
       <Container className="max-w-[1200px] py-10 md:py-12">
-        <Box display="grid" cols={4} gap={8}>
+        <Box className="mb-8">
+          <Logo variant="white" />
+        </Box>
+        <Box display="grid" cols={4} gap={4} className="grid-cols-2 gap-y-4 gap-x-0 md:grid-cols-4 md:gap-8">
           <Box display="flex" direction="col" gap="4">
-            <Logo variant="white" />
             <Typography variant="h6" className="text-white uppercase">
               Enlaces
             </Typography>

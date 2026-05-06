@@ -13,7 +13,6 @@ import Nav from "@/components/ui/Nav";
 // import { Button } from "@/components/ui/button";
 // import Link from "next/link";
 import Box from "@/components/layout/Box";
-import { WHATSAPP_CONSULT_URL } from "@/lib/whatsapp";
 
 export default function Header() {
   return (
@@ -24,7 +23,7 @@ export default function Header() {
           <NavLinks>
             <NavLink href="/">Inicio</NavLink>
             <NavLink href="/guia-de-talles">Guía de talles</NavLink>
-            <NavLink href={WHATSAPP_CONSULT_URL} external>
+            <NavLink href="/contact">
               Contacto
             </NavLink>
           </NavLinks>
@@ -44,7 +43,7 @@ export default function Header() {
                 <NavLink href="/guia-de-talles" mobile>
                   Guía de talles
                 </NavLink>
-                <NavLink href={WHATSAPP_CONSULT_URL} mobile external>
+                <NavLink href="/contact" mobile>
                   Contacto
                 </NavLink>
               </NavLinks>

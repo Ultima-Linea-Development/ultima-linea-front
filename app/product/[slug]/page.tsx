@@ -167,7 +167,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           <div
             className={cn(
-              "grid w-full grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-2",
+              "flex w-full flex-col gap-2",
               product.description &&
                 !hasProductAttributes &&
                 "border-t border-border pt-4"

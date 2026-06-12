@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import AdminTableProductName from "@/components/admin/AdminTableProductName";
-import AdminSaleDateInput from "@/components/admin/AdminSaleDateInput";
 import AdminTableMobileActionsMenu, {
   type AdminTableMobileAction,
 } from "@/components/admin/AdminTableMobileActionsMenu";
@@ -20,62 +19,74 @@ import {
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
 } from "@/components/admin/AdminTable";
-import type { Product, Sale } from "@/lib/api";
-import { cn, formatPrice, generateSlug } from "@/lib/utils";
+import type { Product, Sale, SaleAssignableUser } from "@/lib/api";
+import {
+  formatSaleProductsLabel,
+  formatSaleSizesLabel,
+  getSalePrimaryLineItem,
+  getSaleQuantityTotal,
+} from "@/lib/sale-items";
+import { formatSaleDateDisplay } from "@/lib/sale-date";
+import { getSaleSellerLabel } from "@/lib/sale-seller";
+import { cn, formatPrice } from "@/lib/utils";
 
 const PER_PAGE = 10;
 
 type AdminSalesTableProps = {
   sales: Sale[];
   products?: Product[];
+  assignableUsers?: SaleAssignableUser[];
   page: number;
   perPage: number;
   total: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onViewDetails?: (sale: Sale) => void;
+  onEdit?: (sale: Sale) => void;
   onDelete?: (sale: Sale) => void;
-  onUpdateDate?: (sale: Sale, saleDate: string) => void;
-  updatingSaleId?: string | null;
+  canDeleteSale?: (sale: Sale) => boolean;
 };
 
 export default function AdminSalesTable({
   sales,
   products = [],
+  assignableUsers = [],
   page,
   perPage,
   total,
   totalPages,
   onPageChange,
+  onViewDetails,
+  onEdit,
   onDelete,
-  onUpdateDate,
-  updatingSaleId = null,
+  canDeleteSale,
 }: AdminSalesTableProps) {
   const cellClass = ADMIN_TABLE_CELL_CLASS;
   const thClass = ADMIN_TABLE_TH_CLASS;
-  const [editingDateSaleId, setEditingDateSaleId] = useState<string | null>(null);
-
-  const handleDateUpdate = (sale: Sale, saleDate: string) => {
-    onUpdateDate?.(sale, saleDate);
-    setEditingDateSaleId(null);
-  };
-
-  const toggleDateEdit = (saleId: string) => {
-    setEditingDateSaleId((current) => (current === saleId ? null : saleId));
-  };
+  const hasActions = Boolean(onViewDetails || onEdit || onDelete);
 
   const getRowActions = (sale: Sale): AdminTableMobileAction[] => {
-    const actions: AdminTableMobileAction[] = [
-      {
-        id: "edit-date",
+    const actions: AdminTableMobileAction[] = [];
+
+    if (onViewDetails) {
+      actions.push({
+        id: "view",
+        label: "Ver detalles",
+        icon: "visibility",
+        onClick: () => onViewDetails(sale),
+      });
+    }
+
+    if (onEdit) {
+      actions.push({
+        id: "edit",
         label: "Editar",
         icon: "edit",
-        onClick: () => toggleDateEdit(sale.id),
-        disabled: updatingSaleId === sale.id,
-        active: editingDateSaleId === sale.id,
-      },
-    ];
+        onClick: () => onEdit(sale),
+      });
+    }
 
-    if (onDelete) {
+    if (onDelete && (!canDeleteSale || canDeleteSale(sale))) {
       actions.push({
         id: "delete",
         label: "Eliminar",
@@ -95,17 +106,6 @@ export default function AdminSalesTable({
       ),
     [products]
   );
-
-  const productById = useMemo(
-    () => Object.fromEntries(products.map((product) => [product.id, product] as const)),
-    [products]
-  );
-
-  const getProductHref = (sale: Sale) => {
-    const product = productById[sale.product_id];
-    const slug = product?.slug || generateSlug(sale.product_name);
-    return `/product/${slug}-${sale.product_id}`;
-  };
 
   return (
     <Box display="flex" direction="col" gap="4" className="w-full min-w-0">
@@ -131,57 +131,67 @@ export default function AdminSalesTable({
                   <Typography variant="body2">Total</Typography>
                 </th>
                 <th className={thClass}>
-                  <Typography variant="body2">Acciones</Typography>
+                  <Typography variant="body2">Vendedor</Typography>
                 </th>
+                {hasActions && (
+                  <th className={thClass}>
+                    <Typography variant="body2">Acciones</Typography>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
-              <AdminTableEmptyRow colSpan={6} message="No hay ventas" />
+              <AdminTableEmptyRow colSpan={hasActions ? 7 : 6} message="No hay ventas" />
             </tbody>
           </AdminTable>
         </>
       ) : (
         <>
           <AdminTableMobileList>
-            {sales.map((sale) => (
+            {sales.map((sale) => {
+              const primaryItem = getSalePrimaryLineItem(sale);
+              return (
               <AdminTableMobileCard key={sale.id}>
                 <Box display="flex" justify="between" align="start" gap="3" className="mb-3 w-full">
                   <AdminTableProductName
-                    name={sale.product_name}
-                    imageUrl={productImages[sale.product_id]}
-                    href={getProductHref(sale)}
+                    name={formatSaleProductsLabel(sale)}
+                    imageUrl={primaryItem ? productImages[primaryItem.product_id] : undefined}
+                    onClick={onViewDetails ? () => onViewDetails(sale) : undefined}
                     className="min-w-0 items-start"
                   />
-                  <AdminTableMobileActionsMenu actions={getRowActions(sale)} />
+                  {hasActions && <AdminTableMobileActionsMenu actions={getRowActions(sale)} />}
                 </Box>
                 <AdminTableMobileGrid>
                   <AdminTableMobileField label="Fecha" fullWidth>
-                    <AdminSaleDateInput
-                      sale={sale}
-                      isEditing={editingDateSaleId === sale.id}
-                      disabled={updatingSaleId === sale.id}
-                      onUpdateDate={handleDateUpdate}
-                    />
+                    <Typography variant="body2">
+                      {formatSaleDateDisplay(sale.created_at)}
+                    </Typography>
                   </AdminTableMobileField>
                   <AdminTableMobileField label="Talle">
-                    <Typography variant="body2">{sale.size || "—"}</Typography>
+                    <Typography variant="body2">{formatSaleSizesLabel(sale)}</Typography>
                   </AdminTableMobileField>
                   <AdminTableMobileField label="Cantidad">
-                    <Typography variant="body2">{sale.quantity}</Typography>
+                    <Typography variant="body2">{getSaleQuantityTotal(sale)}</Typography>
                   </AdminTableMobileField>
                   <AdminTableMobileField label="Total">
                     <Typography variant="body2">{formatPrice(sale.total)}</Typography>
                   </AdminTableMobileField>
+                  <AdminTableMobileField label="Vendedor" fullWidth>
+                    <Typography variant="body2">
+                      {getSaleSellerLabel(sale, assignableUsers)}
+                    </Typography>
+                  </AdminTableMobileField>
                 </AdminTableMobileGrid>
               </AdminTableMobileCard>
-            ))}
+            );
+            })}
           </AdminTableMobileList>
 
           <AdminTable>
             <thead className="border-b border-border bg-muted/50">
               <tr>
                 <th className={thClass}>
-                  <Typography variant="body2">Fecha  de venta</Typography>
+                  <Typography variant="body2">Fecha de venta</Typography>
                 </th>
                 <th className={thClass}>
                   <Typography variant="body2">Producto</Typography>
@@ -196,47 +206,59 @@ export default function AdminSalesTable({
                   <Typography variant="body2">Total</Typography>
                 </th>
                 <th className={thClass}>
-                  <Typography variant="body2">Acciones</Typography>
+                  <Typography variant="body2">Vendedor</Typography>
                 </th>
+                {hasActions && (
+                  <th className={thClass}>
+                    <Typography variant="body2">Acciones</Typography>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
-              {sales.map((sale) => (
+              {sales.map((sale) => {
+                const primaryItem = getSalePrimaryLineItem(sale);
+                return (
                 <tr
                   key={sale.id}
                   className="border-b border-border last:border-b-0 hover:bg-muted/30"
                 >
                   <td className={cellClass}>
-                    <AdminSaleDateInput
-                      sale={sale}
-                      isEditing={editingDateSaleId === sale.id}
-                      disabled={updatingSaleId === sale.id}
-                      onUpdateDate={handleDateUpdate}
-                    />
+                    <Typography variant="body2" className="whitespace-nowrap">
+                      {formatSaleDateDisplay(sale.created_at)}
+                    </Typography>
                   </td>
                   <td className={cn(cellClass, "min-w-[160px] max-w-[280px]")}>
                     <AdminTableProductName
-                      name={sale.product_name}
-                      imageUrl={productImages[sale.product_id]}
-                      href={getProductHref(sale)}
+                      name={formatSaleProductsLabel(sale)}
+                      imageUrl={primaryItem ? productImages[primaryItem.product_id] : undefined}
+                      onClick={onViewDetails ? () => onViewDetails(sale) : undefined}
                     />
                   </td>
                   <td className={cellClass}>
-                    <Typography variant="body2">{sale.size || "—"}</Typography>
+                    <Typography variant="body2">{formatSaleSizesLabel(sale)}</Typography>
                   </td>
                   <td className={cellClass}>
-                    <Typography variant="body2">{sale.quantity}</Typography>
+                    <Typography variant="body2">{getSaleQuantityTotal(sale)}</Typography>
                   </td>
                   <td className={cellClass}>
                     <span className="whitespace-nowrap">
                       <Typography variant="body2">{formatPrice(sale.total)}</Typography>
                     </span>
                   </td>
-                  <td className={cn(cellClass, "whitespace-nowrap")}>
-                    <AdminTableMobileActionsMenu actions={getRowActions(sale)} />
+                  <td className={cellClass}>
+                    <Typography variant="body2" className="whitespace-nowrap">
+                      {getSaleSellerLabel(sale, assignableUsers)}
+                    </Typography>
                   </td>
+                  {hasActions && (
+                    <td className={cn(cellClass, "whitespace-nowrap")}>
+                      <AdminTableMobileActionsMenu actions={getRowActions(sale)} />
+                    </td>
+                  )}
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </AdminTable>
         </>

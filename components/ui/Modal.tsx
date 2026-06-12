@@ -39,7 +39,7 @@ export default function Modal({ open, onClose, title, children, className }: Mod
 
   const content = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? "modal-title" : undefined}
@@ -52,23 +52,25 @@ export default function Modal({ open, onClose, title, children, className }: Mod
         tabIndex={0}
         aria-label="Cerrar"
       />
-      <div
-        className={cn(
-          "relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto",
-          "bg-background border border-border shadow-lg",
-          "flex flex-col",
-          className
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3 shrink-0">
-          {title ? (
-            <span id="modal-title">
-              <Typography variant="h2">{title}</Typography>
-            </span>
-          ) : (
-            <span />
+      <div className="flex min-h-full items-center justify-center">
+        <div
+          className={cn(
+            "relative z-10 my-auto w-full max-w-lg",
+            "max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)]",
+            "bg-background border border-border shadow-lg",
+            "flex flex-col overflow-hidden",
+            className
           )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border px-4 py-3">
+            {title ? (
+              <span id="modal-title">
+                <Typography variant="h2">{title}</Typography>
+              </span>
+            ) : (
+              <span />
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -79,8 +81,9 @@ export default function Modal({ open, onClose, title, children, className }: Mod
             >
               <Icon name="close" className="size-5" />
             </Button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
         </div>
-        <div className="p-4">{children}</div>
       </div>
     </div>
   );

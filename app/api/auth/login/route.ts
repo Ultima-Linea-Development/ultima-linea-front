@@ -34,11 +34,22 @@ export async function POST(request: NextRequest) {
     }
 
     const user = userFromDoc(doc);
-    const token = generateToken(user.id, user.email, user.role);
+    const mustChangePassword = user.must_change_password === true;
+    const token = generateToken(
+      user.id,
+      user.email,
+      user.role,
+      mustChangePassword
+    );
 
     const { password: _, ...safeUser } = user;
     return NextResponse.json({ token, user: safeUser });
-  } catch {
-    return jsonError("Failed to generate token", 500);
+  } catch (err) {
+    console.error("Login error:", err);
+    const message =
+      process.env.NODE_ENV === "development" && err instanceof Error
+        ? err.message
+        : "Failed to login";
+    return jsonError(message, 500);
   }
 }

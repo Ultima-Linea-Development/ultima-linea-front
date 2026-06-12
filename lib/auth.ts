@@ -1,7 +1,12 @@
+import { isAdminRole, isStaffRole } from "@/lib/roles";
+
+import type { AuthUser } from "@/lib/api";
+
 type TokenPayload = {
   user_id: string;
   email: string;
   role: string;
+  must_change_password?: boolean;
   exp: number;
   iat: number;
 };
@@ -68,8 +73,15 @@ export function getUserFromToken(): TokenPayload | null {
 }
 
 export function isAdmin(): boolean {
-  const user = getUserFromToken();
-  return user?.role === "admin";
+  return isAdminRole(getUserFromToken()?.role);
+}
+
+export function isStaff(): boolean {
+  return isStaffRole(getUserFromToken()?.role);
+}
+
+export function getCurrentUserId(): string | null {
+  return getUserFromToken()?.user_id ?? null;
 }
 
 export function clearAuth(): void {
@@ -79,3 +91,47 @@ export function clearAuth(): void {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
 }
+
+export function getStoredUser(): AuthUser | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = localStorage.getItem("user");
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUser(user: AuthUser): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.setItem("user", JSON.stringify(user));
+}
+
+export function setAuthSession(token: string, user: AuthUser): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.setItem("token", token);
+  setStoredUser(user);
+  document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`;
+}
+
+export function mustCompleteSetup(): boolean {
+  const tokenUser = getUserFromToken();
+  if (tokenUser?.must_change_password) {
+    return true;
+  }
+
+  return getStoredUser()?.must_change_password === true;
+}
+
+export const ONBOARDING_PATH = "/admin/onboarding";

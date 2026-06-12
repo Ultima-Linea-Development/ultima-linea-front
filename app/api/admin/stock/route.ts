@@ -4,12 +4,12 @@ import { ProductDocument } from "@/lib/server/models";
 import {
   isNextResponse,
   jsonError,
-  requireAdmin,
+  requireStaff,
   requireAuth,
 } from "@/lib/server/auth-middleware";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAdmin(requireAuth(request));
+  const auth = requireStaff(requireAuth(request));
   if (isNextResponse(auth)) return auth;
 
   try {

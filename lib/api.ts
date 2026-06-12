@@ -110,15 +110,24 @@ export type LoginRequest = {
   password: string;
 };
 
+export type AuthUser = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  role: string;
+  must_change_password?: boolean;
+};
+
 export type LoginResponse = {
   token: string;
-  user: {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    role: string;
-  };
+  user: AuthUser;
+};
+
+export type CompleteSetupRequest = {
+  password: string;
+  phone?: string;
 };
 
 export type Product = {
@@ -139,6 +148,7 @@ export type Product = {
   /** FAN / PLAYER (API puede enviar mayúsculas) */
   type?: string;
   is_active: boolean;
+  created_by?: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -173,6 +183,18 @@ export type SearchResponse = {
   results: Product[];
 };
 
+export type AdminSalesSearchResponse = {
+  query: string;
+  total: number;
+  results: Sale[];
+};
+
+export type AdminUsersSearchResponse = {
+  query: string;
+  total: number;
+  results: AdminUser[];
+};
+
 export type ProductOptionsResponse = {
   teams: string[];
   leagues: string[];
@@ -196,8 +218,7 @@ export type CreateProductRequest = {
 
 export type UpdateProductRequest = Partial<CreateProductRequest>;
 
-export type Sale = {
-  id: string;
+export type SaleLineItem = {
   product_id: string;
   product_name: string;
   product_sku?: string;
@@ -205,24 +226,77 @@ export type Sale = {
   quantity: number;
   unit_price: number;
   total: number;
+};
+
+export type SaleSellerType = "internal" | "external";
+
+export type ExternalSeller = {
+  id: string;
+  name: string;
   created_at: string;
   updated_at: string;
 };
 
-export type CreateSaleRequest = {
+export type ExternalSellersResponse = {
+  sellers: ExternalSeller[];
+};
+
+export type Sale = {
+  id: string;
+  items: SaleLineItem[];
+  total: number;
+  created_by?: string;
+  external_seller_id?: string;
+  external_seller_name?: string;
+  transfer_alias?: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SaleAssignableUser = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+};
+
+export type SaleAssignableUsersResponse = {
+  users: SaleAssignableUser[];
+};
+
+export type CreateSaleItemRequest = {
   product_id: string;
   size?: string;
   quantity: number;
+  unit_price?: number;
+};
+
+export type CreateSaleRequest = {
+  items: CreateSaleItemRequest[];
   sale_date?: string;
+  seller_type?: SaleSellerType;
+  created_by?: string;
+  external_seller_id?: string;
+  external_seller_name?: string;
+  transfer_alias?: string;
+  description?: string;
 };
 
 export type UpdateSaleRequest = {
-  sale_date: string;
+  sale_date?: string;
+  seller_type?: SaleSellerType;
+  created_by?: string;
+  external_seller_id?: string;
+  external_seller_name?: string;
+  transfer_alias?: string;
+  description?: string;
 };
 
 export type CreateSaleResponse = {
   sale: Sale;
-  product: Product;
+  products?: Product[];
 };
 
 export type PaginatedSalesResponse = {
@@ -246,6 +320,40 @@ export type AdminProfile = {
   role: string;
 };
 
+export type AdminUser = AdminProfile & {
+  created_at: string;
+  updated_at: string;
+  is_primary_admin?: boolean;
+  must_change_password?: boolean;
+};
+
+export type PaginatedUsersResponse = {
+  users: AdminUser[];
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+};
+
+export type UserRole = "admin" | "vendedor";
+
+export type CreateUserRequest = {
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  password: string;
+  role: UserRole;
+};
+
+export type UpdateUserRequest = {
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  role: UserRole;
+};
+
 export type UpdateProfileRequest = {
   first_name?: string;
   last_name?: string;
@@ -255,6 +363,9 @@ export type UpdateProfileRequest = {
 export const authApi = {
   login: (credentials: LoginRequest) =>
     api.post<LoginResponse>("/auth/login", credentials),
+
+  completeSetup: (payload: CompleteSetupRequest, token: string) =>
+    api.post<LoginResponse>("/auth/complete-setup", payload, token),
 };
 
 export const productsApi = {
@@ -382,6 +493,12 @@ export const adminSalesApi = {
     return api.get<PaginatedSalesResponse>(`/admin/sales${query ? `?${query}` : ""}`, token);
   },
 
+  search: (token: string, query: string) => {
+    const params = new URLSearchParams();
+    params.append("q", query);
+    return api.get<AdminSalesSearchResponse>(`/admin/sales/search?${params.toString()}`, token);
+  },
+
   create: (sale: CreateSaleRequest, token: string) =>
     api.post<CreateSaleResponse>("/admin/sales", sale, token),
 
@@ -393,6 +510,12 @@ export const adminSalesApi = {
 
   getAvailableProducts: (token: string) =>
     api.get<AvailableProductsResponse>("/admin/sales/products", token),
+
+  getAssignableUsers: (token: string) =>
+    api.get<SaleAssignableUsersResponse>("/admin/sales/users", token),
+
+  getExternalSellers: (token: string) =>
+    api.get<ExternalSellersResponse>("/admin/sales/external-sellers", token),
 };
 
 export const adminUploadApi = {
@@ -405,6 +528,37 @@ export const adminProfileApi = {
 
   update: (profile: UpdateProfileRequest, token: string) =>
     api.put<AdminProfile>("/admin/profile", profile, token),
+};
+
+export const adminUsersApi = {
+  getAll: (token: string, filters?: { page?: number; per_page?: number }) => {
+    const params = new URLSearchParams();
+    if (filters?.page != null) params.append("page", String(filters.page));
+    if (filters?.per_page != null) params.append("per_page", String(filters.per_page));
+
+    const query = params.toString();
+    return api.get<PaginatedUsersResponse>(`/admin/users${query ? `?${query}` : ""}`, token);
+  },
+
+  search: (token: string, query: string) => {
+    const params = new URLSearchParams();
+    params.append("q", query);
+    return api.get<AdminUsersSearchResponse>(`/admin/users/search?${params.toString()}`, token);
+  },
+
+  create: (user: CreateUserRequest, token: string) =>
+    api.post<AdminUser>("/admin/users", user, token),
+
+  getById: (id: string, token: string) => api.get<AdminUser>(`/admin/users/${id}`, token),
+
+  update: (id: string, user: UpdateUserRequest, token: string) =>
+    api.put<AdminUser>(`/admin/users/${id}`, user, token),
+
+  requestPasswordChange: (id: string, token: string) =>
+    api.post<AdminUser>(`/admin/users/${id}/request-password-change`, {}, token),
+
+  delete: (id: string, token: string) =>
+    api.delete<{ message: string }>(`/admin/users/${id}`, token),
 };
 
 export const healthApi = {

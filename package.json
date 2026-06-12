@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "npm run db:tunnel",
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "create-admin": "tsx scripts/create-admin.ts"
+    "create-admin": "tsx scripts/create-admin.ts",
+    "db:tunnel": "powershell -ExecutionPolicy Bypass -File scripts/mongo-tunnel.ps1"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",

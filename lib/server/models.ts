@@ -10,6 +10,7 @@ export type User = {
   last_name: string;
   phone: string;
   role: string;
+  must_change_password?: boolean;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;
@@ -34,13 +35,13 @@ export type Product = {
   category: string;
   is_active: boolean;
   yupoo_album_id?: string;
+  created_by?: string;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;
 };
 
-export type Sale = {
-  id: string;
+export type SaleLineItem = {
   product_id: string;
   product_name: string;
   product_sku?: string;
@@ -48,8 +49,32 @@ export type Sale = {
   quantity: number;
   unit_price: number;
   total: number;
+};
+
+export type ExternalSeller = {
+  id: string;
+  name: string;
   created_at: Date;
   updated_at: Date;
+};
+
+export type Sale = {
+  id: string;
+  items?: SaleLineItem[];
+  total: number;
+  created_by?: string;
+  external_seller_id?: string;
+  external_seller_name?: string;
+  transfer_alias?: string;
+  description?: string;
+  created_at: Date;
+  updated_at: Date;
+  product_id?: string;
+  product_name?: string;
+  product_sku?: string;
+  size?: string;
+  quantity?: number;
+  unit_price?: number;
 };
 
 export function generateSlug(text: string): string {
@@ -151,6 +176,7 @@ export function beforeCreateProduct(product: Partial<Product>): Product {
 export type UserDocument = Omit<User, "id"> & { _id: string };
 export type ProductDocument = Omit<Product, "id"> & { _id: string };
 export type SaleDocument = Omit<Sale, "id"> & { _id: string };
+export type ExternalSellerDocument = Omit<ExternalSeller, "id"> & { _id: string };
 
 export function userFromDoc(doc: UserDocument): User {
   const { _id, password, ...rest } = doc;
@@ -179,5 +205,15 @@ export function productToDoc(product: Product): ProductDocument {
 
 export function saleToDoc(sale: Sale): SaleDocument {
   const { id, ...rest } = sale;
+  return { _id: id, ...rest };
+}
+
+export function externalSellerFromDoc(doc: ExternalSellerDocument): ExternalSeller {
+  const { _id, ...rest } = doc;
+  return { id: _id, ...rest };
+}
+
+export function externalSellerToDoc(seller: ExternalSeller): ExternalSellerDocument {
+  const { id, ...rest } = seller;
   return { _id: id, ...rest };
 }

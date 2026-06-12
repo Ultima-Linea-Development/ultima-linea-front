@@ -9,7 +9,7 @@ import {
 import {
   isNextResponse,
   jsonError,
-  requireAdmin,
+  requireStaff,
   requireAuth,
 } from "@/lib/server/auth-middleware";
 import {
@@ -21,7 +21,7 @@ import {
 import { buildAdminCatalogMongoFilter } from "@/lib/admin-catalog-filters";
 
 export async function GET(request: NextRequest) {
-  const auth = requireAdmin(requireAuth(request));
+  const auth = requireStaff(requireAuth(request));
   if (isNextResponse(auth)) return auth;
 
   try {
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAdmin(requireAuth(request));
+  const auth = requireStaff(requireAuth(request));
   if (isNextResponse(auth)) return auth;
 
   try {
@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
     if (Object.keys(product.stock_by_sizes).length > 0) {
       product.stock = sumStockBySizes(product.stock_by_sizes);
     }
+
+    product.created_by = auth.user_id;
 
     await collection.insertOne(productToDoc(product));
     return NextResponse.json(product, { status: 201 });

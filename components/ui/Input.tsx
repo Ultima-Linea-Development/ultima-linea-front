@@ -1,5 +1,10 @@
 import { cn } from "@/lib/utils";
-import { forwardRef, type InputHTMLAttributes } from "react";
+import {
+  forwardRef,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from "react";
 
 type InputWidth = "full" | "auto";
 type InputPaddingY = 1 | 2 | 3 | 4;
@@ -13,6 +18,8 @@ type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className" | "siz
   px?: InputPaddingX;
   background?: InputBackground;
   size?: InputSize;
+  startIcon?: ReactNode;
+  endIcon?: ReactNode;
 };
 
 const widthStyles: Record<InputWidth, string> = {
@@ -44,6 +51,31 @@ const sizeStyles: Record<InputSize, string> = {
   default: "text-base",
 };
 
+const adornmentClassName =
+  "pointer-events-none absolute top-1/2 flex -translate-y-1/2 items-center text-muted-foreground [&_button]:pointer-events-auto";
+
+type InputAdornmentProps = ButtonHTMLAttributes<HTMLButtonElement>;
+
+export function InputAdornment({
+  className,
+  children,
+  type = "button",
+  ...props
+}: InputAdornmentProps) {
+  return (
+    <button
+      type={type}
+      className={cn(
+        "flex size-8 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
@@ -52,23 +84,39 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       px = 4,
       background = "gray",
       size = "sm",
+      startIcon,
+      endIcon,
       ...props
     },
     ref
   ) => {
+    const hasStartIcon = Boolean(startIcon);
+    const hasEndIcon = Boolean(endIcon);
+
     return (
-      <input
-        ref={ref}
-        className={cn(
-          widthStyles[width],
-          paddingYStyles[py],
-          paddingXStyles[px],
-          backgroundStyles[background],
-          size && sizeStyles[size as InputSize],
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        )}
-        {...props}
-      />
+      <div className={cn("relative", widthStyles[width])}>
+        {startIcon ? (
+          <span className={cn(adornmentClassName, "left-2")}>{startIcon}</span>
+        ) : null}
+        <input
+          ref={ref}
+          className={cn(
+            "block",
+            widthStyles[width],
+            paddingYStyles[py],
+            paddingXStyles[px],
+            hasStartIcon && "pl-10",
+            hasEndIcon && "pr-10",
+            backgroundStyles[background],
+            size && sizeStyles[size as InputSize],
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          )}
+          {...props}
+        />
+        {endIcon ? (
+          <span className={cn(adornmentClassName, "right-2")}>{endIcon}</span>
+        ) : null}
+      </div>
     );
   }
 );

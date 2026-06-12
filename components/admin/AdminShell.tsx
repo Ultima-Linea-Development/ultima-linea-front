@@ -6,12 +6,17 @@ import Icon from "@/components/ui/Icons";
 import { cn } from "@/lib/utils";
 import AdminNavLink from "./AdminNavLink";
 import AdminLogoutLink from "./AdminLogoutLink";
+import AdminMainContent from "./AdminMainContent";
+import { getAdminNavItemsForRole } from "@/lib/admin-nav";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
 
 type AdminShellProps = {
   children: React.ReactNode;
 };
 
 export default function AdminShell({ children }: AdminShellProps) {
+  const navItems = getAdminNavItemsForRole(useAdminRole());
+
   return (
     <Box
       display="flex"
@@ -28,30 +33,24 @@ export default function AdminShell({ children }: AdminShellProps) {
           <Box>
             <Logo />
           </Box>
-          <nav className="flex flex-col gap-1">
-            <AdminNavLink
-              href="/admin/products"
-              icon={<Icon name="catalog" className="size-5" />}
-            >
-              Catálogo
-            </AdminNavLink>
-            <AdminNavLink
-              href="/admin/sales"
-              icon={<Icon name="sales" className="size-5" />}
-            >
-              Ventas
-            </AdminNavLink>
+          <nav className="flex w-full flex-col gap-1">
+            {navItems.map((item) => (
+              <AdminNavLink
+                key={item.href}
+                href={item.href}
+                icon={<Icon name={item.icon} className="size-5" />}
+              >
+                {item.label}
+              </AdminNavLink>
+            ))}
           </nav>
         </Box>
-        <Box className="mt-auto pt-4 border-t border-border">
+        <Box className="mt-auto w-full border-t border-border pt-4">
           <AdminLogoutLink />
         </Box>
       </aside>
 
-      {/* Main: espacio para bottom bar en mobile */}
-      <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 pb-24 md:pb-6">
-        <div className="mx-auto w-full max-w-7xl">{children}</div>
-      </main>
+      <AdminMainContent>{children}</AdminMainContent>
 
       {/* Barra inferior: solo mobile */}
       <aside
@@ -61,18 +60,15 @@ export default function AdminShell({ children }: AdminShellProps) {
         )}
       >
         <nav className="flex flex-row items-center justify-around gap-1 w-full [&>a]:flex-1 [&>a]:justify-center [&>a]:text-center [&>a]:min-w-0 [&>a]:py-2 [&>a]:!text-center">
-          <AdminNavLink
-            href="/admin/products"
-            icon={<Icon name="catalog" className="size-5" />}
-          >
-            Catálogo
-          </AdminNavLink>
-          <AdminNavLink
-            href="/admin/sales"
-            icon={<Icon name="sales" className="size-5" />}
-          >
-            Ventas
-          </AdminNavLink>
+          {navItems.map((item) => (
+            <AdminNavLink
+              key={item.href}
+              href={item.href}
+              icon={<Icon name={item.icon} className="size-5" />}
+            >
+              {item.label}
+            </AdminNavLink>
+          ))}
           <AdminLogoutLink />
         </nav>
       </aside>

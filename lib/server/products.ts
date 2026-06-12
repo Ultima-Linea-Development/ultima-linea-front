@@ -1,4 +1,5 @@
 import { Collection } from "mongodb";
+import { escapeRegex } from "@/lib/utils";
 import {
   Product,
   ProductDocument,
@@ -80,7 +81,7 @@ export async function getNextSKUVariant(
   collection: Collection<ProductDocument>,
   skuBase: string
 ): Promise<string> {
-  const escaped = skuBase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escaped = escapeRegex(skuBase);
   const cursor = collection.find(
     { sku: { $regex: `^${escaped}-VAR` } },
     { projection: { sku: 1 } }

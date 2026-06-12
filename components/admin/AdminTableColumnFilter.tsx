@@ -4,6 +4,10 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
 import { zIndex } from "@/lib/design-tokens";
+import {
+  adminIconTriggerClassName,
+  adminMenuOptionClassName,
+} from "@/lib/admin-interactive-styles";
 import { cn } from "@/lib/utils";
 
 type AdminTableColumnFilterOption = {
@@ -89,12 +93,6 @@ export default function AdminTableColumnFilter({
     setOpen(false);
   };
 
-  const optionClass = (selected: boolean) =>
-    cn(
-      "flex w-full cursor-pointer px-4 py-2.5 text-left text-sm transition-colors hover:bg-gray-200",
-      selected && "bg-muted/50 font-medium"
-    );
-
   return (
     <div ref={rootRef} className={cn("relative inline-flex items-center gap-1.5", className)}>
       <Typography variant="body2" className={cn(isActive && "font-medium")}>
@@ -105,7 +103,7 @@ export default function AdminTableColumnFilter({
         id={id}
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "inline-flex cursor-pointer items-center rounded-sm p-1 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          adminIconTriggerClassName,
           isActive ? "text-foreground" : "text-muted-foreground"
         )}
         aria-haspopup="listbox"
@@ -133,7 +131,7 @@ export default function AdminTableColumnFilter({
             role="option"
             aria-selected={!value}
             onClick={() => selectValue("")}
-            className={optionClass(!value)}
+            className={adminMenuOptionClassName({ selected: !value })}
           >
             {allLabel}
           </button>
@@ -144,7 +142,7 @@ export default function AdminTableColumnFilter({
               role="option"
               aria-selected={value === option.value}
               onClick={() => selectValue(option.value)}
-              className={optionClass(value === option.value)}
+              className={adminMenuOptionClassName({ selected: value === option.value })}
             >
               {option.label}
             </button>

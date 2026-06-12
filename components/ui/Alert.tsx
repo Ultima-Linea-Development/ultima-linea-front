@@ -1,17 +1,41 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Icon from "@/components/ui/Icons";
 import Typography from "@/components/ui/Typography";
+import { zIndex } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 
 type AlertVariant = "destructive" | "default";
 
-const variantStyles: Record<AlertVariant, string> = {
+const toastVariantStyles: Record<AlertVariant, string> = {
+  destructive: "bg-white border-destructive shadow-lg",
+  default: "bg-white border-border shadow-lg",
+};
+
+const inlineVariantStyles: Record<AlertVariant, string> = {
   destructive: "bg-destructive/10 border-destructive/20",
   default: "bg-background border-border",
 };
+
+const TOAST_PORTAL_HOST_ID = "toast-portal-host";
+
+function getToastPortalHost(): HTMLElement {
+  let host = document.getElementById(TOAST_PORTAL_HOST_ID);
+
+  if (!host) {
+    host = document.createElement("div");
+    host.id = TOAST_PORTAL_HOST_ID;
+    host.style.cssText = `position:fixed;inset:0;z-index:${zIndex.toast};pointer-events:none;`;
+    document.body.appendChild(host);
+  } else {
+    document.body.appendChild(host);
+  }
+
+  return host;
+}
 
 type ToastAlertProps = {
   open: boolean;
@@ -32,9 +56,14 @@ export default function Alert({
   onUndo,
   undoLabel = "Deshacer",
 }: ToastAlertProps) {
+  const [mounted, setMounted] = useState(false);
   const [progress, setProgress] = useState(100);
   const startRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open || !message) return;
@@ -66,15 +95,15 @@ export default function Alert({
     };
   }, [open, message, duration, onClose]);
 
-  if (!open || !message) return null;
+  if (!open || !message || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       role="alert"
       className={cn(
-        "fixed top-4 right-4 z-50 w-[calc(100%-2rem)] max-w-sm border shadow-sm",
+        "pointer-events-auto fixed top-4 right-4 w-[calc(100%-2rem)] max-w-sm border",
         "sm:top-6 sm:right-6",
-        variantStyles[variant]
+        toastVariantStyles[variant]
       )}
     >
       <div className="flex items-start gap-2 p-3">
@@ -106,7 +135,8 @@ export default function Alert({
       <div className="h-1 w-full">
         <div className="h-full bg-black" style={{ width: `${progress}%` }} />
       </div>
-    </div>
+    </div>,
+    getToastPortalHost()
   );
 }
 
@@ -130,7 +160,7 @@ export const InlineAlert = forwardRef<HTMLDivElement, InlineAlertProps>(
       <div
         ref={ref}
         className={cn(
-          variantStyles[variant],
+          inlineVariantStyles[variant],
           paddingStyles[padding],
           border && "border"
         )}

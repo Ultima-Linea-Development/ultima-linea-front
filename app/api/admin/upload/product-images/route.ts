@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   isNextResponse,
   jsonError,
-  requireAdmin,
+  requireStaff,
   requireAuth,
 } from "@/lib/server/auth-middleware";
 import { saveProductImages } from "@/lib/server/storage";
 
 export async function POST(request: NextRequest) {
-  const auth = requireAdmin(requireAuth(request));
+  const auth = requireStaff(requireAuth(request));
   if (isNextResponse(auth)) return auth;
 
   try {

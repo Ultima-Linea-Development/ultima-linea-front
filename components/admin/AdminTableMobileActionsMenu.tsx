@@ -4,6 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Icon, { type IconName } from "@/components/ui/Icons";
 import { Button } from "@/components/ui/button";
 import Typography from "@/components/ui/Typography";
+import { adminIconTriggerClassName, adminMenuOptionClassName } from "@/lib/admin-interactive-styles";
 import { zIndex } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
@@ -102,7 +103,7 @@ export default function AdminTableMobileActionsMenu({
         aria-haspopup="menu"
         aria-controls={menuId}
         onClick={() => setOpen((current) => !current)}
-        className="text-muted-foreground hover:text-foreground h-10 w-10"
+        className={cn(adminIconTriggerClassName, "h-10 w-10 text-muted-foreground")}
       >
         <Icon name="more" className="size-5" />
       </Button>
@@ -125,13 +126,15 @@ export default function AdminTableMobileActionsMenu({
               disabled={action.disabled}
               onClick={() => handleAction(action)}
               className={cn(
-                "flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
+                adminMenuOptionClassName({
+                  selected: action.active,
+                  className: "items-center gap-2",
+                }),
                 action.destructive
                   ? "text-delete-foreground hover:bg-delete hover:text-delete-foreground"
                   : action.warning
                     ? "text-warning-foreground hover:bg-warning hover:text-warning-foreground"
-                    : "text-foreground hover:bg-gray-200 hover:text-foreground",
-                action.active && "bg-muted/50",
+                    : "text-foreground",
                 action.disabled && "pointer-events-none opacity-50"
               )}
             >

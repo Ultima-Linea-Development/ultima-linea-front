@@ -1,4 +1,5 @@
 import type { Product } from "@/lib/api";
+import { escapeRegex } from "@/lib/utils";
 
 export const ADMIN_CATEGORY_FILTER_OPTIONS: Array<{
   value: NonNullable<Product["category"]>;
@@ -31,7 +32,7 @@ export function buildAdminCatalogMongoFilter(
   const size = searchParams.get("size");
   const isActive = parseIsActiveFilterParam(searchParams.get("is_active"));
 
-  if (team) filter.team = { $regex: team, $options: "i" };
+  if (team) filter.team = { $regex: escapeRegex(team), $options: "i" };
   if (league) filter.league = league;
   if (category) filter.category = category;
   if (size) Object.assign(filter, buildProductSizeFilter(size));
@@ -41,14 +42,15 @@ export function buildAdminCatalogMongoFilter(
 }
 
 export function buildAdminSearchTextMatch(query: string): Record<string, unknown> {
+  const pattern = escapeRegex(query);
   return {
     $or: [
-      { name: { $regex: query, $options: "i" } },
-      { description: { $regex: query, $options: "i" } },
-      { team: { $regex: query, $options: "i" } },
-      { category: { $regex: query, $options: "i" } },
-      { league: { $regex: query, $options: "i" } },
-      { season: { $regex: query, $options: "i" } },
+      { name: { $regex: pattern, $options: "i" } },
+      { description: { $regex: pattern, $options: "i" } },
+      { team: { $regex: pattern, $options: "i" } },
+      { category: { $regex: pattern, $options: "i" } },
+      { league: { $regex: pattern, $options: "i" } },
+      { season: { $regex: pattern, $options: "i" } },
     ],
   };
 }

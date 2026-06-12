@@ -7,6 +7,7 @@ type LabelSpacing = "none" | "sm" | "md";
 type LabelProps = Omit<LabelHTMLAttributes<HTMLLabelElement>, "className"> & {
   display?: LabelDisplay;
   spacing?: LabelSpacing;
+  className?: string;
   children: ReactNode;
 };
 
@@ -23,11 +24,11 @@ const spacingStyles: Record<LabelSpacing, string> = {
 };
 
 const Label = forwardRef<HTMLLabelElement, LabelProps>(
-  ({ display = "block", spacing = "md", children, ...props }, ref) => {
+  ({ display = "block", spacing = "md", className, children, ...props }, ref) => {
     return (
       <label
         ref={ref}
-        className={cn(displayStyles[display], spacingStyles[spacing])}
+        className={cn(displayStyles[display], spacingStyles[spacing], className)}
         {...props}
       >
         {children}

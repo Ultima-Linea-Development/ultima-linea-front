@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isAdminRole, isStaffRole } from "@/lib/roles";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -35,9 +36,13 @@ export function proxy(request: NextRequest) {
         throw new Error("Token expired");
       }
 
-      if (payload.role !== "admin") {
+      if (!isStaffRole(payload.role)) {
         const loginUrl = new URL("/login", request.url);
         return NextResponse.redirect(loginUrl);
+      }
+
+      if (pathname.startsWith("/admin/users") && !isAdminRole(payload.role)) {
+        return NextResponse.redirect(new URL("/admin/products", request.url));
       }
     } catch {
       const loginUrl = new URL("/login", request.url);

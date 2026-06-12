@@ -9,7 +9,8 @@ import {
 import {
   isNextResponse,
   jsonError,
-  requireAdmin,
+  assertCanDeleteOwnedResource,
+  requireStaff,
   requireAuth,
 } from "@/lib/server/auth-middleware";
 import { deleteProductImages } from "@/lib/server/storage";
@@ -23,7 +24,7 @@ import {
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const auth = requireAdmin(requireAuth(request));
+  const auth = requireStaff(requireAuth(request));
   if (isNextResponse(auth)) return auth;
 
   try {
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  const auth = requireAdmin(requireAuth(request));
+  const auth = requireStaff(requireAuth(request));
   if (isNextResponse(auth)) return auth;
 
   try {
@@ -121,7 +122,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const auth = requireAdmin(requireAuth(_request));
+  const auth = requireStaff(requireAuth(_request));
   if (isNextResponse(auth)) return auth;
 
   try {
@@ -134,6 +135,9 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     if (!doc) {
       return jsonError("Product not found", 404);
     }
+
+    const denied = assertCanDeleteOwnedResource(auth, doc.created_by);
+    if (denied) return denied;
 
     const product = productFromDoc(doc);
     await deleteProductImages(product.image_urls);

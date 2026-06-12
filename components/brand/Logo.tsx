@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { LOGO_ASPECT, logoImageStyle } from "./logoConfig";
 
 type LogoProps = {
   variant?: "default" | "white";
@@ -16,8 +17,9 @@ export default function Logo({ variant = "default" }: LogoProps) {
       <Image
         src={src}
         alt="Última Línea"
-        width={40}
-        height={40}
+        width={LOGO_ASPECT.width}
+        height={LOGO_ASPECT.height}
+        style={logoImageStyle}
         priority
       />
     </Link>

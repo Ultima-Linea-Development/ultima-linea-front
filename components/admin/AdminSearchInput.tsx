@@ -1,10 +1,22 @@
 "use client";
 
-import { KeyboardEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { KeyboardEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Input from "@/components/ui/Input";
 import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
+import {
+  adminClearIconButtonClassName,
+  adminMenuOptionClassName,
+} from "@/lib/admin-interactive-styles";
+import { zIndex } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
+
+type ListboxPosition = {
+  top: number;
+  left: number;
+  width: number;
+};
 
 type AdminSearchInputProps<T> = {
   id?: string;
@@ -43,13 +55,62 @@ export default function AdminSearchInput<T>({
   emptyMessage = "No hay resultados",
   listboxId = "admin-search-listbox",
 }: AdminSearchInputProps<T>) {
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [listboxPosition, setListboxPosition] = useState<ListboxPosition | null>(null);
 
   const visibleSuggestions = useMemo(() => {
     if (!value.trim()) return [];
     return suggestions;
   }, [suggestions, value]);
+
+  const shouldShowListbox = isOpen && Boolean(value.trim());
+
+  const updateListboxPosition = useCallback(() => {
+    const anchor = anchorRef.current;
+    if (!anchor) return;
+
+    const rect = anchor.getBoundingClientRect();
+    setListboxPosition({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+    });
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!shouldShowListbox) {
+      setListboxPosition(null);
+      return;
+    }
+
+    updateListboxPosition();
+
+    window.addEventListener("resize", updateListboxPosition);
+    window.addEventListener("scroll", updateListboxPosition, true);
+
+    const anchor = anchorRef.current;
+    const resizeObserver =
+      anchor && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(updateListboxPosition)
+        : null;
+
+    if (anchor && resizeObserver) {
+      resizeObserver.observe(anchor);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateListboxPosition);
+      window.removeEventListener("scroll", updateListboxPosition, true);
+      resizeObserver?.disconnect();
+    };
+  }, [shouldShowListbox, updateListboxPosition, visibleSuggestions.length]);
 
   const closeList = () => {
     setIsOpen(false);
@@ -117,10 +178,62 @@ export default function AdminSearchInput<T>({
     }
   };
 
+  const listbox =
+    shouldShowListbox && listboxPosition ? (
+      <div
+        id={listboxId}
+        role="listbox"
+        style={{
+          top: listboxPosition.top,
+          left: listboxPosition.left,
+          width: listboxPosition.width,
+          zIndex: zIndex.dropdown,
+        }}
+        className="fixed max-h-64 overflow-y-auto border border-border bg-background shadow-md"
+      >
+        {visibleSuggestions.length === 0 ? (
+          <div className="px-4 py-3">
+            <Typography variant="body2" color="muted">
+              {emptyMessage}
+            </Typography>
+          </div>
+        ) : (
+          visibleSuggestions.map((item, index) => {
+            const isHighlighted = highlightedIndex === index;
+
+            return (
+              <button
+                key={getSuggestionKey(item, index)}
+                id={`${listboxId}-option-${index}`}
+                type="button"
+                role="option"
+                aria-selected={isHighlighted}
+                className={cn(
+                  adminMenuOptionClassName({
+                    selected: isHighlighted,
+                    className: "items-center justify-between gap-3",
+                  }),
+                  isHighlighted && "ring-1 ring-inset ring-gray-300"
+                )}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  selectSuggestion(item);
+                }}
+                onMouseEnter={() => setHighlightedIndex(index)}
+                disabled={disabled}
+              >
+                {renderSuggestion(item)}
+              </button>
+            );
+          })
+        )}
+      </div>
+    ) : null;
+
   return (
     <div className={cn("w-full max-w-xl space-y-1", className)}>
       {label}
-      <div className="relative">
+      <div ref={anchorRef} className="relative">
         <Input
           id={id}
           type="text"
@@ -151,7 +264,10 @@ export default function AdminSearchInput<T>({
         {value && (
           <button
             type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 transition-colors hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className={cn(
+              adminClearIconButtonClassName,
+              "absolute right-2 top-1/2 -translate-y-1/2"
+            )}
             aria-label="Limpiar búsqueda"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
@@ -163,50 +279,8 @@ export default function AdminSearchInput<T>({
             <Icon name="close" size={20} />
           </button>
         )}
-        {isOpen && value.trim() && (
-          <div
-            id={listboxId}
-            role="listbox"
-            className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto border border-border bg-background"
-          >
-            {visibleSuggestions.length === 0 ? (
-              <div className="px-4 py-3">
-                <Typography variant="body2" color="muted">
-                  {emptyMessage}
-                </Typography>
-              </div>
-            ) : (
-              visibleSuggestions.map((item, index) => {
-                const isHighlighted = highlightedIndex === index;
-
-                return (
-                <button
-                  key={getSuggestionKey(item, index)}
-                  id={`${listboxId}-option-${index}`}
-                  type="button"
-                  role="option"
-                  aria-selected={isHighlighted}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-3 px-4 py-2 text-left transition-colors",
-                    isHighlighted
-                      ? "bg-gray-200 ring-1 ring-inset ring-gray-300"
-                      : "hover:bg-muted/60"
-                  )}
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    selectSuggestion(item);
-                  }}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                  disabled={disabled}
-                >
-                  {renderSuggestion(item)}
-                </button>
-                );
-              })
-            )}
-          </div>
-        )}
       </div>
+      {mounted && listbox ? createPortal(listbox, document.body) : null}
     </div>
   );
 }

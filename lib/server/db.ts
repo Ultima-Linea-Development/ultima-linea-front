@@ -3,6 +3,7 @@ import { MongoClient, Db, Collection, Document } from "mongodb";
 const USERS_COLLECTION = "users";
 const PRODUCTS_COLLECTION = "products";
 const SALES_COLLECTION = "sales";
+const EXTERNAL_SELLERS_COLLECTION = "external_sellers";
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
@@ -40,7 +41,10 @@ async function connect(): Promise<MongoClient> {
 
 function getClientPromise(): Promise<MongoClient> {
   if (!global._mongoClientPromise) {
-    global._mongoClientPromise = connect();
+    global._mongoClientPromise = connect().catch((err) => {
+      global._mongoClientPromise = undefined;
+      throw err;
+    });
   }
   return global._mongoClientPromise;
 }
@@ -69,6 +73,10 @@ export async function getSalesCollection<T extends Document = Document>() {
   return getCollection<T>(SALES_COLLECTION);
 }
 
+export async function getExternalSellersCollection<T extends Document = Document>() {
+  return getCollection<T>(EXTERNAL_SELLERS_COLLECTION);
+}
+
 let indexesCreated = false;
 
 export async function ensureIndexes(): Promise<void> {
@@ -94,9 +102,18 @@ export async function ensureIndexes(): Promise<void> {
   await sales.createIndexes([
     { key: { product_id: 1 } },
     { key: { created_at: -1 } },
+    { key: { external_seller_id: 1 } },
   ]);
+
+  const externalSellers = db.collection(EXTERNAL_SELLERS_COLLECTION);
+  await externalSellers.createIndexes([{ key: { name: 1 } }]);
 
   indexesCreated = true;
 }
 
-export { USERS_COLLECTION, PRODUCTS_COLLECTION, SALES_COLLECTION };
+export {
+  USERS_COLLECTION,
+  PRODUCTS_COLLECTION,
+  SALES_COLLECTION,
+  EXTERNAL_SELLERS_COLLECTION,
+};

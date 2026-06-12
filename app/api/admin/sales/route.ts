@@ -1,32 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureIndexes, getProductsCollection, getSalesCollection } from "@/lib/server/db";
 import {
+  ensureIndexes,
+  getExternalSellersCollection,
+  getProductsCollection,
+  getSalesCollection,
+} from "@/lib/server/db";
+import {
+  ExternalSellerDocument,
   ProductDocument,
   Sale,
   SaleDocument,
   generateULID,
-  productFromDoc,
-  saleFromDoc,
   saleToDoc,
 } from "@/lib/server/models";
 import {
   isNextResponse,
   jsonError,
-  requireAdmin,
+  requireStaff,
   requireAuth,
 } from "@/lib/server/auth-middleware";
 import { toProductResponse } from "@/lib/server/products";
+import {
+  parseOptionalSaleText,
+  resolveSaleSellerForCreate,
+  type SaleSellerType,
+} from "@/lib/server/sale-seller";
 import { parseSaleDateInput } from "@/lib/sale-date";
+import { CreateSaleItemInput, processSaleItem } from "@/lib/server/create-sale";
+import { normalizeSaleForResponse } from "@/lib/server/sale-items";
+
+type CreateSaleItemBody = {
+  product_id?: string;
+  size?: string;
+  quantity?: number;
+  unit_price?: number;
+};
 
 type CreateSaleBody = {
+  items?: CreateSaleItemBody[];
   product_id?: string;
   size?: string;
   quantity?: number;
   sale_date?: string;
+  seller_type?: SaleSellerType;
+  created_by?: string;
+  external_seller_id?: string;
+  external_seller_name?: string;
+  transfer_alias?: string;
+  description?: string;
 };
 
+function parseCreateSaleItems(body: CreateSaleBody): CreateSaleItemInput[] {
+  if (Array.isArray(body.items) && body.items.length > 0) {
+    return body.items.map((item) => ({
+      product_id: item.product_id?.trim() ?? "",
+      size: item.size,
+      quantity: Number(item.quantity),
+      unit_price: item.unit_price != null ? Number(item.unit_price) : undefined,
+    }));
+  }
+
+  if (body.product_id?.trim()) {
+    return [
+      {
+        product_id: body.product_id.trim(),
+        size: body.size,
+        quantity: Number(body.quantity),
+      },
+    ];
+  }
+
+  return [];
+}
+
 export async function GET(request: NextRequest) {
-  const auth = requireAdmin(requireAuth(request));
+  const auth = requireStaff(requireAuth(request));
   if (isNextResponse(auth)) return auth;
 
   try {
@@ -51,7 +99,7 @@ export async function GET(request: NextRequest) {
       .toArray();
 
     return NextResponse.json({
-      sales: docs.map(saleFromDoc),
+      sales: docs.map(normalizeSaleForResponse),
       page,
       per_page: perPage,
       total,
@@ -63,62 +111,35 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = requireAdmin(requireAuth(request));
+  const auth = requireStaff(requireAuth(request));
   if (isNextResponse(auth)) return auth;
 
   try {
     await ensureIndexes();
 
     const body = (await request.json()) as CreateSaleBody;
-    const productId = body.product_id?.trim();
-    const requestedSize = body.size?.trim() ?? "";
-    const quantity = Number(body.quantity);
+    const itemInputs = parseCreateSaleItems(body);
 
-    if (!productId) return jsonError("Producto requerido", 400);
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      return jsonError("Cantidad inválida", 400);
+    if (itemInputs.length === 0) {
+      return jsonError("Agregá al menos un producto", 400);
     }
 
     const products = await getProductsCollection<ProductDocument>();
-    const productDoc = await products.findOne({ _id: productId, is_active: true });
-    if (!productDoc) return jsonError("Producto no encontrado", 404);
+    const lineItems = [];
+    const updatedProductIds = new Set<string>();
+    const updatedProducts = [];
 
-    const product = productFromDoc(productDoc);
-    const stockBySizes = product.stock_by_sizes ?? {};
-    const hasSizeStock = Object.keys(stockBySizes).length > 0;
-    const saleSize = requestedSize || product.size || "";
-
-    if (hasSizeStock && !requestedSize) return jsonError("Talle requerido", 400);
-
-    let availableStock = product.stock;
-    if (hasSizeStock) {
-      availableStock = Math.max(0, stockBySizes[requestedSize] ?? 0);
-    }
-
-    const deductQty = Math.min(quantity, availableStock);
-    let updatedDoc: ProductDocument = productDoc;
-
-    if (deductQty > 0) {
-      const filter: Record<string, unknown> = {
-        _id: productId,
-        is_active: true,
-        stock: { $gte: deductQty },
-      };
-      const increment: Record<string, number> = { stock: -deductQty };
-
-      if (hasSizeStock) {
-        filter[`stock_by_sizes.${requestedSize}`] = { $gte: deductQty };
-        increment[`stock_by_sizes.${requestedSize}`] = -deductQty;
+    for (const input of itemInputs) {
+      const result = await processSaleItem(products, input);
+      if ("error" in result) {
+        return jsonError(result.error, result.status);
       }
 
-      const stockUpdate = await products.findOneAndUpdate(
-        filter,
-        { $inc: increment, $set: { updated_at: new Date() } },
-        { returnDocument: "after" }
-      );
+      lineItems.push(result.lineItem);
 
-      if (stockUpdate) {
-        updatedDoc = stockUpdate;
+      if (result.updatedProduct && !updatedProductIds.has(result.updatedProduct.id)) {
+        updatedProductIds.add(result.updatedProduct.id);
+        updatedProducts.push(toProductResponse(result.updatedProduct, 2));
       }
     }
 
@@ -131,15 +152,35 @@ export async function POST(request: NextRequest) {
       createdAt = parsedSaleDate;
     }
 
+    const externalSellers = await getExternalSellersCollection<ExternalSellerDocument>();
+    const sellerResult = await resolveSaleSellerForCreate(auth, externalSellers, {
+      seller_type: body.seller_type,
+      created_by: body.created_by,
+      external_seller_id: body.external_seller_id,
+      external_seller_name: body.external_seller_name,
+    });
+
+    if ("error" in sellerResult) {
+      return jsonError(sellerResult.error, sellerResult.status);
+    }
+
+    const total = lineItems.reduce((sum, item) => sum + item.total, 0);
+    const transferAlias = parseOptionalSaleText(body.transfer_alias);
+    const description = parseOptionalSaleText(body.description);
+
     const sale: Sale = {
       id: generateULID(),
-      product_id: product.id,
-      product_name: product.name,
-      product_sku: product.sku,
-      size: saleSize,
-      quantity,
-      unit_price: product.price,
-      total: product.price * quantity,
+      items: lineItems,
+      total,
+      created_by: sellerResult.created_by,
+      ...(sellerResult.external_seller_id
+        ? {
+            external_seller_id: sellerResult.external_seller_id,
+            external_seller_name: sellerResult.external_seller_name,
+          }
+        : {}),
+      ...(transferAlias ? { transfer_alias: transferAlias } : {}),
+      ...(description ? { description } : {}),
       created_at: createdAt,
       updated_at: now,
     };
@@ -149,8 +190,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        sale,
-        product: toProductResponse(productFromDoc(updatedDoc), 2),
+        sale: normalizeSaleForResponse(saleToDoc(sale)),
+        ...(updatedProducts.length > 0 ? { products: updatedProducts } : {}),
       },
       { status: 201 }
     );

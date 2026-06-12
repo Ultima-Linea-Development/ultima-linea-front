@@ -3,7 +3,10 @@ import { ensureIndexes, getProductsCollection } from "@/lib/server/db";
 import { ProductDocument, productFromDoc } from "@/lib/server/models";
 import { jsonError } from "@/lib/server/auth-middleware";
 import { toProductResponse } from "@/lib/server/products";
-import { buildProductSizeFilter } from "@/lib/admin-catalog-filters";
+import {
+  buildAdminSearchTextMatch,
+  buildProductSizeFilter,
+} from "@/lib/admin-catalog-filters";
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,16 +25,7 @@ export async function GET(request: NextRequest) {
     if (Number.isNaN(perPage) || perPage < 1) perPage = 10;
     if (perPage > 50) perPage = 50;
 
-    const textMatch = {
-      $or: [
-        { name: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
-        { team: { $regex: q, $options: "i" } },
-        { category: { $regex: q, $options: "i" } },
-        { league: { $regex: q, $options: "i" } },
-        { season: { $regex: q, $options: "i" } },
-      ],
-    };
+    const textMatch = buildAdminSearchTextMatch(q);
 
     const category = searchParams.get("category");
     const league = searchParams.get("league");

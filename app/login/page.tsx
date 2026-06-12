@@ -6,25 +6,26 @@ import Container from "@/components/layout/Container";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/Input";
+import Input, { InputAdornment } from "@/components/ui/Input";
 import Form from "@/components/ui/Form";
 import Label from "@/components/ui/Label";
 import Div from "@/components/ui/Div";
 import Alert from "@/components/ui/Alert";
+import Icon from "@/components/ui/Icons";
 import { authApi } from "@/lib/api";
-import { isAdmin } from "@/lib/auth";
+import { isStaff, mustCompleteSetup, ONBOARDING_PATH, setAuthSession } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAdmin()) {
-      router.push("/admin");
-    }
+    if (!isStaff()) return;
+    router.push(mustCompleteSetup() ? ONBOARDING_PATH : "/admin");
   }, [router]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -41,12 +42,9 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      
-      document.cookie = `token=${response.data.token}; path=/; max-age=86400; SameSite=Lax`;
-      
-      router.push("/admin");
+      setAuthSession(response.data.token, response.data.user);
+
+      router.push(mustCompleteSetup() ? ONBOARDING_PATH : "/admin");
     } catch {
       setError("Error de conexión. Intenta nuevamente.");
       setLoading(false);
@@ -58,10 +56,9 @@ export default function LoginPage() {
       <Box
         display="flex"
         direction="col"
-        justify="center"
+        justify="start"
         align="center"
         gap="4"
-        className="min-h-[60vh]"
       >
         <Box display="flex" direction="col" gap="2" className="w-full max-w-md">
           <Typography variant="h2" uppercase={true} align="center">
@@ -92,11 +89,25 @@ export default function LoginPage() {
                 </Typography>
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
+                  width="full"
+                  disabled={loading}
+                  endIcon={
+                    <InputAdornment
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      onClick={() => setShowPassword((current) => !current)}
+                      disabled={loading}
+                    >
+                      <Icon
+                        name={showPassword ? "visibilityOff" : "visibility"}
+                        className="size-5"
+                      />
+                    </InputAdornment>
+                  }
                 />
               </Label>
             </Div>

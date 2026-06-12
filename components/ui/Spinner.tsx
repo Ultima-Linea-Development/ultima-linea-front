@@ -1,16 +1,18 @@
 import Image from "next/image";
+import { LOGO_ASPECT, logoImageStyle } from "@/components/brand/logoConfig";
 import { cn } from "@/lib/utils";
 
 type SpinnerProps = {
   className?: string;
+  fullscreen?: boolean;
 };
 
-export default function Spinner({ className }: SpinnerProps) {
+export default function Spinner({ className, fullscreen = true }: SpinnerProps) {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[100] bg-white",
         "flex items-center justify-center",
+        fullscreen && "fixed inset-0 z-[100] bg-white",
         className
       )}
       role="status"
@@ -19,8 +21,9 @@ export default function Spinner({ className }: SpinnerProps) {
       <Image
         src="/images/brand/ultima-linea-logo.png"
         alt="Última Línea"
-        width={40}
-        height={40}
+        width={LOGO_ASPECT.width}
+        height={LOGO_ASPECT.height}
+        style={logoImageStyle}
         className="animate-shimmer"
         priority
       />

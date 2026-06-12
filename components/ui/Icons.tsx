@@ -14,8 +14,10 @@ import {
   MdOutlineFilterList,
   MdFilterList,
   MdMoreVert,
+  MdOutlineCalendarToday,
   MdOutlineVisibilityOff,
   MdOutlineVisibility,
+  MdOutlinePeople,
 } from "react-icons/md";
 import { ComponentProps } from "react";
 
@@ -30,10 +32,12 @@ export const Icons = {
   chevronRight: MdChevronRight,
   catalog: MdOutlineInventory2,
   sales: MdOutlinePointOfSale,
+  users: MdOutlinePeople,
   logout: MdOutlineLogout,
   filter: MdOutlineFilterList,
   filterActive: MdFilterList,
   more: MdMoreVert,
+  calendar: MdOutlineCalendarToday,
   visibilityOff: MdOutlineVisibilityOff,
   visibility: MdOutlineVisibility,
 } as const;

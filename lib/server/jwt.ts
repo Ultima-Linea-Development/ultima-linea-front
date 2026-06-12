@@ -4,6 +4,7 @@ export type JwtClaims = {
   user_id: string;
   email: string;
   role: string;
+  must_change_password?: boolean;
 };
 
 function getSecret(): string {
@@ -12,9 +13,24 @@ function getSecret(): string {
   return secret;
 }
 
-export function generateToken(userId: string, email: string, role: string): string {
+export function generateToken(
+  userId: string,
+  email: string,
+  role: string,
+  mustChangePassword = false
+): string {
   const secret = getSecret();
-  return jwt.sign({ user_id: userId, email, role }, secret, {
+  const payload: JwtClaims = {
+    user_id: userId,
+    email,
+    role,
+  };
+
+  if (mustChangePassword) {
+    payload.must_change_password = true;
+  }
+
+  return jwt.sign(payload, secret, {
     algorithm: "HS256",
     expiresIn: "24h",
   });

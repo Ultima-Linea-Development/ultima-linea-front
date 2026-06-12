@@ -10,6 +10,7 @@ type AdminTableProductNameProps = {
   name: string;
   imageUrl?: string;
   href?: string;
+  onClick?: () => void;
   imageClassName?: string;
   className?: string;
 };
@@ -18,6 +19,7 @@ export default function AdminTableProductName({
   name,
   imageUrl,
   href,
+  onClick,
   imageClassName = "h-10 w-10 sm:h-12 sm:w-12",
   className,
 }: AdminTableProductNameProps) {
@@ -55,6 +57,18 @@ export default function AdminTableProductName({
       >
         {content}
       </Link>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="block max-w-full cursor-pointer text-left text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+      >
+        {content}
+      </button>
     );
   }
 

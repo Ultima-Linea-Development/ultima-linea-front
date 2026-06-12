@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Box from "@/components/layout/Box";
 import Spinner from "@/components/ui/Spinner";
 import Typography from "@/components/ui/Typography";
 import Alert, { InlineAlert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
-import AdminShell from "@/components/admin/AdminShell";
+import AdminDataLoading from "@/components/admin/AdminDataLoading";
 import AdminProductsTable, { PER_PAGE } from "@/components/admin/AdminProductsTable";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import AdminProductSearchSuggestion from "@/components/admin/AdminProductSearchSuggestion";
 import AdminProductEditForm from "@/components/admin/AdminProductEditForm";
+import AdminProductForm from "@/components/admin/AdminProductForm";
 import Modal from "@/components/ui/Modal";
-import { isAdmin, getUserFromToken, clearAuth, getToken } from "@/lib/auth";
+import { isAdmin, getUserFromToken, getToken, getCurrentUserId } from "@/lib/auth";
+import { canDeleteOwnedResource } from "@/lib/roles";
 import {
   productsApi,
   adminProductsApi,
@@ -25,11 +25,11 @@ import { filterProductsByQuery } from "@/lib/admin-product-search";
 import { usePendingDelete } from "@/lib/use-pending-delete";
 
 export default function AdminProductsPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [products, setProducts] = useState<Awaited<ReturnType<typeof productsApi.getAll>>["data"]>(undefined);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [page, setPage] = useState(1);
   const {
     deleteToast,
@@ -72,54 +72,59 @@ export default function AdminProductsPage() {
   };
 
   const loadCatalog = useCallback(async () => {
-    await flushPendingDelete();
-    setError("");
-    const token = getToken();
-    if (!token) {
-      setError("Sesión expirada. Volvé a iniciar sesión.");
-      setProducts(undefined);
-      return;
-    }
+    setIsDataLoading(true);
+    try {
+      await flushPendingDelete();
+      setError("");
+      const token = getToken();
+      if (!token) {
+        setError("Sesión expirada. Volvé a iniciar sesión.");
+        setProducts(undefined);
+        return;
+      }
 
-    const q = searchQuery.trim();
-    if (!q) {
-      const response = await adminProductsApi.getAll(token, {
-        page,
+      const q = searchQuery.trim();
+      if (!q) {
+        const response = await adminProductsApi.getAll(token, {
+          page,
+          per_page: PER_PAGE,
+          ...catalogFilters,
+        });
+        if (response.error) {
+          setError(response.error);
+          setProducts(undefined);
+          return;
+        }
+        setProducts(response.data ?? undefined);
+        return;
+      }
+      let all = searchCacheRef.current?.query === q ? searchCacheRef.current.results : null;
+      if (!all) {
+        const response = await adminProductsApi.search(token, q, catalogFilters);
+        if (response.error || !response.data) {
+          setError(response.error ?? "Error al buscar");
+          setProducts(undefined);
+          return;
+        }
+        all = response.data.results;
+        searchCacheRef.current = { query: q, results: all };
+      }
+      const total = all.length;
+      const total_pages = Math.max(1, Math.ceil(total / PER_PAGE));
+      const safePage = Math.min(Math.max(1, page), total_pages);
+      const start = (safePage - 1) * PER_PAGE;
+      setProducts({
+        products: all.slice(start, start + PER_PAGE),
+        page: safePage,
         per_page: PER_PAGE,
-        ...catalogFilters,
+        total,
+        total_pages,
       });
-      if (response.error) {
-        setError(response.error);
-        setProducts(undefined);
-        return;
+      if (safePage !== page) {
+        setPage(safePage);
       }
-      setProducts(response.data ?? undefined);
-      return;
-    }
-    let all = searchCacheRef.current?.query === q ? searchCacheRef.current.results : null;
-    if (!all) {
-      const response = await adminProductsApi.search(token, q, catalogFilters);
-      if (response.error || !response.data) {
-        setError(response.error ?? "Error al buscar");
-        setProducts(undefined);
-        return;
-      }
-      all = response.data.results;
-      searchCacheRef.current = { query: q, results: all };
-    }
-    const total = all.length;
-    const total_pages = Math.max(1, Math.ceil(total / PER_PAGE));
-    const safePage = Math.min(Math.max(1, page), total_pages);
-    const start = (safePage - 1) * PER_PAGE;
-    setProducts({
-      products: all.slice(start, start + PER_PAGE),
-      page: safePage,
-      per_page: PER_PAGE,
-      total,
-      total_pages,
-    });
-    if (safePage !== page) {
-      setPage(safePage);
+    } finally {
+      setIsDataLoading(false);
     }
   }, [searchQuery, page, categoryFilter, sizeFilter, activeFilter, flushPendingDelete]);
 
@@ -129,37 +134,18 @@ export default function AdminProductsPage() {
   }, [loadCatalog]);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const user = getUserFromToken();
-
-      if (!user || !isAdmin()) {
-        clearAuth();
-        router.push("/login?redirect=/admin/products");
-        return;
-      }
-
-      setIsAuthorized(true);
-      setIsLoading(false);
-    };
-
-    checkAuth();
-  }, [router]);
-
-  useEffect(() => {
-    if (!isAuthorized) return;
     queueMicrotask(() => {
       void loadCatalog();
     });
-  }, [isAuthorized, loadCatalog, searchTick]);
+  }, [loadCatalog, searchTick]);
 
   useEffect(() => {
-    if (!isAuthorized) return;
     void productsApi.getOptions().then((response) => {
       if (response.data) {
         setSizeOptions(response.data.sizes);
       }
     });
-  }, [isAuthorized]);
+  }, []);
 
   useEffect(() => {
     const query = searchInput.trim();
@@ -518,18 +504,6 @@ export default function AdminProductsPage() {
     setSearchTick((t) => t + 1);
   }, []);
 
-  if (isLoading) {
-    return (
-      <Box display="flex" direction="col" gap="4" className="min-h-[60vh] items-center justify-center">
-        <Spinner />
-      </Box>
-    );
-  }
-
-  if (!isAuthorized) {
-    return null;
-  }
-
   const data = products ?? undefined;
   const list = data?.products ?? [];
   const total = data?.total ?? 0;
@@ -537,12 +511,11 @@ export default function AdminProductsPage() {
   const currentPage = data?.page ?? 1;
 
   return (
-    <AdminShell>
-      <Box display="flex" direction="col" gap="6">
+    <Box display="flex" direction="col" gap="6" className="min-h-[calc(100dvh-7rem)]">
         <Box display="flex" className="items-center justify-between flex-wrap gap-4">
           <Typography variant="h1">Catálogo</Typography>
-          <Button asChild>
-            <Link href="/admin/add-product">Agregar producto</Link>
+          <Button type="button" onClick={() => setShowCreateModal(true)}>
+            Agregar producto
           </Button>
         </Box>
 
@@ -574,6 +547,32 @@ export default function AdminProductsPage() {
           variant="destructive"
           onClose={() => setError("")}
         />
+
+        <Alert
+          open={!!success}
+          message={success}
+          variant="default"
+          onClose={() => setSuccess("")}
+        />
+
+        {showCreateModal && (
+          <Modal
+            open={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            title="Agregar producto"
+            className="max-w-2xl"
+          >
+            <AdminProductForm
+              onSuccess={() => {
+                setSuccess("Producto creado correctamente.");
+                setShowCreateModal(false);
+                setPage(1);
+                void loadCatalog();
+              }}
+              onCancel={() => setShowCreateModal(false)}
+            />
+          </Modal>
+        )}
 
         <Alert
           open={!!bulkError}
@@ -669,7 +668,7 @@ export default function AdminProductsPage() {
           <Modal open={!!editingProductId} onClose={handleCancelEdit} title="Editar producto">
             {isLoadingProduct ? (
               <Box display="flex" className="min-h-[200px] items-center justify-center">
-                <Spinner />
+                <Spinner fullscreen={false} />
               </Box>
             ) : editingProduct ? (
               <AdminProductEditForm
@@ -690,69 +689,75 @@ export default function AdminProductsPage() {
           </Modal>
         )}
 
-        <AdminProductsTable
-          products={list}
-          page={currentPage}
-          perPage={PER_PAGE}
-          total={total}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          onEdit={handleEdit}
-          onDeactivate={handleDeactivate}
-          onReactivate={handleReactivate}
-          onDelete={handleDelete}
-          selectedIds={selectedIds}
-          onSelectionChange={handleSelectionChange}
-          categoryFilter={categoryFilter}
-          sizeFilter={sizeFilter}
-          activeFilter={activeFilter}
-          sizeOptions={sizeOptions}
-          onCategoryFilterChange={handleCategoryFilterChange}
-          onSizeFilterChange={handleSizeFilterChange}
-          onActiveFilterChange={handleActiveFilterChange}
-          tableFooter={
-            selectedIds.length > 0 ? (
-              <Box
-                display="flex"
-                className="items-center justify-between gap-4 flex-wrap border border-border bg-muted/30 p-3"
-              >
-                <Typography variant="body2">
-                  {selectedIds.length} seleccionado{selectedIds.length === 1 ? "" : "s"}
-                </Typography>
-                <Box display="flex" gap="2" className="flex-wrap">
-                  <Button
-                    type="button"
-                    variant="warning"
-                    size="sm"
-                    onClick={handleBulkDesactivar}
-                    disabled={isBulkSubmitting}
-                  >
-                    {isBulkSubmitting ? "..." : "Desactivar"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="delete"
-                    size="sm"
-                    onClick={handleBulkEliminarClick}
-                    disabled={isBulkSubmitting}
-                  >
-                    Eliminar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearSelection}
-                    disabled={isBulkSubmitting}
-                  >
-                    Cancelar selección
-                  </Button>
+        {isDataLoading ? (
+          <AdminDataLoading />
+        ) : (
+          <AdminProductsTable
+            products={list}
+            page={currentPage}
+            perPage={PER_PAGE}
+            total={total}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            onEdit={handleEdit}
+            onDeactivate={handleDeactivate}
+            onReactivate={handleReactivate}
+            onDelete={handleDelete}
+            canDeleteProduct={(product) =>
+              canDeleteOwnedResource(getUserFromToken()?.role, getCurrentUserId(), product.created_by)
+            }
+            selectedIds={selectedIds}
+            onSelectionChange={isAdmin() ? handleSelectionChange : undefined}
+            categoryFilter={categoryFilter}
+            sizeFilter={sizeFilter}
+            activeFilter={activeFilter}
+            sizeOptions={sizeOptions}
+            onCategoryFilterChange={handleCategoryFilterChange}
+            onSizeFilterChange={handleSizeFilterChange}
+            onActiveFilterChange={handleActiveFilterChange}
+            tableFooter={
+              selectedIds.length > 0 ? (
+                <Box
+                  display="flex"
+                  className="items-center justify-between gap-4 flex-wrap border border-border bg-muted/30 p-3"
+                >
+                  <Typography variant="body2">
+                    {selectedIds.length} seleccionado{selectedIds.length === 1 ? "" : "s"}
+                  </Typography>
+                  <Box display="flex" gap="2" className="flex-wrap">
+                    <Button
+                      type="button"
+                      variant="warning"
+                      size="sm"
+                      onClick={handleBulkDesactivar}
+                      disabled={isBulkSubmitting}
+                    >
+                      {isBulkSubmitting ? "..." : "Desactivar"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="delete"
+                      size="sm"
+                      onClick={handleBulkEliminarClick}
+                      disabled={isBulkSubmitting}
+                    >
+                      Eliminar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearSelection}
+                      disabled={isBulkSubmitting}
+                    >
+                      Cancelar selección
+                    </Button>
+                  </Box>
                 </Box>
-              </Box>
-            ) : null
-          }
-        />
-      </Box>
-    </AdminShell>
+              ) : null
+            }
+          />
+        )}
+    </Box>
   );
 }

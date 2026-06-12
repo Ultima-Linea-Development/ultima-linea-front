@@ -42,6 +42,7 @@ type AdminProductsTableProps = {
   onDeactivate?: (product: Product) => void;
   onReactivate?: (product: Product) => void;
   onDelete?: (product: Product) => void;
+  canDeleteProduct?: (product: Product) => boolean;
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
   tableFooter?: ReactNode;
@@ -65,6 +66,7 @@ export default function AdminProductsTable({
   onDeactivate,
   onReactivate,
   onDelete,
+  canDeleteProduct,
   selectedIds = [],
   onSelectionChange,
   tableFooter,
@@ -236,7 +238,7 @@ export default function AdminProductsTable({
       });
     }
 
-    if (onDelete) {
+    if (onDelete && (!canDeleteProduct || canDeleteProduct(product))) {
       actions.push({
         id: "delete",
         label: "Eliminar",

@@ -11,6 +11,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      HOSTNAME: 0.0.0.0
     networks:
       - ultima_linea_net
     labels:

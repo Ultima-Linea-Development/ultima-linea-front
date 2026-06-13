@@ -4,6 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { HiMagnifyingGlassPlus } from "react-icons/hi2";
+import { zIndex } from "@/lib/design-tokens";
 import Box from "@/components/layout/Box";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/Icons";
@@ -22,8 +23,8 @@ function ZoomCursor({ x, y }: ZoomCursorProps) {
 
   return createPortal(
     <div
-      className="pointer-events-none fixed z-[60] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/90 bg-black/60 p-1.5 text-white shadow-[0_2px_10px_rgba(0,0,0,0.35)]"
-      style={{ left: x, top: y }}
+      className="pointer-events-none fixed -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/90 bg-black/60 p-1.5 text-white shadow-[0_2px_10px_rgba(0,0,0,0.35)]"
+      style={{ left: x, top: y, zIndex: zIndex.imageZoom }}
       aria-hidden
     >
       <HiMagnifyingGlassPlus className="h-5 w-5" />

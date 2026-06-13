@@ -1,0 +1,58 @@
+---
+description: Estándares de UI, estilos y componetización para Última Línea
+alwaysApply: true
+---
+
+# Estándares UI — Última Línea
+
+Antes de escribir código nuevo, **buscar y reutilizar** lo existente en `components/`, `lib/` y `app/globals.css`. Agregar el mínimo código y CSS posible.
+
+## Flujo obligatorio
+
+1. Revisar `components/ui/` (primitivos), `components/layout/` (layout), `components/admin/` (panel) y `lib/*-styles.ts`.
+2. Extender variantes/props de un componente existente antes de crear uno nuevo.
+3. Si hace falta un primitivo, ubicarlo en `components/ui/`; lógica de dominio en `components/admin/` o `app/components/`.
+4. No crear archivos `.css` adicionales. Estilos solo en Tailwind + `app/globals.css`.
+
+## Stack de estilos
+
+- **Tailwind v4** con variables CSS en `globals.css` (`--primary`, `--muted`, `--delete`, etc.).
+- **`cn()`** de `@/lib/utils` para combinar clases.
+- **CVA** solo en componentes con variantes reales (ej. `button.tsx`).
+- **Tokens**: `zIndex` de `@/lib/design-tokens` para capas; no usar `z-[55]` arbitrarios.
+- **Admin**: estilos interactivos en `@/lib/admin-interactive-styles`.
+- **Formularios admin**: `Select` para desplegables; `FormField` para campos compuestos.
+
+## Componentes a usar (no reinventar)
+
+| Necesidad | Usar |
+|-----------|------|
+| Texto | `Typography` (no `<h1>`/`<p>` con clases sueltas) |
+| Botones | `Button` (`@/components/ui/button`, named export) |
+| Inputs | `Input`, `Textarea`, `Select`, `Label`, `Form`, `FormField` |
+| Layout página | `Container`, `Box`, `Div`, `Main` |
+| Nav pública | `NavLink` (`components/navigation/`) |
+| Nav admin | `AdminNavLink` + `admin-interactive-styles` |
+| Modales / alertas | `Modal`, `Alert` |
+| Loading | `Spinner`, `AdminDataLoading` |
+
+## Convenciones
+
+- Imports con alias `@/`. PascalCase en archivos; excepción: `button.tsx` (shadcn).
+- Prefijo `Admin*` para componentes del panel.
+- Default export en componentes; `Button` es named export.
+- Props semánticas (`display`, `spacing`, `variant`) en lugar de clases Tailwind en páginas.
+- `FormField` para campos (con `htmlFor`) y secciones (sin `htmlFor`).
+- `className` solo para ajustes puntuales que las props no cubren.
+
+## Prohibido / evitar
+
+- Duplicar bloques Label + Typography + Input: extraer o extender.
+- Estilos inline (`style={{}}`) salvo valores dinámicos inevitables.
+- Colores/fuentes hardcodeados fuera de tokens (`text-zinc-500` en footer es excepción de marca).
+- God components: páginas admin >300 líneas deben extraer hooks y subcomponentes.
+- Crear `NavLink` genérico que mezcle admin y tienda pública.
+
+## Referencia completa
+
+Ver `docs/ESTANDARIZACION-UI.md` para inventario de componentes, patrones y deuda técnica conocida.

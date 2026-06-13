@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, createContext, useContext } from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/Icons";
+import MobileOverlay from "@/components/layout/MobileOverlay";
+import MobilePanel from "@/components/layout/MobilePanel";
 import { type ReactNode } from "react";
 
 type MobileMenuContextType = {
@@ -38,28 +39,11 @@ export default function MobileMenu({ children }: MobileMenuProps) {
       >
         <Icon name={isOpen ? "close" : "menu"} size={28} />
       </Button>
-      
-      <>
-        <div
-          className={cn(
-            "fixed inset-0 bg-black/50 z-[55] md:hidden transition-opacity duration-300",
-            isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-          )}
-          onClick={closeMenu}
-          aria-hidden={!isOpen}
-        />
-        <div
-          className={cn(
-            "fixed top-[80px] right-0 w-full h-[calc(100vh-80px)] bg-white z-[60] md:hidden",
-            "shadow-lg transition-transform duration-300 ease-in-out",
-            isOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
-          )}
-        >
-          <div className="flex flex-col py-4 h-full overflow-y-auto">
-            {children}
-          </div>
-        </div>
-      </>
+
+      <MobileOverlay isOpen={isOpen} onClose={closeMenu} />
+      <MobilePanel isOpen={isOpen} variant="menu">
+        {children}
+      </MobilePanel>
     </MobileMenuContext.Provider>
   );
 }

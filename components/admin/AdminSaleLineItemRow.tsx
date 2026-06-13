@@ -4,12 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import Box from "@/components/layout/Box";
 import Input from "@/components/ui/Input";
-import Label from "@/components/ui/Label";
+import FormField from "@/components/ui/FormField";
 import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
 import type { Product } from "@/lib/api";
 import { adminIconTriggerClassName } from "@/lib/admin-interactive-styles";
-import { formFieldClassName } from "@/lib/form-field-classes";
+import Select from "@/components/ui/Select";
 import { getProductTotalStock, orderedSizeEntries } from "@/lib/product-inventory";
 import { cn, formatPrice, generateSlug } from "@/lib/utils";
 
@@ -128,17 +128,13 @@ export default function AdminSaleLineItemRow({
 
       <Box display="grid" cols={4} gap={4}>
         {productSizes.length > 0 && (
-          <Label htmlFor={`sale-size-${item.key}`} display="block" spacing="sm">
-            <Typography variant="body2" mb={1}>
-              Talle *
-            </Typography>
-            <select
+          <FormField htmlFor={`sale-size-${item.key}`} label="Talle" required>
+            <Select
               id={`sale-size-${item.key}`}
               value={item.size}
               onChange={(event) => onChange(item.key, { size: event.target.value })}
               disabled={isSubmitting}
               required
-              className={formFieldClassName}
             >
               <option value="">Seleccionar talle</option>
               {productSizes.map(([optionSize]) => (
@@ -146,14 +142,11 @@ export default function AdminSaleLineItemRow({
                   {optionSize}
                 </option>
               ))}
-            </select>
-          </Label>
+            </Select>
+          </FormField>
         )}
 
-        <Label htmlFor={`sale-stock-${item.key}`} display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Stock disponible
-          </Typography>
+        <FormField htmlFor={`sale-stock-${item.key}`} label="Stock disponible">
           <Input
             id={`sale-stock-${item.key}`}
             type="number"
@@ -161,12 +154,9 @@ export default function AdminSaleLineItemRow({
             readOnly
             disabled
           />
-        </Label>
+        </FormField>
 
-        <Label htmlFor={`sale-quantity-${item.key}`} display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Cantidad *
-          </Typography>
+        <FormField htmlFor={`sale-quantity-${item.key}`} label="Cantidad" required>
           <Input
             id={`sale-quantity-${item.key}`}
             type="number"
@@ -183,12 +173,9 @@ export default function AdminSaleLineItemRow({
             disabled={isSubmitting}
             required
           />
-        </Label>
+        </FormField>
 
-        <Label htmlFor={`sale-unit-price-${item.key}`} display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Precio unitario *
-          </Typography>
+        <FormField htmlFor={`sale-unit-price-${item.key}`} label="Precio unitario" required>
           <Input
             id={`sale-unit-price-${item.key}`}
             type="number"
@@ -205,7 +192,7 @@ export default function AdminSaleLineItemRow({
             disabled={isSubmitting}
             required
           />
-        </Label>
+        </FormField>
       </Box>
 
       <Typography variant="body2" className="text-right">

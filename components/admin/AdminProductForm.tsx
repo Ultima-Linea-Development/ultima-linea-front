@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
-import Label from "@/components/ui/Label";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Div from "@/components/ui/Div";
@@ -22,7 +21,8 @@ import {
   type ProductOptionsResponse,
 } from "@/lib/api";
 import { generateSlug } from "@/lib/utils";
-import { formFieldClassName } from "@/lib/form-field-classes";
+import FormField from "@/components/ui/FormField";
+import Select from "@/components/ui/Select";
 import { validateRequiredProductFields } from "@/lib/product-form-validation";
 import { emptySizeStockRow, rowsToPayload, type SizeStockRow } from "@/lib/product-inventory";
 
@@ -199,10 +199,7 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
   return (
     <Form onSubmit={handleSubmit} spacing="md">
       <Div spacing="md">
-        <Label htmlFor="name" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Nombre *
-          </Typography>
+        <FormField htmlFor="name" label="Nombre" required>
           <Input
             id="name"
             type="text"
@@ -212,21 +209,18 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
             placeholder="Nombre del producto"
             disabled={isSubmitting}
           />
-        </Label>
+        </FormField>
       </Div>
 
       <Div spacing="md">
-        <Label htmlFor="description" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Descripción
-          </Typography>
+        <FormField htmlFor="description" label="Descripción">
           <Textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={isSubmitting}
           />
-        </Label>
+        </FormField>
       </Div>
 
       <Box display="flex" gap="4" className="flex-wrap">
@@ -260,10 +254,7 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
 
       <Box display="flex" gap="4" className="flex-wrap">
         <Div spacing="md" className="flex-1 min-w-[120px]">
-          <Label htmlFor="season" display="block" spacing="sm">
-            <Typography variant="body2" mb={1}>
-              Temporada *
-            </Typography>
+          <FormField htmlFor="season" label="Temporada" required>
             <Input
               id="season"
               type="text"
@@ -273,19 +264,15 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
               required
               disabled={isSubmitting}
             />
-          </Label>
+          </FormField>
         </Div>
         <Div spacing="md" className="flex-1 min-w-[120px]">
-          <Label htmlFor="category" display="block" spacing="sm">
-            <Typography variant="body2" mb={1}>
-              Categoría *
-            </Typography>
-            <select
+          <FormField htmlFor="category" label="Categoría" required>
+            <Select
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value as CreateProductRequest["category"])}
               required
-              className={formFieldClassName}
               disabled={isSubmitting}
             >
               {CATEGORY_OPTIONS.map((opt) => (
@@ -293,17 +280,14 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
                   {opt.label}
                 </option>
               ))}
-            </select>
-          </Label>
+            </Select>
+          </FormField>
         </Div>
       </Box>
 
       <Box display="flex" gap="4" className="flex-wrap">
         <Div spacing="md" className="flex-1 min-w-[120px]">
-          <Label htmlFor="price" display="block" spacing="sm">
-            <Typography variant="body2" mb={1}>
-              Precio *
-            </Typography>
+          <FormField htmlFor="price" label="Precio" required>
             <Input
               id="price"
               type="number"
@@ -314,7 +298,7 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
               placeholder="50000"
               disabled={isSubmitting}
             />
-          </Label>
+          </FormField>
         </Div>
       </Box>
 
@@ -330,10 +314,9 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
       </Div>
 
       <Div spacing="md" className="space-y-2">
-        <Typography variant="body2" mb={1}>
-          Imágenes del producto *
-        </Typography>
-        <ImageUploadDropzone files={imageFiles} onFilesChange={setImageFiles} />
+        <FormField label="Imágenes del producto" required>
+          <ImageUploadDropzone files={imageFiles} onFilesChange={setImageFiles} />
+        </FormField>
       </Div>
 
       {error && (

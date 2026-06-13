@@ -8,7 +8,7 @@ import Typography from "@/components/ui/Typography";
 import { Button } from "@/components/ui/button";
 import Input, { InputAdornment } from "@/components/ui/Input";
 import Form from "@/components/ui/Form";
-import Label from "@/components/ui/Label";
+import FormField from "@/components/ui/FormField";
 import Div from "@/components/ui/Div";
 import Alert from "@/components/ui/Alert";
 import Icon from "@/components/ui/Icons";
@@ -101,10 +101,7 @@ export default function AdminOnboardingPage() {
 
           <Form onSubmit={handleSubmit} spacing="md" mt={4}>
             <Div spacing="md">
-              <Label htmlFor="password" display="block" spacing="sm">
-                <Typography variant="body2" mb={1}>
-                  Nueva contraseña
-                </Typography>
+              <FormField htmlFor="password" label="Nueva contraseña">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -127,14 +124,11 @@ export default function AdminOnboardingPage() {
                     </InputAdornment>
                   }
                 />
-              </Label>
+              </FormField>
             </Div>
 
             <Div spacing="md">
-              <Label htmlFor="confirmPassword" display="block" spacing="sm">
-                <Typography variant="body2" mb={1}>
-                  Confirmar contraseña
-                </Typography>
+              <FormField htmlFor="confirmPassword" label="Confirmar contraseña">
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
@@ -159,14 +153,11 @@ export default function AdminOnboardingPage() {
                     </InputAdornment>
                   }
                 />
-              </Label>
+              </FormField>
             </Div>
 
             <Div spacing="md">
-              <Label htmlFor="phone" display="block" spacing="sm">
-                <Typography variant="body2" mb={1}>
-                  Teléfono
-                </Typography>
+              <FormField htmlFor="phone" label="Teléfono">
                 <Input
                   id="phone"
                   type="tel"
@@ -176,7 +167,7 @@ export default function AdminOnboardingPage() {
                   width="full"
                   disabled={loading}
                 />
-              </Label>
+              </FormField>
             </Div>
 
             <Alert

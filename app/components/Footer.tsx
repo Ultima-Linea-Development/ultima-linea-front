@@ -1,6 +1,7 @@
 import Container from "@/components/layout/Container";
 import Box from "@/components/layout/Box";
 import FooterLink from "@/components/navigation/FooterLink";
+import SocialIconLink from "@/components/navigation/SocialIconLink";
 import Typography from "@/components/ui/Typography";
 import Logo from "@/components/brand/Logo";
 import Footer from "@/components/ui/Footer";
@@ -17,10 +18,6 @@ import { INSTAGRAM_URL } from "@/lib/social";
 
 const linkDark =
   "text-zinc-300 no-underline transition-colors hover:text-white";
-
-/** Misma presentación que el icono de Instagram */
-const socialIconLinkClass =
-  "inline-flex text-white transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
 export default function FooterComponent() {
   return (
@@ -60,30 +57,22 @@ export default function FooterComponent() {
             <Typography variant="h6" mb={2} className="text-white uppercase">
               Contacto
             </Typography>
-            <Link
+            <SocialIconLink
               href={WHATSAPP_CONSULT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
               aria-label="WhatsApp Última Línea"
-              className={socialIconLinkClass}
-            >
-              <FaWhatsapp className="size-7" aria-hidden />
-            </Link>
+              icon={<FaWhatsapp className="size-7" aria-hidden />}
+            />
           </Box>
 
           <Box display="flex" direction="col" gap="3">
             <Typography variant="h6" mb={2} className="text-white uppercase">
               Síguenos
             </Typography>
-            <a
+            <SocialIconLink
               href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
               aria-label="Instagram Última Línea"
-              className={socialIconLinkClass}
-            >
-              <FaInstagram className="size-7" aria-hidden />
-            </a>
+              icon={<FaInstagram className="size-7" aria-hidden />}
+            />
           </Box>
 
           <Box display="flex" direction="col" gap="3">

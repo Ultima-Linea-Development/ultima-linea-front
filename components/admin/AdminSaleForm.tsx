@@ -4,7 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
 import Input from "@/components/ui/Input";
-import Label from "@/components/ui/Label";
+import FormField from "@/components/ui/FormField";
 import Textarea from "@/components/ui/Textarea";
 import Typography from "@/components/ui/Typography";
 import { Button } from "@/components/ui/button";
@@ -224,10 +224,7 @@ export default function AdminSaleForm({
         disabled={isSubmitting}
       />
 
-      <Label htmlFor="sale-transfer-alias" display="block" spacing="sm">
-        <Typography variant="body2" mb={1}>
-          Alias de quien transfirió
-        </Typography>
+      <FormField htmlFor="sale-transfer-alias" label="Alias de quien transfirió">
         <Input
           id="sale-transfer-alias"
           value={transferAlias}
@@ -235,12 +232,9 @@ export default function AdminSaleForm({
           placeholder="Opcional"
           disabled={isSubmitting}
         />
-      </Label>
+      </FormField>
 
-      <Label htmlFor="sale-description" display="block" spacing="sm">
-        <Typography variant="body2" mb={1}>
-          Descripción
-        </Typography>
+      <FormField htmlFor="sale-description" label="Descripción">
         <Textarea
           id="sale-description"
           value={description}
@@ -249,7 +243,7 @@ export default function AdminSaleForm({
           disabled={isSubmitting}
           rows={3}
         />
-      </Label>
+      </FormField>
 
       {lineItems.length > 0 && (
         <Typography variant="body2" className="text-right font-medium">

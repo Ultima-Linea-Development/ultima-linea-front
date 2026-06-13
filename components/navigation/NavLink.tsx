@@ -37,7 +37,7 @@ export default function NavLink({
         mobile ? "h-auto py-3 w-full justify-between" : "h-full",
         "no-underline hover:no-underline hover:bg-transparent",
         !mobile && "after:absolute after:bottom-[-1px] after:left-0 after:right-0 after:h-[2px] after:bg-foreground after:scale-x-0 after:transition-transform after:origin-left after:z-20 hover:after:scale-x-100",
-        "[font-family:var(--font-archivo-black)]"
+        "[font-family:var(--font-heading)]"
       )}
     >
       <span>{children}</span>

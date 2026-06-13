@@ -8,7 +8,7 @@ import Typography from "@/components/ui/Typography";
 import { Button } from "@/components/ui/button";
 import Input, { InputAdornment } from "@/components/ui/Input";
 import Form from "@/components/ui/Form";
-import Label from "@/components/ui/Label";
+import FormField from "@/components/ui/FormField";
 import Div from "@/components/ui/Div";
 import Alert from "@/components/ui/Alert";
 import Icon from "@/components/ui/Icons";
@@ -67,10 +67,7 @@ export default function LoginPage() {
 
           <Form onSubmit={handleSubmit} spacing="md" mt={4}>
             <Div spacing="md">
-              <Label htmlFor="email" display="block" spacing="sm">
-                <Typography variant="body2" mb={1}>
-                  Email
-                </Typography>
+              <FormField htmlFor="email" label="Email">
                 <Input
                   id="email"
                   type="email"
@@ -79,14 +76,11 @@ export default function LoginPage() {
                   required
                   placeholder="admin@example.com"
                 />
-              </Label>
+              </FormField>
             </Div>
 
             <Div spacing="md">
-              <Label htmlFor="password" display="block" spacing="sm">
-                <Typography variant="body2" mb={1}>
-                  Contraseña
-                </Typography>
+              <FormField htmlFor="password" label="Contraseña">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -109,7 +103,7 @@ export default function LoginPage() {
                     </InputAdornment>
                   }
                 />
-              </Label>
+              </FormField>
             </Div>
 
             <Alert

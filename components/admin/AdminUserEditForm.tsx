@@ -4,13 +4,13 @@ import { FormEvent, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
 import Input from "@/components/ui/Input";
-import Label from "@/components/ui/Label";
 import Div from "@/components/ui/Div";
 import Typography from "@/components/ui/Typography";
 import { InlineAlert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
+import FormField from "@/components/ui/FormField";
+import Select from "@/components/ui/Select";
 import type { AdminUser, UpdateUserRequest, UserRole } from "@/lib/api";
-import { formFieldClassName } from "@/lib/form-field-classes";
 import { ROLES, USER_ROLE_OPTIONS } from "@/lib/roles";
 
 type AdminUserEditFormProps = {
@@ -93,10 +93,7 @@ export default function AdminUserEditForm({
   return (
     <Form onSubmit={handleSubmit} spacing="md">
       <Div spacing="md">
-        <Label htmlFor="edit-user-email" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Email *
-          </Typography>
+        <FormField htmlFor="edit-user-email" label="Email" required>
           <Input
             id="edit-user-email"
             type="email"
@@ -105,14 +102,11 @@ export default function AdminUserEditForm({
             disabled={isBusy}
             required
           />
-        </Label>
+        </FormField>
       </Div>
 
       <Box display="grid" cols={2} gap={4}>
-        <Label htmlFor="edit-user-first-name" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Nombre *
-          </Typography>
+        <FormField htmlFor="edit-user-first-name" label="Nombre" required>
           <Input
             id="edit-user-first-name"
             value={firstName}
@@ -120,12 +114,9 @@ export default function AdminUserEditForm({
             disabled={isBusy}
             required
           />
-        </Label>
+        </FormField>
 
-        <Label htmlFor="edit-user-last-name" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Apellido *
-          </Typography>
+        <FormField htmlFor="edit-user-last-name" label="Apellido" required>
           <Input
             id="edit-user-last-name"
             value={lastName}
@@ -133,14 +124,11 @@ export default function AdminUserEditForm({
             disabled={isBusy}
             required
           />
-        </Label>
+        </FormField>
       </Box>
 
       <Div spacing="md">
-        <Label htmlFor="edit-user-phone" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Teléfono
-          </Typography>
+        <FormField htmlFor="edit-user-phone" label="Teléfono">
           <Input
             id="edit-user-phone"
             type="tel"
@@ -149,58 +137,53 @@ export default function AdminUserEditForm({
             disabled={isBusy}
             placeholder="Opcional"
           />
-        </Label>
+        </FormField>
       </Div>
 
       <Div spacing="md">
-        <Label htmlFor="edit-user-role" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Rol *
-          </Typography>
-          <select
+        <FormField htmlFor="edit-user-role" label="Rol" required>
+          <Select
             id="edit-user-role"
             value={role}
             onChange={(event) => setRole(event.target.value as UpdateUserRequest["role"])}
             disabled={isBusy}
             required
-            className={formFieldClassName}
           >
             {USER_ROLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
-          </select>
-        </Label>
+          </Select>
+        </FormField>
       </Div>
 
       <Div spacing="md">
-        <Typography variant="body2" mb={1}>
-          Contraseña
-        </Typography>
-        {mustChangePassword ? (
-          <Typography variant="body2" className="text-muted-foreground">
-            El usuario deberá definir una nueva contraseña al iniciar sesión.
-          </Typography>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleRequestPasswordChange}
-            disabled={isBusy || !onRequestPasswordChange}
-          >
-            {isRequestingPasswordChange
-              ? "Solicitando..."
-              : "Solicitar cambio de contraseña"}
-          </Button>
-        )}
-        {passwordChangeError ? (
-          <InlineAlert variant="destructive">
-            <Typography variant="body2" color="destructive">
-              {passwordChangeError}
+        <FormField label="Contraseña">
+          {mustChangePassword ? (
+            <Typography variant="body2" className="text-muted-foreground">
+              El usuario deberá definir una nueva contraseña al iniciar sesión.
             </Typography>
-          </InlineAlert>
-        ) : null}
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleRequestPasswordChange}
+              disabled={isBusy || !onRequestPasswordChange}
+            >
+              {isRequestingPasswordChange
+                ? "Solicitando..."
+                : "Solicitar cambio de contraseña"}
+            </Button>
+          )}
+          {passwordChangeError ? (
+            <InlineAlert variant="destructive">
+              <Typography variant="body2" color="destructive">
+                {passwordChangeError}
+              </Typography>
+            </InlineAlert>
+          ) : null}
+        </FormField>
       </Div>
 
       {displayError && (

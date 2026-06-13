@@ -4,10 +4,9 @@ import { useMemo } from "react";
 import Box from "@/components/layout/Box";
 import AdminSaleDateField from "@/components/admin/AdminSaleDateField";
 import Input from "@/components/ui/Input";
-import Label from "@/components/ui/Label";
-import Typography from "@/components/ui/Typography";
+import FormField from "@/components/ui/FormField";
+import Select from "@/components/ui/Select";
 import type { ExternalSeller, SaleAssignableUser } from "@/lib/api";
-import { formFieldClassName } from "@/lib/form-field-classes";
 import {
   NEW_EXTERNAL_SELLER_VALUE,
   type SaleSellerFormValue,
@@ -60,10 +59,12 @@ export default function AdminSaleSellerField({
     <Box display="flex" direction="col" gap="3" className="w-full min-w-0">
       <div className="grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         <div className="min-w-0 w-full">
-          <Label htmlFor={saleDateId} display="block" spacing="sm" className={fieldLabelClassName}>
-            <Typography variant="body2" mb={1}>
-              Fecha de venta *
-            </Typography>
+          <FormField
+            htmlFor={saleDateId}
+            label="Fecha de venta"
+            required
+            className={fieldLabelClassName}
+          >
             <AdminSaleDateField
               id={saleDateId}
               value={saleDate}
@@ -71,15 +72,17 @@ export default function AdminSaleSellerField({
               disabled={disabled}
               required
             />
-          </Label>
+          </FormField>
         </div>
 
         <div className="min-w-0 w-full">
-          <Label htmlFor="sale-seller-type" display="block" spacing="sm" className={fieldLabelClassName}>
-            <Typography variant="body2" mb={1}>
-              Vendedor *
-            </Typography>
-            <select
+          <FormField
+            htmlFor="sale-seller-type"
+            label="Vendedor"
+            required
+            className={fieldLabelClassName}
+          >
+            <Select
               id="sale-seller-type"
               value={value.sellerType}
               onChange={(event) => {
@@ -94,21 +97,22 @@ export default function AdminSaleSellerField({
               }}
               disabled={disabled}
               required
-              className={formFieldClassName}
             >
               <option value="internal">Usuario del sistema</option>
               <option value="external">Vendedor externo</option>
-            </select>
-          </Label>
+            </Select>
+          </FormField>
         </div>
 
         {showInternalAssignee && (
           <div className="min-w-0 w-full">
-            <Label htmlFor="sale-internal-seller" display="block" spacing="sm" className={fieldLabelClassName}>
-              <Typography variant="body2" mb={1}>
-                Usuario asignado *
-              </Typography>
-              <select
+            <FormField
+              htmlFor="sale-internal-seller"
+              label="Usuario asignado"
+              required
+              className={fieldLabelClassName}
+            >
+              <Select
                 id="sale-internal-seller"
                 value={value.internalUserId}
                 onChange={(event) =>
@@ -119,25 +123,26 @@ export default function AdminSaleSellerField({
                 }
                 disabled={disabled || isSelfOnlyAssignee}
                 required
-                className={formFieldClassName}
               >
                 {internalSellerOptions.map((user) => (
                   <option key={user.id} value={user.id}>
                     {formatAssignableUserLabel(user)}
                   </option>
                 ))}
-              </select>
-            </Label>
+              </Select>
+            </FormField>
           </div>
         )}
 
         {showExternalPicker && (
           <div className="min-w-0 w-full">
-            <Label htmlFor="sale-external-seller" display="block" spacing="sm" className={fieldLabelClassName}>
-              <Typography variant="body2" mb={1}>
-                Vendedor externo *
-              </Typography>
-              <select
+            <FormField
+              htmlFor="sale-external-seller"
+              label="Vendedor externo"
+              required
+              className={fieldLabelClassName}
+            >
+              <Select
                 id="sale-external-seller"
                 value={value.externalSellerId || NEW_EXTERNAL_SELLER_VALUE}
                 onChange={(event) => {
@@ -151,7 +156,6 @@ export default function AdminSaleSellerField({
                 }}
                 disabled={disabled}
                 required
-                className={formFieldClassName}
               >
                 {externalSellers.map((seller) => (
                   <option key={seller.id} value={seller.id}>
@@ -159,17 +163,19 @@ export default function AdminSaleSellerField({
                   </option>
                 ))}
                 <option value={NEW_EXTERNAL_SELLER_VALUE}>Agregar nuevo...</option>
-              </select>
-            </Label>
+              </Select>
+            </FormField>
           </div>
         )}
       </div>
 
       {showNewExternalName && (
-        <Label htmlFor="sale-external-seller-name" display="block" spacing="sm" className={fieldLabelClassName}>
-          <Typography variant="body2" mb={1}>
-            Nombre del vendedor *
-          </Typography>
+        <FormField
+          htmlFor="sale-external-seller-name"
+          label="Nombre del vendedor"
+          required
+          className={fieldLabelClassName}
+        >
           <Input
             id="sale-external-seller-name"
             value={value.externalSellerName}
@@ -184,7 +190,7 @@ export default function AdminSaleSellerField({
             disabled={disabled}
             required
           />
-        </Label>
+        </FormField>
       )}
     </Box>
   );

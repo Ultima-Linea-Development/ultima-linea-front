@@ -7,6 +7,7 @@ import Input from "@/components/ui/Input";
 import Form from "@/components/ui/Form";
 import Div from "@/components/ui/Div";
 import Box from "@/components/layout/Box";
+import ClearIconButton from "@/components/ui/ClearIconButton";
 import { cn } from "@/lib/utils";
 
 type SearchInputProps = {
@@ -40,15 +41,10 @@ export default function SearchInput({ className, onBlur, onSubmit }: SearchInput
             style={{ paddingRight: query ? "5rem" : "2.75rem" }}
           />
           {query && (
-            <button
-              type="button"
-              className="absolute right-10 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 text-gray-500 transition-colors hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              aria-label="Limpiar búsqueda"
-              onMouseDown={(e) => e.preventDefault()}
+            <ClearIconButton
+              className="absolute right-10 top-1/2 -translate-y-1/2"
               onClick={() => setQuery("")}
-            >
-              <Icon name="close" size={20} />
-            </button>
+            />
           )}
           <button
             type="submit"

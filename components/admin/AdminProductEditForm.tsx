@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import Form from "@/components/ui/Form";
+import FormField from "@/components/ui/FormField";
 import Label from "@/components/ui/Label";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
@@ -16,7 +17,7 @@ import ProductOptionSelect from "@/components/admin/ProductOptionSelect";
 import type { Product, ProductOptionsResponse, UpdateProductRequest } from "@/lib/api";
 import { adminUploadApi, productsApi } from "@/lib/api";
 import { generateSlug, normalizeShirtType, type ShirtType } from "@/lib/utils";
-import { formFieldClassName } from "@/lib/form-field-classes";
+import Select from "@/components/ui/Select";
 import { validateRequiredProductFields } from "@/lib/product-form-validation";
 import {
   productToRows,
@@ -214,10 +215,7 @@ export default function AdminProductEditForm({
     <Box display="flex" direction="col" gap="4">
       <Form onSubmit={handleSubmit} spacing="md">
         <Div spacing="md">
-          <Label htmlFor="edit-name" display="block" spacing="sm">
-            <Typography variant="body2" mb={1}>
-              Nombre *
-            </Typography>
+          <FormField htmlFor="edit-name" label="Nombre" required>
             <Input
               id="edit-name"
               type="text"
@@ -225,20 +223,17 @@ export default function AdminProductEditForm({
               onChange={(e) => setName(e.target.value)}
               required
             />
-          </Label>
+          </FormField>
         </Div>
 
         <Div spacing="md">
-          <Label htmlFor="edit-description" display="block" spacing="sm">
-            <Typography variant="body2" mb={1}>
-              Descripción
-            </Typography>
+          <FormField htmlFor="edit-description" label="Descripción">
             <Textarea
               id="edit-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
-          </Label>
+          </FormField>
         </Div>
 
         <Box display="flex" gap="4" className="flex-wrap">
@@ -274,10 +269,7 @@ export default function AdminProductEditForm({
 
         <Box display="flex" gap="4" className="flex-wrap">
           <Div spacing="md" className="flex-1 min-w-[120px]">
-            <Label htmlFor="edit-season" display="block" spacing="sm">
-              <Typography variant="body2" mb={1}>
-                Temporada *
-              </Typography>
+            <FormField htmlFor="edit-season" label="Temporada" required>
               <Input
                 id="edit-season"
                 type="text"
@@ -286,56 +278,45 @@ export default function AdminProductEditForm({
                 placeholder="24/25"
                 required
               />
-            </Label>
+            </FormField>
           </Div>
           <Div spacing="md" className="flex-1 min-w-[120px]">
-            <Label htmlFor="edit-category" display="block" spacing="sm">
-              <Typography variant="body2" mb={1}>
-                Categoría *
-              </Typography>
-              <select
+            <FormField htmlFor="edit-category" label="Categoría" required>
+              <Select
                 id="edit-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as Product["category"])}
                 required
-                className={formFieldClassName}
               >
                 {CATEGORY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
-              </select>
-            </Label>
+              </Select>
+            </FormField>
           </Div>
           <Div spacing="md" className="flex-1 min-w-[120px]">
-            <Label htmlFor="edit-shirt-type" display="block" spacing="sm">
-              <Typography variant="body2" mb={1}>
-                Tipo *
-              </Typography>
-              <select
+            <FormField htmlFor="edit-shirt-type" label="Tipo" required>
+              <Select
                 id="edit-shirt-type"
                 value={shirtType}
                 onChange={(e) => setShirtType(e.target.value as ShirtType)}
                 required
-                className={formFieldClassName}
               >
                 {SHIRT_TYPE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
-              </select>
-            </Label>
+              </Select>
+            </FormField>
           </Div>
         </Box>
 
         <Box display="flex" gap="4" className="flex-wrap items-end">
           <Div spacing="md" className="flex-1 min-w-[120px]">
-            <Label htmlFor="edit-price" display="block" spacing="sm">
-              <Typography variant="body2" mb={1}>
-                Precio *
-              </Typography>
+            <FormField htmlFor="edit-price" label="Precio" required>
               <Input
                 id="edit-price"
                 type="number"
@@ -344,7 +325,7 @@ export default function AdminProductEditForm({
                 onChange={(e) => setPrice(e.target.value)}
                 required
               />
-            </Label>
+            </FormField>
           </Div>
           <Div spacing="md" className="flex items-center gap-2 pb-2">
             <input
@@ -372,37 +353,35 @@ export default function AdminProductEditForm({
         </Div>
 
         <Div spacing="md">
-          <Typography variant="body2" mb={1}>
-            Imágenes actuales
-          </Typography>
-          {currentImageUrls.length === 0 && newFiles.length === 0 ? (
-            <Typography variant="body2" color="muted">
-              No hay imágenes. Agregá nuevas abajo.
-            </Typography>
-          ) : (
-            <>
-              {currentImageUrls.length > 0 && (
-                <>
-                  <Typography variant="caption" color="muted" mb={1}>
-                    Arrastrá las imágenes para cambiar el orden de aparición.
-                  </Typography>
-                  <SortableImageGrid
-                    items={currentImageItems}
-                    onReorder={handleCurrentImagesReorder}
-                    onRemove={removeCurrentImage}
-                    showOrderBadge
-                  />
-                </>
-              )}
-            </>
-          )}
+          <FormField label="Imágenes actuales">
+            {currentImageUrls.length === 0 && newFiles.length === 0 ? (
+              <Typography variant="body2" color="muted">
+                No hay imágenes. Agregá nuevas abajo.
+              </Typography>
+            ) : (
+              <>
+                {currentImageUrls.length > 0 && (
+                  <>
+                    <Typography variant="caption" color="muted" mb={1}>
+                      Arrastrá las imágenes para cambiar el orden de aparición.
+                    </Typography>
+                    <SortableImageGrid
+                      items={currentImageItems}
+                      onReorder={handleCurrentImagesReorder}
+                      onRemove={removeCurrentImage}
+                      showOrderBadge
+                    />
+                  </>
+                )}
+              </>
+            )}
+          </FormField>
         </Div>
 
         <Div spacing="md">
-          <Typography variant="body2" mb={1}>
-            Agregar o reemplazar imágenes *
-          </Typography>
-          <ImageUploadDropzone files={newFiles} onFilesChange={setNewFiles} />
+          <FormField label="Agregar o reemplazar imágenes" required>
+            <ImageUploadDropzone files={newFiles} onFilesChange={setNewFiles} />
+          </FormField>
         </Div>
 
         {(error || fieldError || imageError || inventoryError) && (

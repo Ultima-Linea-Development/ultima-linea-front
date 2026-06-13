@@ -1,3 +1,4 @@
+import { clearIconButtonClassName } from "@/lib/interactive-styles";
 import { cn } from "@/lib/utils";
 
 export const ADMIN_INTERACTIVE_TRANSITION = "transition-colors";
@@ -40,8 +41,6 @@ export const adminIconTriggerClassName = cn(
 );
 
 export const adminClearIconButtonClassName = cn(
-  "cursor-pointer rounded-sm p-1 text-gray-500",
-  ADMIN_INTERACTIVE_TRANSITION,
-  "hover:bg-gray-200 hover:text-gray-700",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+  clearIconButtonClassName,
+  ADMIN_INTERACTIVE_TRANSITION
 );

@@ -86,9 +86,13 @@ export default function ProductFeatureHighlights({
                   <span className="break-words text-xs font-normal leading-tight text-muted-foreground sm:text-[13px]">
                     {label}
                   </span>
-                  <span className="break-words text-xs font-bold uppercase leading-snug tracking-tight text-foreground [font-family:var(--font-archivo-black)] sm:text-sm">
+                  <Typography
+                    variant="small"
+                    uppercase
+                    className="font-bold leading-snug tracking-tight sm:text-sm"
+                  >
                     {value}
-                  </span>
+                  </Typography>
                 </div>
               </Link>
             </li>

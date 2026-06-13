@@ -5,7 +5,7 @@ import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
 import AdminSaleSellerField from "@/components/admin/AdminSaleSellerField";
 import Input from "@/components/ui/Input";
-import Label from "@/components/ui/Label";
+import FormField from "@/components/ui/FormField";
 import Textarea from "@/components/ui/Textarea";
 import Div from "@/components/ui/Div";
 import Typography from "@/components/ui/Typography";
@@ -122,22 +122,21 @@ export default function AdminSaleEditForm({
   return (
     <Form onSubmit={handleSubmit} spacing="md">
       <Div spacing="md">
-        <Typography variant="body2" mb={1}>
-          Productos
-        </Typography>
-        <Box display="flex" direction="col" gap="2">
-          {lineItems.map((item, index) => (
-            <Typography key={`${item.product_id}-${item.size}-${index}`} variant="body2" className="text-muted-foreground">
-              {item.product_name}
-              {item.size ? ` · Talle ${item.size}` : ""}
-              {" · "}
-              {item.quantity} x {formatPrice(item.unit_price)} = {formatPrice(item.total)}
-            </Typography>
-          ))}
-        </Box>
-        <Typography variant="body2" className="mt-2">
-          Total: {formatPrice(sale.total)}
-        </Typography>
+        <FormField label="Productos">
+          <Box display="flex" direction="col" gap="2">
+            {lineItems.map((item, index) => (
+              <Typography key={`${item.product_id}-${item.size}-${index}`} variant="body2" className="text-muted-foreground">
+                {item.product_name}
+                {item.size ? ` · Talle ${item.size}` : ""}
+                {" · "}
+                {item.quantity} x {formatPrice(item.unit_price)} = {formatPrice(item.total)}
+              </Typography>
+            ))}
+          </Box>
+          <Typography variant="body2" className="mt-2">
+            Total: {formatPrice(sale.total)}
+          </Typography>
+        </FormField>
       </Div>
 
       <AdminSaleSellerField
@@ -153,10 +152,7 @@ export default function AdminSaleEditForm({
         disabled={isSubmitting}
       />
 
-      <Label htmlFor="edit-sale-transfer-alias" display="block" spacing="sm">
-        <Typography variant="body2" mb={1}>
-          Alias de quien transfirió
-        </Typography>
+      <FormField htmlFor="edit-sale-transfer-alias" label="Alias de quien transfirió">
         <Input
           id="edit-sale-transfer-alias"
           value={transferAlias}
@@ -164,12 +160,9 @@ export default function AdminSaleEditForm({
           placeholder="Opcional"
           disabled={isSubmitting}
         />
-      </Label>
+      </FormField>
 
-      <Label htmlFor="edit-sale-description" display="block" spacing="sm">
-        <Typography variant="body2" mb={1}>
-          Descripción
-        </Typography>
+      <FormField htmlFor="edit-sale-description" label="Descripción">
         <Textarea
           id="edit-sale-description"
           value={description}
@@ -178,7 +171,7 @@ export default function AdminSaleEditForm({
           disabled={isSubmitting}
           rows={3}
         />
-      </Label>
+      </FormField>
 
       {displayError && (
         <InlineAlert variant="destructive">

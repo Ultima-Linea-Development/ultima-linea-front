@@ -9,6 +9,7 @@ import {
   WHATSAPP_DISPLAY_NUMBER,
   WHATSAPP_TEL_HREF,
 } from "@/lib/whatsapp";
+import SocialIconLink from "@/components/navigation/SocialIconLink";
 import { INSTAGRAM_URL } from "@/lib/social";
 import { FaInstagram } from "react-icons/fa";
 import { FaWhatsapp } from "react-icons/fa6";
@@ -67,20 +68,13 @@ export default function ContactPage() {
             <Typography variant="h5" mb={3}>
               Redes sociales
             </Typography>
-            <Link
+            <SocialIconLink
               href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 text-base transition-opacity hover:opacity-80"
               aria-label="Instagram Última Línea"
-            >
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black">
-                <FaInstagram className="h-5 w-5" aria-hidden />
-              </span>
-              <span className="underline-offset-4 hover:underline">
-                @ultimalineastore
-              </span>
-            </Link>
+              variant="withLabel"
+              icon={<FaInstagram className="h-5 w-5" aria-hidden />}
+              label="@ultimalineastore"
+            />
           </div>
         </Box>
       </section>

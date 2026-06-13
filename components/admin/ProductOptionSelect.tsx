@@ -3,9 +3,8 @@
 import { useMemo } from "react";
 import Div from "@/components/ui/Div";
 import Input from "@/components/ui/Input";
-import Label from "@/components/ui/Label";
-import Typography from "@/components/ui/Typography";
-import { formFieldClassName } from "@/lib/form-field-classes";
+import FormField from "@/components/ui/FormField";
+import Select from "@/components/ui/Select";
 
 const CUSTOM_OPTION_VALUE = "__custom__";
 
@@ -54,12 +53,8 @@ export default function ProductOptionSelect({
   }, [options]);
 
   return (
-    <Label htmlFor={id} display="block" spacing="sm">
-      <Typography variant="body2" mb={1}>
-        {label}
-        {required ? " *" : ""}
-      </Typography>
-      <select
+    <FormField htmlFor={id} label={label} required={required}>
+      <Select
         id={id}
         value={isCustom ? CUSTOM_OPTION_VALUE : value}
         onChange={(e) => {
@@ -74,7 +69,6 @@ export default function ProductOptionSelect({
         }}
         disabled={disabled}
         required={required && !isCustom}
-        className={formFieldClassName}
       >
         <option value="">{placeholder}</option>
         {normalizedOptions.map((option) => (
@@ -85,7 +79,7 @@ export default function ProductOptionSelect({
         <option value={CUSTOM_OPTION_VALUE}>
           {customOptionLabel ?? `Nuevo ${label.toLocaleLowerCase()}`}
         </option>
-      </select>
+      </Select>
       {isCustom && (
         <Div mt={2}>
           <Input
@@ -99,6 +93,6 @@ export default function ProductOptionSelect({
           />
         </Div>
       )}
-    </Label>
+    </FormField>
   );
 }

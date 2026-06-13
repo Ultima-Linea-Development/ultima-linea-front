@@ -3,7 +3,6 @@ import ProductCard from "@/components/ui/ProductCard";
 import Typography from "@/components/ui/Typography";
 import Container from "@/components/layout/Container";
 import Div from "@/components/ui/Div";
-import Paragraph from "@/components/ui/Paragraph";
 import { productsApi, type Product } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 
@@ -57,9 +56,9 @@ async function ProductsList() {
     await delay(500);
     return (
       <Div textAlign="center" py={8}>
-        <Paragraph color="muted">
+        <Typography variant="body" color="muted">
           Error al cargar los productos. Por favor, intenta más tarde.
-        </Paragraph>
+        </Typography>
       </Div>
     );
   }
@@ -67,9 +66,9 @@ async function ProductsList() {
   if (response.error || !response.data) {
     return (
       <Div textAlign="center" py={8}>
-        <Paragraph color="muted">
+        <Typography variant="body" color="muted">
           {response.error || "No se pudieron cargar los productos"}
-        </Paragraph>
+        </Typography>
       </Div>
     );
   }
@@ -82,7 +81,7 @@ async function ProductsList() {
   if (activeProducts.length === 0) {
     return (
       <Div textAlign="center" py={8}>
-        <Paragraph color="muted">No hay productos disponibles</Paragraph>
+        <Typography variant="body" color="muted">No hay productos disponibles</Typography>
       </Div>
     );
   }

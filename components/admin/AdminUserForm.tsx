@@ -4,14 +4,14 @@ import { FormEvent, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
 import Input, { InputAdornment } from "@/components/ui/Input";
-import Label from "@/components/ui/Label";
 import Div from "@/components/ui/Div";
 import Typography from "@/components/ui/Typography";
 import { InlineAlert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/Icons";
+import FormField from "@/components/ui/FormField";
+import Select from "@/components/ui/Select";
 import type { CreateUserRequest } from "@/lib/api";
-import { formFieldClassName } from "@/lib/form-field-classes";
 import { ROLES, USER_ROLE_OPTIONS } from "@/lib/roles";
 
 type AdminUserFormProps = {
@@ -94,10 +94,7 @@ export default function AdminUserForm({
   return (
     <Form onSubmit={handleSubmit} spacing="md">
       <Div spacing="md">
-        <Label htmlFor="user-email" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Email *
-          </Typography>
+        <FormField htmlFor="user-email" label="Email" required>
           <Input
             id="user-email"
             type="email"
@@ -107,14 +104,11 @@ export default function AdminUserForm({
             required
             placeholder="admin@example.com"
           />
-        </Label>
+        </FormField>
       </Div>
 
       <Box display="grid" cols={2} gap={4}>
-        <Label htmlFor="user-first-name" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Nombre *
-          </Typography>
+        <FormField htmlFor="user-first-name" label="Nombre" required>
           <Input
             id="user-first-name"
             value={firstName}
@@ -122,12 +116,9 @@ export default function AdminUserForm({
             disabled={isSubmitting}
             required
           />
-        </Label>
+        </FormField>
 
-        <Label htmlFor="user-last-name" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Apellido *
-          </Typography>
+        <FormField htmlFor="user-last-name" label="Apellido" required>
           <Input
             id="user-last-name"
             value={lastName}
@@ -135,14 +126,11 @@ export default function AdminUserForm({
             disabled={isSubmitting}
             required
           />
-        </Label>
+        </FormField>
       </Box>
 
       <Div spacing="md">
-        <Label htmlFor="user-phone" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Teléfono
-          </Typography>
+        <FormField htmlFor="user-phone" label="Teléfono">
           <Input
             id="user-phone"
             type="tel"
@@ -151,36 +139,29 @@ export default function AdminUserForm({
             disabled={isSubmitting}
             placeholder="Opcional"
           />
-        </Label>
+        </FormField>
       </Div>
 
       <Div spacing="md">
-        <Label htmlFor="user-role" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Rol *
-          </Typography>
-          <select
+        <FormField htmlFor="user-role" label="Rol" required>
+          <Select
             id="user-role"
             value={role}
             onChange={(event) => setRole(event.target.value as CreateUserRequest["role"])}
             disabled={isSubmitting}
             required
-            className={formFieldClassName}
           >
             {USER_ROLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
-          </select>
-        </Label>
+          </Select>
+        </FormField>
       </Div>
 
       <Div spacing="md">
-        <Label htmlFor="user-password" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Contraseña *
-          </Typography>
+        <FormField htmlFor="user-password" label="Contraseña" required>
           <Input
             id="user-password"
             type={showPassword ? "text" : "password"}
@@ -201,14 +182,11 @@ export default function AdminUserForm({
               </InputAdornment>
             }
           />
-        </Label>
+        </FormField>
       </Div>
 
       <Div spacing="md">
-        <Label htmlFor="user-confirm-password" display="block" spacing="sm">
-          <Typography variant="body2" mb={1}>
-            Confirmar contraseña *
-          </Typography>
+        <FormField htmlFor="user-confirm-password" label="Confirmar contraseña" required>
           <Input
             id="user-confirm-password"
             type={showConfirmPassword ? "text" : "password"}
@@ -232,7 +210,7 @@ export default function AdminUserForm({
               </InputAdornment>
             }
           />
-        </Label>
+        </FormField>
       </Div>
 
       {displayError && (

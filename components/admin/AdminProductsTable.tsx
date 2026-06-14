@@ -15,6 +15,7 @@ import {
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_CHECKBOX_COLUMN_CLASS,
   ADMIN_TABLE_TH_CLASS,
+  adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { Product } from "@/lib/api";
 import { formatPrice, generateSlug, cn } from "@/lib/utils";
@@ -148,7 +149,7 @@ export default function AdminProductsTable({
     return (
       <Box
         display="flex"
-        className="md:hidden w-full min-w-0 flex-wrap items-center gap-3 border border-border px-3 py-2.5 sm:px-4 sm:py-3"
+        className="md:hidden w-full min-w-0 flex-wrap items-center gap-3 border border-gray-200 px-3 py-2.5 sm:px-4 sm:py-3"
       >
         {onCategoryFilterChange && (
           <AdminTableColumnFilter
@@ -257,7 +258,7 @@ export default function AdminProductsTable({
         <>
           <AdminTableMobileEmpty message="No hay productos" />
           <AdminTable>
-            <thead className="border-b border-border bg-muted/50">
+            <thead className="bg-muted/50">
               {renderDesktopHeaderRow(true)}
             </thead>
             <tbody>
@@ -271,7 +272,7 @@ export default function AdminProductsTable({
             {onSelectionChange && (
               <Box
                 display="flex"
-                className="items-center gap-3 border-b border-border px-3 py-2.5 bg-muted/30 sm:px-4 sm:py-3"
+                className="items-center gap-3 px-3 py-2.5 bg-muted/30 sm:px-4 sm:py-3"
               >
                 <input
                   type="checkbox"
@@ -283,8 +284,12 @@ export default function AdminProductsTable({
                 <Typography variant="body2">Seleccionar todos</Typography>
               </Box>
             )}
-            {products.map((p) => (
-              <AdminTableMobileCard key={p.id} selected={selectedSet.has(p.id)}>
+            {products.map((p, index) => (
+              <AdminTableMobileCard
+                key={p.id}
+                selected={selectedSet.has(p.id)}
+                stripeIndex={index}
+              >
                 <Box display="flex" justify="between" align="start" gap="2" className="w-full min-w-0">
                   <Box display="flex" align="start" gap="2" className="min-w-0">
                     {onSelectionChange && (
@@ -302,6 +307,7 @@ export default function AdminProductsTable({
                       href={`/product/${(p.slug || generateSlug(p.name))}-${p.id}`}
                       imageClassName="h-9 w-9"
                       className="min-w-0 items-start gap-2"
+                      inactive={!p.is_active}
                     />
                   </Box>
                   <AdminTableMobileActionsMenu actions={getRowActions(p)} />
@@ -326,17 +332,17 @@ export default function AdminProductsTable({
           </AdminTableMobileList>
 
           <AdminTable>
-            <thead className="border-b border-border bg-muted/50">
+            <thead className="bg-muted/50">
               {renderDesktopHeaderRow(true)}
             </thead>
             <tbody>
-              {products.map((p) => (
+              {products.map((p, index) => (
                 <tr
                   key={p.id}
-                  className={cn(
-                    "border-b border-border last:border-b-0 hover:bg-muted/30",
-                    selectedSet.has(p.id) && "bg-muted/50"
-                  )}
+                  className={adminTableRowClassName({
+                    stripeIndex: index,
+                    selected: selectedSet.has(p.id),
+                  })}
                 >
                   {onSelectionChange && (
                     <td className={cn(cellClass, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>
@@ -354,6 +360,7 @@ export default function AdminProductsTable({
                       name={p.name}
                       imageUrl={p.image_urls?.[0]}
                       href={`/product/${(p.slug || generateSlug(p.name))}-${p.id}`}
+                      inactive={!p.is_active}
                     />
                   </td>
                   <td className={cellClass}>

@@ -13,6 +13,7 @@ type AdminTableProductNameProps = {
   onClick?: () => void;
   imageClassName?: string;
   className?: string;
+  inactive?: boolean;
 };
 
 export default function AdminTableProductName({
@@ -22,11 +23,12 @@ export default function AdminTableProductName({
   onClick,
   imageClassName = "h-10 w-10 sm:h-12 sm:w-12",
   className,
+  inactive = false,
 }: AdminTableProductNameProps) {
   const content = (
     <Box display="flex" className={cn("items-center gap-2 sm:gap-3 min-w-0", className)}>
       {imageUrl ? (
-        <div className={cn("relative shrink-0", imageClassName)}>
+        <div className={cn("relative shrink-0 overflow-hidden", imageClassName)}>
           <Image
             src={imageUrl}
             alt=""
@@ -35,6 +37,11 @@ export default function AdminTableProductName({
             sizes="48px"
             unoptimized
           />
+          {inactive ? (
+            <span className="absolute bottom-0 left-0 bg-black/70 px-1 text-[10px] text-white leading-tight">
+              Inactivo
+            </span>
+          ) : null}
         </div>
       ) : (
         <span className="text-muted-foreground text-xs shrink-0 w-10 sm:w-12 text-center">—</span>

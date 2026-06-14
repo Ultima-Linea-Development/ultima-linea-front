@@ -9,9 +9,11 @@ import {
   ADMIN_TABLE_CHECKBOX_COLUMN_CLASS,
   ADMIN_TABLE_PAGE_SIZE,
   ADMIN_TABLE_TH_CLASS,
+  ADMIN_TABLE_OUTER_BORDER_CLASS,
   AdminTable,
   AdminTableMobileCard,
   AdminTableMobileList,
+  adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import { cn } from "@/lib/utils";
 
@@ -121,7 +123,7 @@ function MobileSubtextRow({ staggerIndex }: { staggerIndex?: number }) {
 
 function MobileSalesCardSkeleton({ staggerIndex }: { staggerIndex: number }) {
   return (
-    <AdminTableMobileCard>
+    <AdminTableMobileCard stripeIndex={staggerIndex}>
       <MobileProductHeaderRow staggerIndex={staggerIndex} />
       <MobileSummaryRow staggerIndex={staggerIndex} />
       <MobileSubtextRow staggerIndex={staggerIndex} />
@@ -131,7 +133,7 @@ function MobileSalesCardSkeleton({ staggerIndex }: { staggerIndex: number }) {
 
 function MobileUsersCardSkeleton({ staggerIndex }: { staggerIndex: number }) {
   return (
-    <AdminTableMobileCard>
+    <AdminTableMobileCard stripeIndex={staggerIndex}>
       <MobileTitleActionsHeaderRow staggerIndex={staggerIndex} />
       <MobileSummaryRow staggerIndex={staggerIndex} showRight={false} />
       <MobileSubtextRow staggerIndex={staggerIndex} />
@@ -147,7 +149,7 @@ function MobileProductsCardSkeleton({
   staggerIndex: number;
 }) {
   return (
-    <AdminTableMobileCard>
+    <AdminTableMobileCard stripeIndex={staggerIndex}>
       {showSelection ? (
         <MobileProductHeaderRowWithCheckbox staggerIndex={staggerIndex} />
       ) : (
@@ -186,7 +188,7 @@ function DesktopBodyRow({
   const productColumnIndex = variant === "sales" ? 1 : variant === "products" ? 0 : -1;
 
   return (
-    <tr className="border-b border-border last:border-b-0">
+    <tr className={adminTableRowClassName({ stripeIndex: staggerIndex })}>
       {showSelection ? (
         <td className={cn(ADMIN_TABLE_CELL_CLASS, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>
           <DesktopSkeletonCell>
@@ -258,7 +260,8 @@ export default function AdminTableSkeleton({
         <Box
           display="flex"
           className={cn(
-            "md:hidden w-full min-w-0 flex-wrap items-center gap-3 border border-border px-3 py-2.5 sm:px-4 sm:py-3"
+            "md:hidden w-full min-w-0 flex-wrap items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3",
+            ADMIN_TABLE_OUTER_BORDER_CLASS
           )}
         >
           <AdminLoadingShimmer className="h-8 w-24 rounded-sm" />
@@ -273,7 +276,7 @@ export default function AdminTableSkeleton({
               display="flex"
               align="center"
               gap="3"
-              className="border-b border-border bg-muted/30 px-3 py-2.5 sm:px-4 sm:py-3"
+              className="bg-muted/30 px-3 py-2.5 sm:px-4 sm:py-3"
             >
               <AdminLoadingShimmer className="size-4 shrink-0 rounded-sm" />
               <AdminLoadingShimmer className={cn(SHIMMER_TEXT, "max-w-[8rem]")} />
@@ -283,7 +286,7 @@ export default function AdminTableSkeleton({
       </AdminTableMobileList>
 
       <AdminTable className="overflow-x-hidden" tableClassName="h-auto">
-          <thead className="border-b border-border bg-muted/50">
+          <thead className="bg-muted/50">
             <tr>
               {showSelection ? (
                 <th className={cn(ADMIN_TABLE_TH_CLASS, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>

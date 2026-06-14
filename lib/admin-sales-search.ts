@@ -1,9 +1,9 @@
 import type { Sale } from "@/lib/api";
-import { saleMatchesQuery } from "@/lib/sale-items";
+import { normalizeSaleSearchQuery, saleMatchesQuery } from "@/lib/sale-items";
 import { escapeRegex } from "@/lib/utils";
 
 export function buildAdminSalesSearchTextMatch(query: string): Record<string, unknown> {
-  const pattern = escapeRegex(query);
+  const pattern = escapeRegex(normalizeSaleSearchQuery(query));
   return {
     $or: [
       { product_name: { $regex: pattern, $options: "i" } },

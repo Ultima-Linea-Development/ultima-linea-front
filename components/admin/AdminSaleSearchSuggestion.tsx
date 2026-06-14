@@ -1,6 +1,6 @@
 import Typography from "@/components/ui/Typography";
 import type { Sale } from "@/lib/api";
-import { formatSaleProductsLabel, formatSaleSizesLabel } from "@/lib/sale-items";
+import { getSalePrimaryProductName, formatSaleSizesLabel } from "@/lib/sale-items";
 import { formatPrice } from "@/lib/utils";
 
 type AdminSaleSearchSuggestionProps = {
@@ -12,7 +12,7 @@ export default function AdminSaleSearchSuggestion({ sale }: AdminSaleSearchSugge
     <>
       <span className="min-w-0">
         <Typography variant="body2" as="span">
-          {formatSaleProductsLabel(sale)}
+          {getSalePrimaryProductName(sale)}
         </Typography>
       </span>
       <span className="shrink-0 text-muted-foreground text-xs">

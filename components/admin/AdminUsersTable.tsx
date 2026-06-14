@@ -16,6 +16,7 @@ import {
   ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
+  adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { AdminUser } from "@/lib/api";
 import { formatUserRole } from "@/lib/roles";
@@ -86,7 +87,7 @@ export default function AdminUsersTable({
         <>
           <AdminTableMobileEmpty message="No hay usuarios" />
           <AdminTable>
-            <thead className="border-b border-border bg-muted/50">
+            <thead className="bg-muted/50">
               <tr>
                 <th className={cn(thClass, "w-[16%]")}>
                   <Typography variant="body2">Nombre</Typography>
@@ -118,8 +119,8 @@ export default function AdminUsersTable({
       ) : (
         <>
           <AdminTableMobileList>
-            {users.map((user) => (
-              <AdminTableMobileCard key={user.id}>
+            {users.map((user, index) => (
+              <AdminTableMobileCard key={user.id} stripeIndex={index}>
                 <Box display="flex" justify="between" align="start" gap="2" className="w-full min-w-0">
                   <Typography variant="body2" className="min-w-0 font-medium leading-snug">
                     {formatUserName(user)}
@@ -140,7 +141,7 @@ export default function AdminUsersTable({
           </AdminTableMobileList>
 
           <AdminTable>
-            <thead className="border-b border-border bg-muted/50">
+            <thead className="bg-muted/50">
               <tr>
                 <th className={cn(thClass, "w-[16%]")}>
                   <Typography variant="body2">Nombre</Typography>
@@ -165,10 +166,10 @@ export default function AdminUsersTable({
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {users.map((user, index) => (
                 <tr
                   key={user.id}
-                  className="border-b border-border last:border-b-0 hover:bg-muted/30"
+                  className={adminTableRowClassName({ stripeIndex: index })}
                 >
                   <td className={cellClass}>
                     <Typography variant="body2">{formatUserName(user)}</Typography>

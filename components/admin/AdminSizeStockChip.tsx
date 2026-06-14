@@ -4,6 +4,7 @@ type AdminSizeStockChipProps = {
   size: string;
   stock: number;
   highlighted?: boolean;
+  badgeAriaLabel?: string;
   className?: string;
 };
 
@@ -11,6 +12,7 @@ export default function AdminSizeStockChip({
   size,
   stock,
   highlighted = false,
+  badgeAriaLabel,
   className,
 }: AdminSizeStockChipProps) {
   return (
@@ -25,7 +27,7 @@ export default function AdminSizeStockChip({
       </span>
       <span
         className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-green-100 px-1 text-[10px] font-semibold leading-none text-green-800 tabular-nums"
-        aria-label={`Stock ${stock}`}
+        aria-label={badgeAriaLabel ?? `Stock ${stock}`}
       >
         {stock}
       </span>

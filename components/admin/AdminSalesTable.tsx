@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import AdminTableProductName from "@/components/admin/AdminTableProductName";
+import AdminSaleSizeQuantity from "@/components/admin/AdminSaleSizeQuantity";
 import AdminTableMobileActionsMenu, {
   type AdminTableMobileAction,
 } from "@/components/admin/AdminTableMobileActionsMenu";
@@ -19,13 +20,12 @@ import {
   ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
+  adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { Product, Sale, SaleAssignableUser } from "@/lib/api";
 import {
   formatSaleProductsLabel,
-  formatSaleSizesLabel,
   getSalePrimaryLineItem,
-  getSaleQuantityTotal,
 } from "@/lib/sale-items";
 import { formatSaleDateDisplay } from "@/lib/sale-date";
 import { getSaleSellerLabel } from "@/lib/sale-seller";
@@ -114,7 +114,7 @@ export default function AdminSalesTable({
         <>
           <AdminTableMobileEmpty message="No hay ventas" />
           <AdminTable>
-            <thead className="border-b border-border bg-muted/50">
+            <thead className="bg-muted/50">
               <tr>
                 <th className={cn(thClass, "w-[12%]")}>
                   <Typography variant="body2">Fecha</Typography>
@@ -122,11 +122,8 @@ export default function AdminSalesTable({
                 <th className={cn(thClass, "w-[30%]")}>
                   <Typography variant="body2">Producto</Typography>
                 </th>
-                <th className={cn(thClass, "w-[8%]")}>
-                  <Typography variant="body2">Talle</Typography>
-                </th>
-                <th className={cn(thClass, "w-[8%]")}>
-                  <Typography variant="body2">Cantidad</Typography>
+                <th className={cn(thClass, "w-[16%]")}>
+                  <Typography variant="body2">Talles</Typography>
                 </th>
                 <th className={cn(thClass, "w-[10%]")}>
                   <Typography variant="body2">Total</Typography>
@@ -142,17 +139,17 @@ export default function AdminSalesTable({
               </tr>
             </thead>
             <tbody>
-              <AdminTableEmptyRow colSpan={hasActions ? 7 : 6} message="No hay ventas" />
+              <AdminTableEmptyRow colSpan={hasActions ? 6 : 5} message="No hay ventas" />
             </tbody>
           </AdminTable>
         </>
       ) : (
         <>
           <AdminTableMobileList>
-            {sales.map((sale) => {
+            {sales.map((sale, index) => {
               const primaryItem = getSalePrimaryLineItem(sale);
               return (
-              <AdminTableMobileCard key={sale.id}>
+              <AdminTableMobileCard key={sale.id} stripeIndex={index}>
                 <Box display="flex" justify="between" align="start" gap="2" className="w-full min-w-0">
                   <AdminTableProductName
                     name={formatSaleProductsLabel(sale)}
@@ -174,7 +171,7 @@ export default function AdminSalesTable({
                   right={formatPrice(sale.total)}
                 />
                 <AdminTableMobileSubtext>
-                  Talle {formatSaleSizesLabel(sale)} · Cant. {getSaleQuantityTotal(sale)}
+                  <AdminSaleSizeQuantity sale={sale} className="min-w-0 max-w-none" />
                 </AdminTableMobileSubtext>
               </AdminTableMobileCard>
             );
@@ -182,7 +179,7 @@ export default function AdminSalesTable({
           </AdminTableMobileList>
 
           <AdminTable>
-            <thead className="border-b border-border bg-muted/50">
+            <thead className="bg-muted/50">
               <tr>
                 <th className={cn(thClass, "w-[12%]")}>
                   <Typography variant="body2">Fecha de venta</Typography>
@@ -190,11 +187,8 @@ export default function AdminSalesTable({
                 <th className={cn(thClass, "w-[30%]")}>
                   <Typography variant="body2">Producto</Typography>
                 </th>
-                <th className={cn(thClass, "w-[8%]")}>
-                  <Typography variant="body2">Talle</Typography>
-                </th>
-                <th className={cn(thClass, "w-[8%]")}>
-                  <Typography variant="body2">Cantidad</Typography>
+                <th className={cn(thClass, "w-[16%]")}>
+                  <Typography variant="body2">Talles</Typography>
                 </th>
                 <th className={cn(thClass, "w-[10%]")}>
                   <Typography variant="body2">Total</Typography>
@@ -210,12 +204,12 @@ export default function AdminSalesTable({
               </tr>
             </thead>
             <tbody>
-              {sales.map((sale) => {
+              {sales.map((sale, index) => {
                 const primaryItem = getSalePrimaryLineItem(sale);
                 return (
                 <tr
                   key={sale.id}
-                  className="border-b border-border last:border-b-0 hover:bg-muted/30"
+                  className={adminTableRowClassName({ stripeIndex: index })}
                 >
                   <td className={cellClass}>
                     <Typography variant="body2" className="whitespace-nowrap">
@@ -230,10 +224,7 @@ export default function AdminSalesTable({
                     />
                   </td>
                   <td className={cellClass}>
-                    <Typography variant="body2">{formatSaleSizesLabel(sale)}</Typography>
-                  </td>
-                  <td className={cellClass}>
-                    <Typography variant="body2">{getSaleQuantityTotal(sale)}</Typography>
+                    <AdminSaleSizeQuantity sale={sale} className="w-full max-w-none" />
                   </td>
                   <td className={cellClass}>
                     <span className="whitespace-nowrap">

@@ -20,6 +20,26 @@ export const ADMIN_PAGE_PADDING_CLASS = "w-full px-4 sm:px-6 md:px-0";
 export const ADMIN_TABLE_MODAL_MOBILE_BLEED_CLASS =
   "relative box-border -mx-4 w-[calc(100%+2rem)] max-w-none sm:-mx-6 sm:w-[calc(100%+3rem)] md:mx-0 md:w-full md:max-w-none";
 
+export const ADMIN_TABLE_OUTER_BORDER_CLASS = "border border-gray-200";
+
+export function adminTableRowClassName({
+  stripeIndex,
+  selected = false,
+  className,
+}: {
+  stripeIndex: number;
+  selected?: boolean;
+  className?: string;
+}) {
+  return cn(
+    "hover:bg-gray-200",
+    stripeIndex % 2 === 0 ? "bg-gray-100" : "bg-background",
+    selected && "!bg-gray-200",
+    "[&>td]:bg-inherit",
+    className
+  );
+}
+
 type AdminTableProps = {
   children: ReactNode;
   className?: string;
@@ -30,7 +50,8 @@ export function AdminTable({ children, className, tableClassName }: AdminTablePr
   return (
     <div
       className={cn(
-        "hidden md:flex md:flex-col w-full min-w-0 overflow-x-auto border border-border",
+        "hidden md:flex md:flex-col w-full min-w-0 overflow-x-auto",
+        ADMIN_TABLE_OUTER_BORDER_CLASS,
         className
       )}
     >
@@ -55,7 +76,8 @@ export function AdminTableMobileList({
   return (
     <div
       className={cn(
-        "md:hidden flex w-full min-w-0 max-w-full flex-col border border-border",
+        "md:hidden flex w-full min-w-0 max-w-full flex-col",
+        ADMIN_TABLE_OUTER_BORDER_CLASS,
         bleed === "modal" && ADMIN_TABLE_MODAL_MOBILE_BLEED_CLASS,
         className
       )}
@@ -69,18 +91,20 @@ type AdminTableMobileCardProps = {
   children: ReactNode;
   className?: string;
   selected?: boolean;
+  stripeIndex: number;
 };
 
 export function AdminTableMobileCard({
   children,
   className,
   selected = false,
+  stripeIndex,
 }: AdminTableMobileCardProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 border-b border-border px-3 py-2.5 last:border-b-0 sm:px-4 sm:py-3",
-        selected && "bg-muted/50",
+        adminTableRowClassName({ stripeIndex, selected }),
+        "flex flex-col gap-2 px-3 py-2.5 sm:px-4 sm:py-3",
         className
       )}
     >
@@ -169,7 +193,7 @@ type AdminTableMobileEmptyProps = {
 
 export function AdminTableMobileEmpty({ message }: AdminTableMobileEmptyProps) {
   return (
-    <div className="md:hidden w-full min-w-0 max-w-full border border-border p-8 text-center">
+    <div className={cn("md:hidden w-full min-w-0 max-w-full p-8 text-center", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
       <Typography variant="body2" color="muted">
         {message}
       </Typography>

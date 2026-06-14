@@ -15,6 +15,7 @@ import {
   type UpdateSaleRequest,
 } from "@/lib/api";
 import { filterSalesByQuery } from "@/lib/admin-sales-search";
+import { normalizeSaleSearchQuery } from "@/lib/sale-items";
 import { useAdminSearch } from "@/lib/hooks/use-admin-search";
 import { usePendingDelete } from "@/lib/use-pending-delete";
 
@@ -67,9 +68,16 @@ export function useAdminSalesPanel() {
     clearSearch,
     invalidateSearchCache,
   } = useAdminSearch<Sale>({
-    searchApi: (token, query) => adminSalesApi.search(token, query),
+    searchApi: (token, query) => adminSalesApi.search(token, normalizeSaleSearchQuery(query)),
     filterCached: filterSalesByQuery,
   });
+
+  const applySalesSearchFromQuery = useCallback(
+    (query: string, resetPage?: () => void) => {
+      applySearchFromQuery(normalizeSaleSearchQuery(query), resetPage);
+    },
+    [applySearchFromQuery]
+  );
 
   const loadSaleCatalog = useCallback(async () => {
     const token = getToken();
@@ -343,7 +351,7 @@ export function useAdminSalesPanel() {
     deleteError,
     setDeleteError,
     isDeleteSubmitting,
-    applySearchFromQuery: (query: string) => applySearchFromQuery(query, resetPage),
+    applySearchFromQuery: (query: string) => applySalesSearchFromQuery(query, resetPage),
     clearSearch: () => clearSearch(resetPage),
     handleCreateSale,
     handleSaveEdit,

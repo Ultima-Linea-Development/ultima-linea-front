@@ -11,6 +11,8 @@ import {
   AdminTableMobileList,
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
+  ADMIN_TABLE_OUTER_BORDER_CLASS,
+  adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { Product, Sale, SaleAssignableUser } from "@/lib/api";
 import { getSaleLineItems } from "@/lib/sale-items";
@@ -118,7 +120,10 @@ export default function AdminSaleDetail({
 
       <AdminTableMobileList bleed="modal">
         {lineItems.map((item, index) => (
-          <AdminTableMobileCard key={`${item.product_id}-${item.size}-${index}`}>
+          <AdminTableMobileCard
+            key={`${item.product_id}-${item.size}-${index}`}
+            stripeIndex={index}
+          >
             <Box display="flex" direction="col" gap="3">
               <AdminTableProductName
                 name={item.product_name}
@@ -148,7 +153,7 @@ export default function AdminSaleDetail({
             </Box>
           </AdminTableMobileCard>
         ))}
-        <div className="flex items-center justify-between border-t border-border bg-muted/30 px-4 py-3">
+        <div className="flex items-center justify-between bg-muted/30 px-4 py-3">
           <Typography variant="body2" className="font-medium">
             Total
           </Typography>
@@ -158,9 +163,9 @@ export default function AdminSaleDetail({
         </div>
       </AdminTableMobileList>
 
-      <div className="hidden md:block overflow-x-auto border-y border-border">
+      <div className={cn("hidden md:block overflow-x-auto", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
         <table className="w-full table-fixed text-left text-sm">
-          <thead className="border-b border-border bg-muted/50">
+          <thead className="bg-muted/50">
             <tr>
               <th className={cn(thClass, "w-[40%]")}>
                 <Typography variant="body2">Producto</Typography>
@@ -183,7 +188,7 @@ export default function AdminSaleDetail({
             {lineItems.map((item, index) => (
               <tr
                 key={`${item.product_id}-${item.size}-${index}`}
-                className="border-b border-border last:border-b-0"
+                className={adminTableRowClassName({ stripeIndex: index })}
               >
                 <td className={cn(cellClass, "min-w-0")}>
                   <Box display="flex" direction="col" gap="1" className="min-w-0">
@@ -219,7 +224,7 @@ export default function AdminSaleDetail({
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t border-border bg-muted/30">
+            <tr className="bg-muted/30">
               <td colSpan={4} className={cn(cellClass, "text-right")}>
                 <Typography variant="body2" className="font-medium">
                   Total

@@ -13,7 +13,7 @@ import { ADMIN_PAGE_PADDING_CLASS } from "@/components/admin/AdminTable";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import AdminSaleSearchSuggestion from "@/components/admin/AdminSaleSearchSuggestion";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
-import { formatSaleProductsLabel } from "@/lib/sale-items";
+import { getSalePrimaryProductName } from "@/lib/sale-items";
 import { Button } from "@/components/ui/button";
 import { useAdminSalesPanel } from "@/lib/hooks/use-admin-sales-panel";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,7 @@ export default function AdminSalesPage() {
         onChange={panel.setSearchInput}
         onClear={panel.clearSearch}
         onSubmit={panel.applySearchFromQuery}
-        onSuggestionSelect={(sale) => panel.applySearchFromQuery(formatSaleProductsLabel(sale))}
+        onSuggestionSelect={(sale) => panel.applySearchFromQuery(getSalePrimaryProductName(sale))}
         suggestions={panel.searchInput.trim() ? panel.searchSuggestions : []}
         getSuggestionKey={(sale) => sale.id}
         renderSuggestion={(sale) => <AdminSaleSearchSuggestion sale={sale} />}

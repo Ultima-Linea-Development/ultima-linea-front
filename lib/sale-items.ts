@@ -1,4 +1,5 @@
 import type { Sale, SaleLineItem } from "@/lib/api";
+import { compareSizeLabels } from "@/lib/product-inventory";
 
 type LegacySaleFields = {
   product_id?: string;
@@ -44,6 +45,20 @@ export function getSaleTotal(sale: LegacySaleFields): number {
   return getSaleLineItems(sale).reduce((sum, item) => sum + item.total, 0);
 }
 
+const SALE_COMBINED_LABEL_SUFFIX_RE = /\s*\(\+\d+\)\s*$/;
+
+export function stripSaleCombinedLabelSuffix(value: string): string {
+  return value.replace(SALE_COMBINED_LABEL_SUFFIX_RE, "").trim();
+}
+
+export function normalizeSaleSearchQuery(query: string): string {
+  return stripSaleCombinedLabelSuffix(query.trim());
+}
+
+export function getSalePrimaryProductName(sale: LegacySaleFields): string {
+  return getSalePrimaryLineItem(sale)?.product_name ?? "—";
+}
+
 export function getSalePrimaryLineItem(sale: LegacySaleFields): SaleLineItem | null {
   return getSaleLineItems(sale)[0] ?? null;
 }
@@ -71,8 +86,20 @@ export function getSaleQuantityTotal(sale: LegacySaleFields): number {
   return getSaleLineItems(sale).reduce((sum, item) => sum + item.quantity, 0);
 }
 
+export function getSaleSizeQuantityEntries(sale: LegacySaleFields): [string, number][] {
+  const bySize = new Map<string, number>();
+
+  for (const item of getSaleLineItems(sale)) {
+    const size = item.size?.trim();
+    if (!size) continue;
+    bySize.set(size, (bySize.get(size) ?? 0) + item.quantity);
+  }
+
+  return [...bySize.entries()].sort(([a], [b]) => compareSizeLabels(a, b));
+}
+
 export function saleMatchesQuery(sale: Sale, query: string): boolean {
-  const normalized = query.trim().toLocaleLowerCase();
+  const normalized = normalizeSaleSearchQuery(query).toLocaleLowerCase();
   if (!normalized) return false;
 
   const saleValues = [sale.external_seller_name, sale.transfer_alias, sale.description];

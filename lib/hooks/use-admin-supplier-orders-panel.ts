@@ -1,0 +1,319 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { PER_PAGE } from "@/components/admin/AdminSupplierOrdersTable";
+import { getToken, getUserFromToken, getCurrentUserId } from "@/lib/auth";
+import { canDeleteOwnedResource } from "@/lib/roles";
+import {
+  adminSupplierOrdersApi,
+  adminSuppliersApi,
+  type CreateSupplierOrderRequest,
+  type Supplier,
+  type SupplierOrder,
+  type UpdateSupplierOrderRequest,
+} from "@/lib/api";
+import { filterSupplierOrdersByQuery } from "@/lib/admin-supplier-orders-search";
+import { getSupplierOrderLabel } from "@/lib/supplier-order-display";
+import { useAdminSearch } from "@/lib/hooks/use-admin-search";
+import { usePendingDelete } from "@/lib/use-pending-delete";
+
+type SupplierOrdersListData = {
+  orders: SupplierOrder[];
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+};
+
+export function useAdminSupplierOrdersPanel() {
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [ordersData, setOrdersData] = useState<SupplierOrdersListData>();
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [viewingOrder, setViewingOrder] = useState<SupplierOrder | null>(null);
+  const [editingOrder, setEditingOrder] = useState<SupplierOrder | null>(null);
+  const [editError, setEditError] = useState("");
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<SupplierOrder | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleteSubmitting, setIsDeleteSubmitting] = useState(false);
+
+  const {
+    deleteToast,
+    undoDuration,
+    scheduleDelete,
+    undoDelete,
+    dismissDeleteToast,
+    flushPendingDelete,
+  } = usePendingDelete();
+
+  const resetPage = useCallback(() => setPage(1), []);
+
+  const {
+    searchInput,
+    setSearchInput,
+    searchQuery,
+    searchTick,
+    searchSuggestions,
+    searchCacheRef,
+    applySearchFromQuery,
+    clearSearch,
+    invalidateSearchCache,
+  } = useAdminSearch<SupplierOrder>({
+    searchApi: (token, query) => adminSupplierOrdersApi.search(token, query),
+    filterCached: filterSupplierOrdersByQuery,
+  });
+
+  const loadSuppliers = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    const response = await adminSuppliersApi.getAll(token);
+    setSuppliers(response.data?.suppliers ?? []);
+  }, []);
+
+  const loadOrders = useCallback(async () => {
+    await flushPendingDelete();
+    const token = getToken();
+    if (!token) {
+      setError("Sesión expirada. Volvé a iniciar sesión.");
+      return;
+    }
+
+    const q = searchQuery.trim();
+    if (!q) {
+      const response = await adminSupplierOrdersApi.getAll(token, { page, per_page: PER_PAGE });
+      if (response.error || !response.data) {
+        setError(response.error || "No se pudieron cargar los pedidos.");
+        setOrdersData(undefined);
+        return;
+      }
+      setOrdersData(response.data);
+      return;
+    }
+
+    let all = searchCacheRef.current?.query === q ? searchCacheRef.current.results : null;
+    if (!all) {
+      const response = await adminSupplierOrdersApi.search(token, q);
+      if (response.error || !response.data) {
+        setError(response.error || "Error al buscar pedidos.");
+        setOrdersData(undefined);
+        return;
+      }
+      all = response.data.results;
+      searchCacheRef.current = { query: q, results: all };
+    }
+
+    const total = all.length;
+    const total_pages = Math.max(1, Math.ceil(total / PER_PAGE));
+    const safePage = Math.min(Math.max(1, page), total_pages);
+    const start = (safePage - 1) * PER_PAGE;
+    setOrdersData({
+      orders: all.slice(start, start + PER_PAGE),
+      page: safePage,
+      per_page: PER_PAGE,
+      total,
+      total_pages,
+    });
+    if (safePage !== page) {
+      setPage(safePage);
+    }
+  }, [page, searchQuery, flushPendingDelete, searchCacheRef]);
+
+  const refreshOrdersList = useCallback(async () => {
+    setIsDataLoading(true);
+    try {
+      await Promise.all([loadOrders(), loadSuppliers()]);
+    } finally {
+      setIsDataLoading(false);
+    }
+  }, [loadOrders, loadSuppliers]);
+
+  const refreshOrdersPanel = useCallback(async () => {
+    setIsDataLoading(true);
+    try {
+      await Promise.all([loadSuppliers(), loadOrders()]);
+    } finally {
+      setIsDataLoading(false);
+    }
+  }, [loadSuppliers, loadOrders]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void refreshOrdersList();
+    });
+  }, [refreshOrdersList, searchTick]);
+
+  useEffect(() => {
+    if (!showOrderForm && !editingOrder) return;
+
+    queueMicrotask(() => {
+      void loadSuppliers();
+    });
+  }, [showOrderForm, editingOrder, loadSuppliers]);
+
+  const handleCreateOrder = useCallback(
+    async (payload: CreateSupplierOrderRequest) => {
+      await flushPendingDelete();
+      const token = getToken();
+      if (!token) {
+        setError("Sesión expirada. Volvé a iniciar sesión.");
+        return false;
+      }
+
+      setError("");
+      setSuccess("");
+      setIsSubmitting(true);
+
+      const response = await adminSupplierOrdersApi.create(payload, token);
+      if (response.error || !response.data) {
+        setError(response.error || "No se pudo crear el pedido.");
+        setIsSubmitting(false);
+        return false;
+      }
+
+      setSuccess("Pedido creado correctamente.");
+      invalidateSearchCache();
+      await refreshOrdersPanel();
+      setIsSubmitting(false);
+      setShowOrderForm(false);
+      return true;
+    },
+    [refreshOrdersPanel, flushPendingDelete, invalidateSearchCache]
+  );
+
+  const handleSaveEdit = useCallback(
+    async (payload: UpdateSupplierOrderRequest) => {
+      if (!editingOrder) return false;
+
+      await flushPendingDelete();
+      const token = getToken();
+      if (!token) {
+        setEditError("Sesión expirada. Volvé a iniciar sesión.");
+        return false;
+      }
+
+      setEditError("");
+      setIsEditSubmitting(true);
+
+      const response = await adminSupplierOrdersApi.update(editingOrder.id, payload, token);
+      if (response.error || !response.data) {
+        setEditError(response.error || "No se pudo actualizar el pedido.");
+        setIsEditSubmitting(false);
+        return false;
+      }
+
+      setSuccess("Pedido actualizado correctamente.");
+      setEditingOrder(null);
+      invalidateSearchCache();
+      await loadOrders();
+      await loadSuppliers();
+      setIsEditSubmitting(false);
+      return true;
+    },
+    [editingOrder, loadOrders, loadSuppliers, flushPendingDelete, invalidateSearchCache]
+  );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteConfirmOrder) return;
+    const order = deleteConfirmOrder;
+    const ordersSnapshot = ordersData;
+
+    setDeleteConfirmOrder(null);
+    setIsDeleteSubmitting(false);
+    setDeleteError("");
+    setError("");
+
+    setOrdersData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        orders: prev.orders.filter((item) => item.id !== order.id),
+        total: Math.max(0, prev.total - 1),
+      };
+    });
+
+    await scheduleDelete({
+      message: "Pedido eliminado correctamente.",
+      restore: () => setOrdersData(ordersSnapshot),
+      commit: async () => {
+        const token = getToken();
+        if (!token) {
+          setOrdersData(ordersSnapshot);
+          setError("Sesión expirada. Volvé a iniciar sesión.");
+          return;
+        }
+
+        const response = await adminSupplierOrdersApi.delete(order.id, token);
+        if (response.error) {
+          setOrdersData(ordersSnapshot);
+          setError(response.error);
+          return;
+        }
+
+        invalidateSearchCache();
+        await refreshOrdersPanel();
+      },
+    });
+  }, [deleteConfirmOrder, ordersData, scheduleDelete, refreshOrdersPanel, invalidateSearchCache]);
+
+  const canDeleteOrder = useCallback(
+    (order: SupplierOrder) =>
+      canDeleteOwnedResource(getUserFromToken()?.role, getCurrentUserId(), order.created_by),
+    []
+  );
+
+  const data = ordersData ?? undefined;
+  const orders = data?.orders ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.total_pages ?? 0;
+  const currentPage = data?.page ?? page;
+
+  return {
+    isDataLoading,
+    orders,
+    total,
+    totalPages,
+    currentPage,
+    page,
+    setPage,
+    suppliers,
+    error,
+    setError,
+    success,
+    setSuccess,
+    searchInput,
+    setSearchInput,
+    searchSuggestions,
+    deleteToast,
+    undoDuration,
+    undoDelete,
+    dismissDeleteToast,
+    showOrderForm,
+    setShowOrderForm,
+    viewingOrder,
+    setViewingOrder,
+    editingOrder,
+    setEditingOrder,
+    editError,
+    setEditError,
+    isEditSubmitting,
+    isSubmitting,
+    deleteConfirmOrder,
+    setDeleteConfirmOrder,
+    deleteError,
+    setDeleteError,
+    isDeleteSubmitting,
+    applySearchFromQuery: (query: string) => applySearchFromQuery(query, resetPage),
+    clearSearch: () => clearSearch(resetPage),
+    handleCreateOrder,
+    handleSaveEdit,
+    handleConfirmDelete,
+    canDeleteOrder,
+    getSupplierOrderLabel,
+  };
+}

@@ -58,6 +58,50 @@ export type ExternalSeller = {
   updated_at: Date;
 };
 
+export type SupplierOrderItemType = "FAN" | "PLAYER" | "RETRO";
+
+export type SupplierOrderStatus = "draft" | "sent" | "partial" | "completed" | "cancelled";
+
+export type SupplierOrderLineItem = {
+  id: string;
+  shirt_name: string;
+  quantity: number;
+  type: SupplierOrderItemType;
+  sizes: string;
+  dorsal?: string;
+  description?: string;
+  link?: string;
+  downloaded: boolean;
+  cleaned: boolean;
+  price: number;
+  ordered: boolean;
+};
+
+export type Supplier = {
+  id: string;
+  name: string;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  link?: string;
+  created_at: Date;
+  updated_at: Date;
+};
+
+export type SupplierOrder = {
+  id: string;
+  name: string;
+  supplier_id?: string;
+  supplier_name?: string;
+  status: SupplierOrderStatus;
+  notes?: string;
+  items: SupplierOrderLineItem[];
+  created_by?: string;
+  created_at: Date;
+  updated_at: Date;
+};
+
 export type Sale = {
   id: string;
   items?: SaleLineItem[];
@@ -177,6 +221,8 @@ export type UserDocument = Omit<User, "id"> & { _id: string };
 export type ProductDocument = Omit<Product, "id"> & { _id: string };
 export type SaleDocument = Omit<Sale, "id"> & { _id: string };
 export type ExternalSellerDocument = Omit<ExternalSeller, "id"> & { _id: string };
+export type SupplierDocument = Omit<Supplier, "id"> & { _id: string };
+export type SupplierOrderDocument = Omit<SupplierOrder, "id"> & { _id: string };
 
 export function userFromDoc(doc: UserDocument): User {
   const { _id, password, ...rest } = doc;
@@ -215,5 +261,25 @@ export function externalSellerFromDoc(doc: ExternalSellerDocument): ExternalSell
 
 export function externalSellerToDoc(seller: ExternalSeller): ExternalSellerDocument {
   const { id, ...rest } = seller;
+  return { _id: id, ...rest };
+}
+
+export function supplierFromDoc(doc: SupplierDocument): Supplier {
+  const { _id, ...rest } = doc;
+  return { id: _id, ...rest };
+}
+
+export function supplierToDoc(supplier: Supplier): SupplierDocument {
+  const { id, ...rest } = supplier;
+  return { _id: id, ...rest };
+}
+
+export function supplierOrderFromDoc(doc: SupplierOrderDocument): SupplierOrder {
+  const { _id, ...rest } = doc;
+  return { id: _id, ...rest };
+}
+
+export function supplierOrderToDoc(order: SupplierOrder): SupplierOrderDocument {
+  const { id, ...rest } = order;
   return { _id: id, ...rest };
 }

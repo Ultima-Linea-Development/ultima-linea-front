@@ -18,6 +18,7 @@ import {
   MdOutlineVisibilityOff,
   MdOutlineVisibility,
   MdOutlinePeople,
+  MdOutlineLocalShipping,
 } from "react-icons/md";
 import { ComponentProps } from "react";
 
@@ -33,6 +34,7 @@ export const Icons = {
   catalog: MdOutlineInventory2,
   sales: MdOutlinePointOfSale,
   users: MdOutlinePeople,
+  orders: MdOutlineLocalShipping,
   logout: MdOutlineLogout,
   filter: MdOutlineFilterList,
   filterActive: MdFilterList,

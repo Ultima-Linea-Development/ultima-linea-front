@@ -186,7 +186,6 @@ export default function AdminSaleSellerField({
                 externalSellerName: event.target.value,
               })
             }
-            placeholder="Ej: Juan Pérez"
             disabled={disabled}
             required
           />

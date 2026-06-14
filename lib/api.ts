@@ -241,6 +241,110 @@ export type ExternalSellersResponse = {
   sellers: ExternalSeller[];
 };
 
+export type SupplierOrderItemType = "FAN" | "PLAYER" | "RETRO";
+
+export type SupplierOrderStatus = "draft" | "sent" | "partial" | "completed" | "cancelled";
+
+export type SupplierOrderLineItem = {
+  id: string;
+  shirt_name: string;
+  quantity: number;
+  type: SupplierOrderItemType;
+  sizes: string;
+  dorsal?: string;
+  description?: string;
+  link?: string;
+  downloaded: boolean;
+  cleaned: boolean;
+  price: number;
+  ordered: boolean;
+};
+
+export type Supplier = {
+  id: string;
+  name: string;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  link?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SuppliersResponse = {
+  suppliers: Supplier[];
+};
+
+export type SupplierOrder = {
+  id: string;
+  name: string;
+  supplier_id?: string;
+  supplier_name?: string;
+  status: SupplierOrderStatus;
+  notes?: string;
+  items: SupplierOrderLineItem[];
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateSupplierOrderItemRequest = {
+  id?: string;
+  shirt_name: string;
+  quantity: number;
+  type: SupplierOrderItemType;
+  sizes: string;
+  dorsal?: string;
+  description?: string;
+  link?: string;
+  downloaded?: boolean;
+  cleaned?: boolean;
+  price: number;
+  ordered?: boolean;
+};
+
+export type CreateSupplierOrderRequest = {
+  name: string;
+  supplier_id?: string;
+  supplier_name?: string;
+  supplier_contact_name?: string;
+  supplier_email?: string;
+  supplier_phone?: string;
+  supplier_notes?: string;
+  supplier_link?: string;
+  status?: SupplierOrderStatus;
+  notes?: string;
+  items: CreateSupplierOrderItemRequest[];
+};
+
+export type UpdateSupplierOrderRequest = Partial<CreateSupplierOrderRequest>;
+
+export type CreateSupplierRequest = {
+  name: string;
+  contact_name?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  link?: string;
+};
+
+export type UpdateSupplierRequest = Partial<CreateSupplierRequest>;
+
+export type PaginatedSupplierOrdersResponse = {
+  orders: SupplierOrder[];
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+};
+
+export type AdminSupplierOrdersSearchResponse = {
+  query: string;
+  total: number;
+  results: SupplierOrder[];
+};
+
 export type Sale = {
   id: string;
   items: SaleLineItem[];
@@ -559,6 +663,48 @@ export const adminUsersApi = {
 
   delete: (id: string, token: string) =>
     api.delete<{ message: string }>(`/admin/users/${id}`, token),
+};
+
+export const adminSupplierOrdersApi = {
+  getAll: (token: string, filters?: { page?: number; per_page?: number }) => {
+    const params = new URLSearchParams();
+    if (filters?.page != null) params.append("page", String(filters.page));
+    if (filters?.per_page != null) params.append("per_page", String(filters.per_page));
+
+    const query = params.toString();
+    return api.get<PaginatedSupplierOrdersResponse>(
+      `/admin/supplier-orders${query ? `?${query}` : ""}`,
+      token
+    );
+  },
+
+  search: (token: string, query: string) => {
+    const params = new URLSearchParams();
+    params.append("q", query);
+    return api.get<AdminSupplierOrdersSearchResponse>(
+      `/admin/supplier-orders/search?${params.toString()}`,
+      token
+    );
+  },
+
+  create: (order: CreateSupplierOrderRequest, token: string) =>
+    api.post<{ order: SupplierOrder }>("/admin/supplier-orders", order, token),
+
+  update: (id: string, order: UpdateSupplierOrderRequest, token: string) =>
+    api.put<{ order: SupplierOrder }>(`/admin/supplier-orders/${id}`, order, token),
+
+  delete: (id: string, token: string) =>
+    api.delete<{ message: string }>(`/admin/supplier-orders/${id}`, token),
+};
+
+export const adminSuppliersApi = {
+  getAll: (token: string) => api.get<SuppliersResponse>("/admin/suppliers", token),
+
+  create: (supplier: CreateSupplierRequest, token: string) =>
+    api.post<{ supplier: Supplier }>("/admin/suppliers", supplier, token),
+
+  update: (id: string, supplier: UpdateSupplierRequest, token: string) =>
+    api.put<{ supplier: Supplier }>(`/admin/suppliers/${id}`, supplier, token),
 };
 
 export const healthApi = {

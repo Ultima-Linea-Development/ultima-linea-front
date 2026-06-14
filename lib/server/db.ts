@@ -4,6 +4,8 @@ const USERS_COLLECTION = "users";
 const PRODUCTS_COLLECTION = "products";
 const SALES_COLLECTION = "sales";
 const EXTERNAL_SELLERS_COLLECTION = "external_sellers";
+const SUPPLIERS_COLLECTION = "suppliers";
+const SUPPLIER_ORDERS_COLLECTION = "supplier_orders";
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
@@ -77,6 +79,14 @@ export async function getExternalSellersCollection<T extends Document = Document
   return getCollection<T>(EXTERNAL_SELLERS_COLLECTION);
 }
 
+export async function getSuppliersCollection<T extends Document = Document>() {
+  return getCollection<T>(SUPPLIERS_COLLECTION);
+}
+
+export async function getSupplierOrdersCollection<T extends Document = Document>() {
+  return getCollection<T>(SUPPLIER_ORDERS_COLLECTION);
+}
+
 let indexesCreated = false;
 
 export async function ensureIndexes(): Promise<void> {
@@ -108,6 +118,17 @@ export async function ensureIndexes(): Promise<void> {
   const externalSellers = db.collection(EXTERNAL_SELLERS_COLLECTION);
   await externalSellers.createIndexes([{ key: { name: 1 } }]);
 
+  const suppliers = db.collection(SUPPLIERS_COLLECTION);
+  await suppliers.createIndexes([{ key: { name: 1 } }]);
+
+  const supplierOrders = db.collection(SUPPLIER_ORDERS_COLLECTION);
+  await supplierOrders.createIndexes([
+    { key: { created_at: -1 } },
+    { key: { supplier_id: 1 } },
+    { key: { status: 1 } },
+    { key: { name: 1 } },
+  ]);
+
   indexesCreated = true;
 }
 
@@ -116,4 +137,6 @@ export {
   PRODUCTS_COLLECTION,
   SALES_COLLECTION,
   EXTERNAL_SELLERS_COLLECTION,
+  SUPPLIERS_COLLECTION,
+  SUPPLIER_ORDERS_COLLECTION,
 };

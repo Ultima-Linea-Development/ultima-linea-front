@@ -11,6 +11,12 @@ import {
   labelShirtType,
   normalizeShirtType,
 } from "@/lib/utils";
+import ProductJsonLd from "@/components/seo/ProductJsonLd";
+import {
+  buildProductMetadata,
+  buildProductPath,
+  resolvePublicSiteUrl,
+} from "@/lib/seo";
 import { getSiteOrigin } from "@/lib/site-origin";
 import { buildWhatsAppConsultUrl } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
@@ -45,16 +51,9 @@ export async function generateMetadata({
   }
 
   const product = response.data;
-  const title = product.name;
-  const description =
-    product.description ||
-    `${product.name}${product.team ? ` - ${product.team}` : ""}${product.season ? ` ${product.season}` : ""
-    } en Última Línea`;
+  const siteOrigin = resolvePublicSiteUrl(await getSiteOrigin());
 
-  return {
-    title,
-    description,
-  };
+  return buildProductMetadata(product, siteOrigin);
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -75,8 +74,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
       shirtType
   );
   const imageUrls = product.image_urls ?? [];
-  const origin = await getSiteOrigin();
-  const productHref = origin ? `${origin}/product/${slug}` : "";
+  const siteOrigin = resolvePublicSiteUrl(await getSiteOrigin());
+  const canonicalPath = buildProductPath(product);
+  const productHref = siteOrigin
+    ? `${siteOrigin}/product/${canonicalPath}`
+    : `/product/${canonicalPath}`;
   const whatsappMessage = productHref
     ? `Hola, quisiera hacer una consulta sobre el producto: ${product.name}\n${productHref}`
     : `Hola, quisiera hacer una consulta sobre el producto: ${product.name}`;
@@ -115,7 +117,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   ].filter((tag): tag is ProductTagItem => tag !== null);
 
   return (
-    <Container className="pt-0">
+    <>
+      <ProductJsonLd product={product} siteOrigin={siteOrigin} />
+      <Container className="pt-0">
       <Box className="grid grid-cols-1 gap-8 md:grid-cols-[1.5fr_1fr] lg:grid-cols-[2fr_1fr] md:grid-rows-[auto_1fr]">
         <Box
           display="flex"
@@ -205,5 +209,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </Box>
       </Box>
     </Container>
+    </>
   );
 }

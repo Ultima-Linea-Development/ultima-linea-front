@@ -53,8 +53,6 @@ export default function AdminSaleDetail({
   const cellClass = ADMIN_TABLE_CELL_CLASS;
   const thClass = ADMIN_TABLE_TH_CLASS;
 
-  const modalBleedClass = "-mx-4 w-[calc(100%+2rem)]";
-
   const metadataItems = [
     {
       key: "date",
@@ -118,7 +116,7 @@ export default function AdminSaleDetail({
         ))}
       </div>
 
-      <AdminTableMobileList className={cn("md:hidden", modalBleedClass)}>
+      <AdminTableMobileList bleed="modal">
         {lineItems.map((item, index) => (
           <AdminTableMobileCard key={`${item.product_id}-${item.size}-${index}`}>
             <Box display="flex" direction="col" gap="3">
@@ -160,7 +158,7 @@ export default function AdminSaleDetail({
         </div>
       </AdminTableMobileList>
 
-      <div className={cn("hidden md:block overflow-x-auto border-y border-border", modalBleedClass)}>
+      <div className="hidden md:block overflow-x-auto border-y border-border">
         <table className="w-full table-fixed text-left text-sm">
           <thead className="border-b border-border bg-muted/50">
             <tr>

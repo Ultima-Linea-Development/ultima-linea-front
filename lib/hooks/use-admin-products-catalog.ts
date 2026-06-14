@@ -27,6 +27,8 @@ export function useAdminProductsCatalog() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sizeFilter, setSizeFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
+  const [todoCount, setTodoCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
   const [sizeOptions, setSizeOptions] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
@@ -63,12 +65,21 @@ export function useAdminProductsCatalog() {
   const catalogFilters = {
     ...(categoryFilter ? { category: categoryFilter as Product["category"] } : {}),
     ...(sizeFilter ? { size: sizeFilter } : {}),
-    ...(activeFilter === "true"
-      ? { is_active: true }
-      : activeFilter === "false"
-        ? { is_active: false }
-        : {}),
+    ...(activeFilter === "false" ? { is_active: false } : {}),
   };
+
+  const refreshStatusCounts = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    const [allResponse, inactiveResponse] = await Promise.all([
+      adminProductsApi.getAll(token, { page: 1, per_page: 1 }),
+      adminProductsApi.getAll(token, { page: 1, per_page: 1, is_active: false }),
+    ]);
+
+    if (allResponse.data) setTodoCount(allResponse.data.total);
+    if (inactiveResponse.data) setInactiveCount(inactiveResponse.data.total);
+  }, []);
 
   const loadCatalog = useCallback(async () => {
     setIsDataLoading(true);
@@ -131,14 +142,20 @@ export function useAdminProductsCatalog() {
 
   const refreshCatalog = useCallback(async () => {
     invalidateSearchCache();
-    await loadCatalog();
-  }, [loadCatalog, invalidateSearchCache]);
+    await Promise.all([loadCatalog(), refreshStatusCounts()]);
+  }, [loadCatalog, invalidateSearchCache, refreshStatusCounts]);
 
   useEffect(() => {
     queueMicrotask(() => {
       void loadCatalog();
     });
   }, [loadCatalog, searchTick]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void refreshStatusCounts();
+    });
+  }, [refreshStatusCounts]);
 
   useEffect(() => {
     void productsApi.getOptions().then((response) => {
@@ -177,6 +194,14 @@ export function useAdminProductsCatalog() {
     },
     [invalidateSearchCache, bumpSearch]
   );
+
+  const showInactiveProducts = useCallback(() => {
+    handleActiveFilterChange("false");
+  }, [handleActiveFilterChange]);
+
+  const showTodoProducts = useCallback(() => {
+    handleActiveFilterChange("");
+  }, [handleActiveFilterChange]);
 
   const handleDeactivate = useCallback(
     async (product: Product) => {
@@ -383,6 +408,10 @@ export function useAdminProductsCatalog() {
     categoryFilter,
     sizeFilter,
     activeFilter,
+    todoCount,
+    inactiveCount,
+    showInactiveProducts,
+    showTodoProducts,
     sizeOptions,
     searchInput,
     setSearchInput,

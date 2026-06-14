@@ -13,6 +13,10 @@ type UseAdminSearchConfig<T> = {
   suggestionLimit?: number;
 };
 
+function areSameSuggestionSlice<T>(left: T[], right: T[]): boolean {
+  return left.length === right.length && left.every((item, index) => item === right[index]);
+}
+
 export function useAdminSearch<T>({
   searchApi,
   filterCached,
@@ -24,22 +28,31 @@ export function useAdminSearch<T>({
   const [searchTick, setSearchTick] = useState(0);
   const [searchSuggestions, setSearchSuggestions] = useState<T[]>([]);
   const searchCacheRef = useRef<{ query: string; results: T[] } | null>(null);
+  const searchApiRef = useRef(searchApi);
+  const filterCachedRef = useRef(filterCached);
+
+  searchApiRef.current = searchApi;
+  filterCachedRef.current = filterCached;
+
+  const setSuggestionsIfChanged = useCallback((next: T[]) => {
+    setSearchSuggestions((prev) => (areSameSuggestionSlice(prev, next) ? prev : next));
+  }, []);
 
   useEffect(() => {
     const query = searchInput.trim();
     if (!query) {
-      queueMicrotask(() => setSearchSuggestions([]));
+      setSuggestionsIfChanged([]);
       return;
     }
 
     if (searchCacheRef.current) {
       const cached = searchCacheRef.current;
       if (cached.query === query) {
-        setSearchSuggestions(cached.results.slice(0, suggestionLimit));
-      } else if (filterCached) {
-        const filtered = filterCached(cached.results, query, suggestionLimit);
+        setSuggestionsIfChanged(cached.results.slice(0, suggestionLimit));
+      } else if (filterCachedRef.current) {
+        const filtered = filterCachedRef.current(cached.results, query, suggestionLimit);
         if (filtered.length > 0) {
-          setSearchSuggestions(filtered);
+          setSuggestionsIfChanged(filtered);
         }
       }
     }
@@ -47,21 +60,21 @@ export function useAdminSearch<T>({
     const timer = setTimeout(() => {
       const token = getToken();
       if (!token) {
-        setSearchSuggestions([]);
+        setSuggestionsIfChanged([]);
         return;
       }
 
-      void searchApi(token, query).then((response) => {
+      void searchApiRef.current(token, query).then((response) => {
         if (response.data) {
-          setSearchSuggestions(response.data.results.slice(0, suggestionLimit));
+          setSuggestionsIfChanged(response.data.results.slice(0, suggestionLimit));
           return;
         }
-        setSearchSuggestions([]);
+        setSuggestionsIfChanged([]);
       });
     }, debounceMs);
 
     return () => clearTimeout(timer);
-  }, [searchInput, searchApi, filterCached, debounceMs, suggestionLimit]);
+  }, [searchInput, debounceMs, suggestionLimit, setSuggestionsIfChanged]);
 
   const bumpSearch = useCallback(() => {
     setSearchTick((tick) => tick + 1);

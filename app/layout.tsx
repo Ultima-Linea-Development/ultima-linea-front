@@ -2,14 +2,21 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { fontVariable } from "@/lib/fonts";
 import ConditionalLayout from "@/components/layout/ConditionalLayout";
+import { getMetadataBaseUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
+  metadataBase: getMetadataBaseUrl(),
   title: {
     default: "Última Línea",
     template: "%s | Última Línea",
   },
   description:
     "Última Línea - Tienda especializada en camisetas de fútbol retro y actuales. Encuentra camisetas oficiales de los mejores equipos y selecciones del mundo. Catálogo completo de camisetas vintage, clásicas y de temporada actual. Envíos a todo el país.",
+  openGraph: {
+    siteName: "Última Línea",
+    locale: "es_AR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

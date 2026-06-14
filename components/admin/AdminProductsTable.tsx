@@ -8,11 +8,12 @@ import {
   AdminTableEmptyRow,
   AdminTableMobileCard,
   AdminTableMobileEmpty,
-  AdminTableMobileField,
-  AdminTableMobileGrid,
   AdminTableMobileList,
+  AdminTableMobileSummary,
   AdminTablePagination,
+  ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
   ADMIN_TABLE_CELL_CLASS,
+  ADMIN_TABLE_CHECKBOX_COLUMN_CLASS,
   ADMIN_TABLE_TH_CLASS,
 } from "@/components/admin/AdminTable";
 import type { Product } from "@/lib/api";
@@ -24,7 +25,6 @@ import AdminTableMobileActionsMenu, {
   type AdminTableMobileAction,
 } from "@/components/admin/AdminTableMobileActionsMenu";
 import {
-  ADMIN_ACTIVE_FILTER_OPTIONS,
   ADMIN_CATEGORY_FILTER_OPTIONS,
 } from "@/lib/admin-catalog-filters";
 import { compareSizeLabels } from "@/lib/product-inventory";
@@ -48,11 +48,9 @@ type AdminProductsTableProps = {
   tableFooter?: ReactNode;
   categoryFilter?: string;
   sizeFilter?: string;
-  activeFilter?: string;
   sizeOptions?: string[];
   onCategoryFilterChange?: (value: string) => void;
   onSizeFilterChange?: (value: string) => void;
-  onActiveFilterChange?: (value: string) => void;
 };
 
 export default function AdminProductsTable({
@@ -72,11 +70,9 @@ export default function AdminProductsTable({
   tableFooter,
   categoryFilter = "",
   sizeFilter = "",
-  activeFilter = "",
   sizeOptions = [],
   onCategoryFilterChange,
   onSizeFilterChange,
-  onActiveFilterChange,
 }: AdminProductsTableProps) {
   const cellClass = ADMIN_TABLE_CELL_CLASS;
   const thClass = ADMIN_TABLE_TH_CLASS;
@@ -112,7 +108,7 @@ export default function AdminProductsTable({
     if (el) el.indeterminate = someVisibleSelected && !allVisibleSelected;
   }, [someVisibleSelected, allVisibleSelected]);
 
-  const colSpan = onSelectionChange ? 8 : 7;
+  const colSpan = onSelectionChange ? 7 : 6;
 
   const sortedSizeOptions = [...sizeOptions].sort(compareSizeLabels);
 
@@ -146,29 +142,13 @@ export default function AdminProductsTable({
       <Typography variant="body2">Talles</Typography>
     );
 
-  const renderActiveHeader = () =>
-    onActiveFilterChange ? (
-      <AdminTableColumnFilter
-        id="catalog-active-filter"
-        label="Activo"
-        value={activeFilter}
-        onChange={onActiveFilterChange}
-        options={ADMIN_ACTIVE_FILTER_OPTIONS.map((option) => ({
-          value: option.value,
-          label: option.label,
-        }))}
-      />
-    ) : (
-      <Typography variant="body2">Activo</Typography>
-    );
-
   const renderMobileFilters = () => {
-    if (!onCategoryFilterChange && !onSizeFilterChange && !onActiveFilterChange) return null;
+    if (!onCategoryFilterChange && !onSizeFilterChange) return null;
 
     return (
       <Box
         display="flex"
-        className="md:hidden flex-wrap items-center gap-4 border border-border p-4"
+        className="md:hidden w-full min-w-0 flex-wrap items-center gap-3 border border-border px-3 py-2.5 sm:px-4 sm:py-3"
       >
         {onCategoryFilterChange && (
           <AdminTableColumnFilter
@@ -189,18 +169,6 @@ export default function AdminProductsTable({
             value={sizeFilter}
             onChange={onSizeFilterChange}
             options={sortedSizeOptions.map((size) => ({ value: size, label: size }))}
-          />
-        )}
-        {onActiveFilterChange && (
-          <AdminTableColumnFilter
-            id="catalog-active-filter-mobile"
-            label="Activo"
-            value={activeFilter}
-            onChange={onActiveFilterChange}
-            options={ADMIN_ACTIVE_FILTER_OPTIONS.map((option) => ({
-              value: option.value,
-              label: option.label,
-            }))}
           />
         )}
       </Box>
@@ -251,15 +219,35 @@ export default function AdminProductsTable({
     return actions;
   };
 
-  const renderActiveBadge = (isActive: boolean) => (
-    <span
-      className={cn(
-        "inline-flex items-center px-2 py-0.5 text-xs font-medium whitespace-nowrap",
-        isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+  const renderDesktopHeaderRow = (withSelectAllRef = false) => (
+    <tr>
+      {onSelectionChange && (
+        <th className={cn(thClass, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>
+          <input
+            ref={withSelectAllRef ? selectAllRef : undefined}
+            type="checkbox"
+            checked={allVisibleSelected}
+            onChange={handleToggleAll}
+            aria-label="Seleccionar todos"
+            className="size-4 cursor-pointer"
+          />
+        </th>
       )}
-    >
-      {isActive ? "Sí" : "No"}
-    </span>
+      <th className={cn(thClass, onSelectionChange ? "w-[24%]" : "w-[28%]")}>
+        <Typography variant="body2">Nombre</Typography>
+      </th>
+      <th className={cn(thClass, "w-[12%]")}>
+        <Typography variant="body2">Equipo</Typography>
+      </th>
+      <th className={cn(thClass, "w-[12%]")}>{renderCategoryHeader()}</th>
+      <th className={cn(thClass, "w-[10%]")}>
+        <Typography variant="body2">Precio</Typography>
+      </th>
+      <th className={cn(thClass, "w-[18%]")}>{renderSizeHeader()}</th>
+      <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+        <Typography variant="body2">Acciones</Typography>
+      </th>
+    </tr>
   );
 
   return (
@@ -269,41 +257,13 @@ export default function AdminProductsTable({
         <>
           <AdminTableMobileEmpty message="No hay productos" />
           <AdminTable>
-        <thead className="border-b border-border bg-muted/50">
-          <tr>
-            {onSelectionChange && (
-              <th className={cn(thClass, "w-10")}>
-                <input
-                  ref={selectAllRef}
-                  type="checkbox"
-                  checked={allVisibleSelected}
-                  onChange={handleToggleAll}
-                  aria-label="Seleccionar todos"
-                  className="size-4 cursor-pointer"
-                />
-              </th>
-            )}
-            <th className={thClass}>
-              <Typography variant="body2">Nombre</Typography>
-            </th>
-            <th className={thClass}>
-              <Typography variant="body2">Equipo</Typography>
-            </th>
-            <th className={thClass}>{renderCategoryHeader()}</th>
-            <th className={thClass}>
-              <Typography variant="body2">Precio</Typography>
-            </th>
-            <th className={cn(thClass, "min-w-[140px]")}>{renderSizeHeader()}</th>
-            <th className={thClass}>{renderActiveHeader()}</th>
-            <th className={thClass}>
-              <Typography variant="body2">Acciones</Typography>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <AdminTableEmptyRow colSpan={colSpan} message="No hay productos" />
-        </tbody>
-      </AdminTable>
+            <thead className="border-b border-border bg-muted/50">
+              {renderDesktopHeaderRow(true)}
+            </thead>
+            <tbody>
+              <AdminTableEmptyRow colSpan={colSpan} message="No hay productos" />
+            </tbody>
+          </AdminTable>
         </>
       ) : (
         <>
@@ -311,7 +271,7 @@ export default function AdminProductsTable({
             {onSelectionChange && (
               <Box
                 display="flex"
-                className="items-center gap-3 border-b border-border p-4 bg-muted/30"
+                className="items-center gap-3 border-b border-border px-3 py-2.5 bg-muted/30 sm:px-4 sm:py-3"
               >
                 <input
                   type="checkbox"
@@ -325,78 +285,49 @@ export default function AdminProductsTable({
             )}
             {products.map((p) => (
               <AdminTableMobileCard key={p.id} selected={selectedSet.has(p.id)}>
-                <Box display="flex" justify="between" align="start" gap="3" className="mb-3 w-full">
-                  <Box display="flex" align="start" gap="3" className="min-w-0">
+                <Box display="flex" justify="between" align="start" gap="2" className="w-full min-w-0">
+                  <Box display="flex" align="start" gap="2" className="min-w-0">
                     {onSelectionChange && (
                       <input
                         type="checkbox"
                         checked={selectedSet.has(p.id)}
                         onChange={() => handleToggleRow(p.id)}
                         aria-label={`Seleccionar ${p.name}`}
-                        className="size-4 cursor-pointer shrink-0"
+                        className="size-4 cursor-pointer shrink-0 mt-0.5"
                       />
                     )}
                     <AdminTableProductName
                       name={p.name}
                       imageUrl={p.image_urls?.[0]}
                       href={`/product/${(p.slug || generateSlug(p.name))}-${p.id}`}
-                      className="min-w-0 items-start"
+                      imageClassName="h-9 w-9"
+                      className="min-w-0 items-start gap-2"
                     />
                   </Box>
                   <AdminTableMobileActionsMenu actions={getRowActions(p)} />
                 </Box>
-                <AdminTableMobileGrid className="grid-cols-3">
-                  <AdminTableMobileField label="Equipo">
-                    <Typography variant="body2">{p.team ?? "—"}</Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Categoría">
-                    <Typography variant="body2">{p.category ?? "—"}</Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Precio">
-                    <Typography variant="body2">{formatPrice(p.price)}</Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Talles" className="col-span-3">
-                    <AdminProductSizeStock product={p} highlightSize={sizeFilter || undefined} />
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Activo">
-                    {renderActiveBadge(p.is_active)}
-                  </AdminTableMobileField>
-                </AdminTableMobileGrid>
+                <AdminTableMobileSummary
+                  left={
+                    <>
+                      {p.team ?? "—"}
+                      {" · "}
+                      {p.category ?? "—"}
+                    </>
+                  }
+                  right={formatPrice(p.price)}
+                />
+                <AdminProductSizeStock
+                  product={p}
+                  highlightSize={sizeFilter || undefined}
+                  className="min-w-0 max-w-none"
+                />
               </AdminTableMobileCard>
             ))}
           </AdminTableMobileList>
 
           <AdminTable>
             <thead className="border-b border-border bg-muted/50">
-              <tr>
-                {onSelectionChange && (
-                  <th className={cn(thClass, "w-10")}>
-                    <input
-                      ref={selectAllRef}
-                      type="checkbox"
-                      checked={allVisibleSelected}
-                      onChange={handleToggleAll}
-                      aria-label="Seleccionar todos"
-                      className="size-4 cursor-pointer"
-                    />
-                  </th>
-                )}
-                <th className={thClass}>
-                  <Typography variant="body2">Nombre</Typography>
-                </th>
-                <th className={thClass}>
-                  <Typography variant="body2">Equipo</Typography>
-                </th>
-                <th className={thClass}>{renderCategoryHeader()}</th>
-                <th className={thClass}>
-                  <Typography variant="body2">Precio</Typography>
-                </th>
-                <th className={cn(thClass, "min-w-[140px]")}>{renderSizeHeader()}</th>
-                <th className={thClass}>{renderActiveHeader()}</th>
-                <th className={thClass}>
-                  <Typography variant="body2">Acciones</Typography>
-                </th>
-              </tr>
+              {renderDesktopHeaderRow(true)}
             </thead>
             <tbody>
               {products.map((p) => (
@@ -408,7 +339,7 @@ export default function AdminProductsTable({
                   )}
                 >
                   {onSelectionChange && (
-                    <td className={cellClass}>
+                    <td className={cn(cellClass, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>
                       <input
                         type="checkbox"
                         checked={selectedSet.has(p.id)}
@@ -418,7 +349,7 @@ export default function AdminProductsTable({
                       />
                     </td>
                   )}
-                  <td className={cn(cellClass, "min-w-[160px] max-w-[280px]")}>
+                  <td className={cellClass}>
                     <AdminTableProductName
                       name={p.name}
                       imageUrl={p.image_urls?.[0]}
@@ -426,28 +357,28 @@ export default function AdminProductsTable({
                     />
                   </td>
                   <td className={cellClass}>
-                    <span className="whitespace-nowrap truncate block max-w-[100px] sm:max-w-none">
-                      <Typography variant="body2">{p.team ?? "—"}</Typography>
-                    </span>
+                    <Typography variant="body2" className="truncate">
+                      {p.team ?? "—"}
+                    </Typography>
                   </td>
                   <td className={cellClass}>
-                    <Typography variant="body2">{p.category ?? "—"}</Typography>
+                    <Typography variant="body2" className="truncate">
+                      {p.category ?? "—"}
+                    </Typography>
                   </td>
                   <td className={cellClass}>
-                    <span className="whitespace-nowrap">
-                      <Typography variant="body2">{formatPrice(p.price)}</Typography>
-                    </span>
+                    <Typography variant="body2" className="whitespace-nowrap">
+                      {formatPrice(p.price)}
+                    </Typography>
                   </td>
                   <td className={cellClass}>
                     <AdminProductSizeStock
                       product={p}
                       highlightSize={sizeFilter || undefined}
+                      className="w-full max-w-none"
                     />
                   </td>
-                  <td className={cellClass}>
-                    {renderActiveBadge(p.is_active)}
-                  </td>
-                  <td className={cn(cellClass, "whitespace-nowrap")}>
+                  <td className={cn(cellClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
                     <AdminTableMobileActionsMenu actions={getRowActions(p)} />
                   </td>
                 </tr>

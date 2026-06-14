@@ -5,20 +5,23 @@ import Typography from "@/components/ui/Typography";
 import Alert from "@/components/ui/Alert";
 import Modal from "@/components/ui/Modal";
 import { Button } from "@/components/ui/button";
-import AdminDataLoading from "@/components/admin/AdminDataLoading";
+import AdminTableSkeleton from "@/components/admin/AdminTableSkeleton";
 import AdminUsersTable, { PER_PAGE } from "@/components/admin/AdminUsersTable";
+import { ADMIN_PAGE_PADDING_CLASS } from "@/components/admin/AdminTable";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import AdminUserSearchSuggestion from "@/components/admin/AdminUserSearchSuggestion";
 import AdminUserForm from "@/components/admin/AdminUserForm";
 import AdminUserEditForm from "@/components/admin/AdminUserEditForm";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
 import { useAdminUsersPanel } from "@/lib/hooks/use-admin-users-panel";
+import { cn } from "@/lib/utils";
 
 export default function AdminUsersPage() {
   const panel = useAdminUsersPanel();
 
   return (
-    <Box display="flex" direction="col" gap="6" className="min-h-[calc(100dvh-7rem)]">
+    <Box display="flex" direction="col" gap="6" className="w-full min-w-0">
+      <div className={cn("flex flex-col gap-6", ADMIN_PAGE_PADDING_CLASS)}>
       <Box display="flex" className="items-center justify-between flex-wrap gap-4">
         <Typography variant="h1">Usuarios</Typography>
         <Button
@@ -58,6 +61,7 @@ export default function AdminUsersPage() {
         onClose={panel.dismissDeleteToast}
         onUndo={panel.undoDelete}
       />
+      </div>
 
       {panel.showCreateModal && (
         <Modal
@@ -142,28 +146,30 @@ export default function AdminUsersPage() {
         ]}
       />
 
-      {panel.isDataLoading ? (
-        <AdminDataLoading />
-      ) : (
-        <AdminUsersTable
-          users={panel.users}
-          page={panel.currentPage}
-          perPage={PER_PAGE}
-          total={panel.total}
-          totalPages={panel.totalPages}
-          onPageChange={panel.setPage}
-          onEdit={(user) => {
-            panel.setEditError("");
-            panel.setPasswordChangeError("");
-            panel.setEditingUser(user);
-          }}
-          onDelete={(user) => {
-            if (user.is_primary_admin) return;
-            panel.setDeleteConfirmUser(user);
-            panel.setDeleteError("");
-          }}
-        />
-      )}
+      <div className="w-full min-w-0">
+        {panel.isDataLoading ? (
+          <AdminTableSkeleton variant="users" />
+        ) : (
+          <AdminUsersTable
+            users={panel.users}
+            page={panel.currentPage}
+            perPage={PER_PAGE}
+            total={panel.total}
+            totalPages={panel.totalPages}
+            onPageChange={panel.setPage}
+            onEdit={(user) => {
+              panel.setEditError("");
+              panel.setPasswordChangeError("");
+              panel.setEditingUser(user);
+            }}
+            onDelete={(user) => {
+              if (user.is_primary_admin) return;
+              panel.setDeleteConfirmUser(user);
+              panel.setDeleteError("");
+            }}
+          />
+        )}
+      </div>
     </Box>
   );
 }

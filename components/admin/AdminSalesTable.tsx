@@ -12,10 +12,11 @@ import {
   AdminTableEmptyRow,
   AdminTableMobileCard,
   AdminTableMobileEmpty,
-  AdminTableMobileField,
-  AdminTableMobileGrid,
   AdminTableMobileList,
+  AdminTableMobileSummary,
+  AdminTableMobileSubtext,
   AdminTablePagination,
+  ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
 } from "@/components/admin/AdminTable";
@@ -115,26 +116,26 @@ export default function AdminSalesTable({
           <AdminTable>
             <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[12%]")}>
                   <Typography variant="body2">Fecha</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[30%]")}>
                   <Typography variant="body2">Producto</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[8%]")}>
                   <Typography variant="body2">Talle</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[8%]")}>
                   <Typography variant="body2">Cantidad</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[10%]")}>
                   <Typography variant="body2">Total</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[20%]")}>
                   <Typography variant="body2">Vendedor</Typography>
                 </th>
                 {hasActions && (
-                  <th className={thClass}>
+                  <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
                     <Typography variant="body2">Acciones</Typography>
                   </th>
                 )}
@@ -152,36 +153,29 @@ export default function AdminSalesTable({
               const primaryItem = getSalePrimaryLineItem(sale);
               return (
               <AdminTableMobileCard key={sale.id}>
-                <Box display="flex" justify="between" align="start" gap="3" className="mb-3 w-full">
+                <Box display="flex" justify="between" align="start" gap="2" className="w-full min-w-0">
                   <AdminTableProductName
                     name={formatSaleProductsLabel(sale)}
                     imageUrl={primaryItem ? productImages[primaryItem.product_id] : undefined}
                     onClick={onViewDetails ? () => onViewDetails(sale) : undefined}
-                    className="min-w-0 items-start"
+                    imageClassName="h-9 w-9"
+                    className="min-w-0 items-start gap-2"
                   />
                   {hasActions && <AdminTableMobileActionsMenu actions={getRowActions(sale)} />}
                 </Box>
-                <AdminTableMobileGrid>
-                  <AdminTableMobileField label="Fecha" fullWidth>
-                    <Typography variant="body2">
+                <AdminTableMobileSummary
+                  left={
+                    <>
                       {formatSaleDateDisplay(sale.created_at)}
-                    </Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Talle">
-                    <Typography variant="body2">{formatSaleSizesLabel(sale)}</Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Cantidad">
-                    <Typography variant="body2">{getSaleQuantityTotal(sale)}</Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Total">
-                    <Typography variant="body2">{formatPrice(sale.total)}</Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Vendedor" fullWidth>
-                    <Typography variant="body2">
+                      {" · "}
                       {getSaleSellerLabel(sale, assignableUsers)}
-                    </Typography>
-                  </AdminTableMobileField>
-                </AdminTableMobileGrid>
+                    </>
+                  }
+                  right={formatPrice(sale.total)}
+                />
+                <AdminTableMobileSubtext>
+                  Talle {formatSaleSizesLabel(sale)} · Cant. {getSaleQuantityTotal(sale)}
+                </AdminTableMobileSubtext>
               </AdminTableMobileCard>
             );
             })}
@@ -190,26 +184,26 @@ export default function AdminSalesTable({
           <AdminTable>
             <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[12%]")}>
                   <Typography variant="body2">Fecha de venta</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[30%]")}>
                   <Typography variant="body2">Producto</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[8%]")}>
                   <Typography variant="body2">Talle</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[8%]")}>
                   <Typography variant="body2">Cantidad</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[10%]")}>
                   <Typography variant="body2">Total</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[20%]")}>
                   <Typography variant="body2">Vendedor</Typography>
                 </th>
                 {hasActions && (
-                  <th className={thClass}>
+                  <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
                     <Typography variant="body2">Acciones</Typography>
                   </th>
                 )}
@@ -228,7 +222,7 @@ export default function AdminSalesTable({
                       {formatSaleDateDisplay(sale.created_at)}
                     </Typography>
                   </td>
-                  <td className={cn(cellClass, "min-w-[160px] max-w-[280px]")}>
+                  <td className={cellClass}>
                     <AdminTableProductName
                       name={formatSaleProductsLabel(sale)}
                       imageUrl={primaryItem ? productImages[primaryItem.product_id] : undefined}
@@ -252,7 +246,7 @@ export default function AdminSalesTable({
                     </Typography>
                   </td>
                   {hasActions && (
-                    <td className={cn(cellClass, "whitespace-nowrap")}>
+                    <td className={cn(cellClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
                       <AdminTableMobileActionsMenu actions={getRowActions(sale)} />
                     </td>
                   )}

@@ -6,6 +6,8 @@ export const ADMIN_INTERACTIVE_TRANSITION = "transition-colors";
 export const ADMIN_SURFACE_HOVER =
   "hover:bg-gray-200 hover:text-foreground";
 
+export const ADMIN_LOADING_SHIMMER_CLASS = "admin-shimmer";
+
 export const ADMIN_NAV_LINK_ACTIVE =
   "bg-gray-200 font-medium text-foreground";
 
@@ -44,3 +46,22 @@ export const adminClearIconButtonClassName = cn(
   clearIconButtonClassName,
   ADMIN_INTERACTIVE_TRANSITION
 );
+
+export function adminTextLinkClassName(options?: {
+  tone?: "default" | "muted";
+  selected?: boolean;
+  className?: string;
+}) {
+  const { tone = "default", selected = false, className } = options ?? {};
+
+  return cn(
+    "max-w-full underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+    ADMIN_INTERACTIVE_TRANSITION,
+    tone === "default"
+      ? "text-foreground"
+      : selected
+        ? "font-medium text-foreground"
+        : "text-muted-foreground hover:text-foreground",
+    className
+  );
+}

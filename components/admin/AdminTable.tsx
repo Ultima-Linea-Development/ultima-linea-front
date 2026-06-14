@@ -6,19 +6,37 @@ import Typography from "@/components/ui/Typography";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export const ADMIN_TABLE_CELL_CLASS = "px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2";
+export const ADMIN_TABLE_CELL_CLASS =
+  "min-w-0 px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2";
 export const ADMIN_TABLE_TH_CLASS =
-  "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-3 font-medium whitespace-nowrap";
+  "min-w-0 px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-3 font-medium";
+export const ADMIN_TABLE_LAYOUT_CLASS = "w-full min-w-full table-fixed";
+export const ADMIN_TABLE_PAGE_SIZE = 10;
+export const ADMIN_TABLE_ACTIONS_COLUMN_CLASS = "w-14";
+export const ADMIN_TABLE_CHECKBOX_COLUMN_CLASS = "w-10";
+
+export const ADMIN_PAGE_PADDING_CLASS = "w-full px-4 sm:px-6 md:px-0";
+
+export const ADMIN_TABLE_MODAL_MOBILE_BLEED_CLASS =
+  "relative box-border -mx-4 w-[calc(100%+2rem)] max-w-none sm:-mx-6 sm:w-[calc(100%+3rem)] md:mx-0 md:w-full md:max-w-none";
 
 type AdminTableProps = {
   children: ReactNode;
   className?: string;
+  tableClassName?: string;
 };
 
-export function AdminTable({ children, className }: AdminTableProps) {
+export function AdminTable({ children, className, tableClassName }: AdminTableProps) {
   return (
-    <div className={cn("hidden md:block overflow-x-auto border border-border", className)}>
-      <table className="w-full text-left text-sm">{children}</table>
+    <div
+      className={cn(
+        "hidden md:flex md:flex-col w-full min-w-0 overflow-x-auto border border-border",
+        className
+      )}
+    >
+      <table className={cn(ADMIN_TABLE_LAYOUT_CLASS, "text-left text-sm", tableClassName)}>
+        {children}
+      </table>
     </div>
   );
 }
@@ -26,17 +44,19 @@ export function AdminTable({ children, className }: AdminTableProps) {
 type AdminTableMobileListProps = {
   children: ReactNode;
   className?: string;
+  bleed?: "page" | "modal";
 };
 
-const ADMIN_TABLE_MOBILE_BLEED_CLASS =
-  "-mx-4 w-[calc(100%+2rem)] sm:-mx-6 sm:w-[calc(100%+3rem)] md:mx-0 md:w-full";
-
-export function AdminTableMobileList({ children, className }: AdminTableMobileListProps) {
+export function AdminTableMobileList({
+  children,
+  className,
+  bleed = "page",
+}: AdminTableMobileListProps) {
   return (
     <div
       className={cn(
-        "md:hidden flex w-full min-w-0 flex-col border border-border",
-        ADMIN_TABLE_MOBILE_BLEED_CLASS,
+        "md:hidden flex w-full min-w-0 max-w-full flex-col border border-border",
+        bleed === "modal" && ADMIN_TABLE_MODAL_MOBILE_BLEED_CLASS,
         className
       )}
     >
@@ -59,7 +79,7 @@ export function AdminTableMobileCard({
   return (
     <div
       className={cn(
-        "border-b border-border p-4 last:border-b-0",
+        "flex flex-col gap-2 border-b border-border px-3 py-2.5 last:border-b-0 sm:px-4 sm:py-3",
         selected && "bg-muted/50",
         className
       )}
@@ -75,7 +95,43 @@ type AdminTableMobileGridProps = {
 };
 
 export function AdminTableMobileGrid({ children, className }: AdminTableMobileGridProps) {
-  return <div className={cn("grid grid-cols-2 gap-x-4 gap-y-3", className)}>{children}</div>;
+  return (
+    <div className={cn("grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3", className)}>
+      {children}
+    </div>
+  );
+}
+
+type AdminTableMobileSummaryProps = {
+  left: ReactNode;
+  right?: ReactNode;
+  className?: string;
+};
+
+export function AdminTableMobileSummary({
+  left,
+  right,
+  className,
+}: AdminTableMobileSummaryProps) {
+  return (
+    <div className={cn("flex min-w-0 items-center justify-between gap-2", className)}>
+      <div className="min-w-0 truncate text-xs text-muted-foreground">{left}</div>
+      {right ? <div className="shrink-0 text-sm font-medium tabular-nums">{right}</div> : null}
+    </div>
+  );
+}
+
+type AdminTableMobileSubtextProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+export function AdminTableMobileSubtext({ children, className }: AdminTableMobileSubtextProps) {
+  return (
+    <Typography variant="caption" color="muted" className={cn("block leading-snug", className)}>
+      {children}
+    </Typography>
+  );
 }
 
 type AdminTableMobileFieldProps = {
@@ -92,11 +148,17 @@ export function AdminTableMobileField({
   className,
 }: AdminTableMobileFieldProps) {
   return (
-    <div className={cn("min-w-0", fullWidth && "col-span-2", className)}>
-      <Typography variant="caption" color="muted" mb={1}>
+    <div
+      className={cn(
+        "flex min-w-0 items-baseline gap-1.5",
+        fullWidth && "col-span-2 sm:col-span-3",
+        className
+      )}
+    >
+      <Typography variant="caption" color="muted" className="shrink-0 leading-snug">
         {label}
       </Typography>
-      {children}
+      <div className="min-w-0 flex-1 text-sm leading-snug">{children}</div>
     </div>
   );
 }
@@ -107,12 +169,7 @@ type AdminTableMobileEmptyProps = {
 
 export function AdminTableMobileEmpty({ message }: AdminTableMobileEmptyProps) {
   return (
-    <div
-      className={cn(
-        "md:hidden w-full min-w-0 border border-border p-8 text-center",
-        ADMIN_TABLE_MOBILE_BLEED_CLASS
-      )}
-    >
+    <div className="md:hidden w-full min-w-0 max-w-full border border-border p-8 text-center">
       <Typography variant="body2" color="muted">
         {message}
       </Typography>
@@ -126,6 +183,7 @@ type AdminTablePaginationProps = {
   total: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  className?: string;
 };
 
 export function AdminTablePagination({
@@ -134,6 +192,7 @@ export function AdminTablePagination({
   total,
   totalPages,
   onPageChange,
+  className,
 }: AdminTablePaginationProps) {
   if (totalPages <= 1) return null;
 
@@ -143,7 +202,11 @@ export function AdminTablePagination({
   return (
     <Box
       display="flex"
-      className="flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 flex-wrap"
+      className={cn(
+        ADMIN_PAGE_PADDING_CLASS,
+        "flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 flex-wrap",
+        className
+      )}
     >
       <span className="order-2 sm:order-1">
         <Typography variant="body2" color="muted">

@@ -10,10 +10,10 @@ import {
   AdminTableEmptyRow,
   AdminTableMobileCard,
   AdminTableMobileEmpty,
-  AdminTableMobileField,
-  AdminTableMobileGrid,
   AdminTableMobileList,
+  AdminTableMobileSubtext,
   AdminTablePagination,
+  ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
 } from "@/components/admin/AdminTable";
@@ -88,23 +88,23 @@ export default function AdminUsersTable({
           <AdminTable>
             <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[16%]")}>
                   <Typography variant="body2">Nombre</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[30%]")}>
                   <Typography variant="body2">Email</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[14%]")}>
                   <Typography variant="body2">Teléfono</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[12%]")}>
                   <Typography variant="body2">Rol</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[14%]")}>
                   <Typography variant="body2">Creado</Typography>
                 </th>
                 {hasActions && (
-                  <th className={thClass}>
+                  <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
                     <Typography variant="body2">Acciones</Typography>
                   </th>
                 )}
@@ -120,30 +120,21 @@ export default function AdminUsersTable({
           <AdminTableMobileList>
             {users.map((user) => (
               <AdminTableMobileCard key={user.id}>
-                <Box display="flex" justify="between" align="start" gap="3" className="mb-3 w-full">
-                  <Typography variant="body2" className="min-w-0 font-medium">
+                <Box display="flex" justify="between" align="start" gap="2" className="w-full min-w-0">
+                  <Typography variant="body2" className="min-w-0 font-medium leading-snug">
                     {formatUserName(user)}
                   </Typography>
                   {hasActions && <AdminTableMobileActionsMenu actions={getRowActions(user)} />}
                 </Box>
-                <AdminTableMobileGrid>
-                  <AdminTableMobileField label="Email" fullWidth>
-                    <Typography variant="body2" className="break-all">
-                      {user.email}
-                    </Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Teléfono">
-                    <Typography variant="body2">{user.phone || "—"}</Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Rol">
-                    <Typography variant="body2">{formatUserRole(user.role)}</Typography>
-                  </AdminTableMobileField>
-                  <AdminTableMobileField label="Creado">
-                    <Typography variant="body2">
-                      {formatSaleDateDisplay(user.created_at)}
-                    </Typography>
-                  </AdminTableMobileField>
-                </AdminTableMobileGrid>
+                <Typography variant="caption" className="block break-all leading-snug text-foreground/80">
+                  {user.email}
+                </Typography>
+                <AdminTableMobileSubtext>
+                  {formatUserRole(user.role)}
+                  {" · "}
+                  {formatSaleDateDisplay(user.created_at)}
+                  {user.phone ? ` · ${user.phone}` : ""}
+                </AdminTableMobileSubtext>
               </AdminTableMobileCard>
             ))}
           </AdminTableMobileList>
@@ -151,23 +142,23 @@ export default function AdminUsersTable({
           <AdminTable>
             <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[16%]")}>
                   <Typography variant="body2">Nombre</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[30%]")}>
                   <Typography variant="body2">Email</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[14%]")}>
                   <Typography variant="body2">Teléfono</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[12%]")}>
                   <Typography variant="body2">Rol</Typography>
                 </th>
-                <th className={thClass}>
+                <th className={cn(thClass, "w-[14%]")}>
                   <Typography variant="body2">Creado</Typography>
                 </th>
                 {hasActions && (
-                  <th className={thClass}>
+                  <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
                     <Typography variant="body2">Acciones</Typography>
                   </th>
                 )}
@@ -199,7 +190,7 @@ export default function AdminUsersTable({
                     </Typography>
                   </td>
                   {hasActions && (
-                    <td className={cn(cellClass, "whitespace-nowrap")}>
+                    <td className={cn(cellClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
                       <AdminTableMobileActionsMenu actions={getRowActions(user)} />
                     </td>
                   )}

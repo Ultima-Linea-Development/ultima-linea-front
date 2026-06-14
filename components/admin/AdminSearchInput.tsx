@@ -231,9 +231,9 @@ export default function AdminSearchInput<T>({
     ) : null;
 
   return (
-    <div className={cn("w-full max-w-xl space-y-1", className)}>
+    <div className={cn("w-full min-w-0 max-w-none space-y-1", className)}>
       {label}
-      <div ref={anchorRef} className="relative">
+      <div ref={anchorRef} className="relative w-full min-w-0">
         <Input
           id={id}
           type="text"

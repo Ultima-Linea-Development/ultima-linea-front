@@ -7,16 +7,26 @@ import Spinner from "@/components/ui/Spinner";
 import Div from "@/components/ui/Div";
 import { productsApi } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
+import { NOINDEX_FOLLOW_METADATA } from "@/lib/seo";
 import { Suspense } from "react";
 
 type SearchPageProps = {
   searchParams: Promise<{ q?: string }>;
 };
 
-export const metadata: Metadata = {
-  title: "Búsqueda",
-  description: "Busca camisetas de fútbol en nuestro catálogo. Encuentra las camisetas que estás buscando.",
-};
+export async function generateMetadata({
+  searchParams,
+}: SearchPageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const query = params.q?.trim();
+
+  return {
+    ...NOINDEX_FOLLOW_METADATA,
+    title: query ? `Búsqueda: ${query}` : "Búsqueda",
+    description:
+      "Busca camisetas de fútbol en nuestro catálogo. Encuentra las camisetas que estás buscando.",
+  };
+}
 
 async function SearchResults({ query }: { query: string }) {
   if (!query) {

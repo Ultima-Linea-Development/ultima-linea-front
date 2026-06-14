@@ -3,14 +3,13 @@ import { NOINDEX_METADATA } from "@/lib/seo";
 
 export const metadata: Metadata = {
   ...NOINDEX_METADATA,
-  title: "Iniciar Sesión",
-  description: "Inicia sesión en tu cuenta de Última Línea",
+  title: "Cerrar sesión",
 };
 
-export default function LoginLayout({
+export default function LogoutLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return children;
 }

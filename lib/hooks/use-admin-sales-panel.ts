@@ -6,6 +6,7 @@ import { getToken, getUserFromToken, getCurrentUserId, isAdmin } from "@/lib/aut
 import { canDeleteOwnedResource } from "@/lib/roles";
 import {
   adminSalesApi,
+  adminProductsApi,
   type CreateSaleRequest,
   type Product,
   type Sale,
@@ -70,29 +71,47 @@ export function useAdminSalesPanel() {
     filterCached: filterSalesByQuery,
   });
 
-  const loadSaleFormData = useCallback(async () => {
+  const loadSaleCatalog = useCallback(async () => {
     const token = getToken();
     if (!token) {
       setError("Sesión expirada. Volvé a iniciar sesión.");
       return;
     }
 
-    const [productsResponse, usersResponse, externalSellersResponse] = await Promise.all([
+    const [productsResponse, usersResponse] = await Promise.all([
       adminSalesApi.getAvailableProducts(token),
       adminSalesApi.getAssignableUsers(token),
-      adminSalesApi.getExternalSellers(token),
     ]);
 
     if (productsResponse.error || !productsResponse.data) {
-      setError(productsResponse.error || "No se pudieron cargar los productos.");
-      setProducts([]);
+      const fallback = await adminProductsApi.getAll(token, {
+        page: 1,
+        per_page: 50,
+        is_active: true,
+      });
+      if (fallback.data?.products) {
+        setProducts(fallback.data.products);
+      } else {
+        setProducts([]);
+      }
     } else {
       setProducts(productsResponse.data.products);
     }
 
     setAssignableUsers(usersResponse.data?.users ?? []);
-    setExternalSellers(externalSellersResponse.data?.sellers ?? []);
   }, []);
+
+  const loadExternalSellers = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    const response = await adminSalesApi.getExternalSellers(token);
+    setExternalSellers(response.data?.sellers ?? []);
+  }, []);
+
+  const loadSaleFormData = useCallback(async () => {
+    await Promise.all([loadSaleCatalog(), loadExternalSellers()]);
+  }, [loadSaleCatalog, loadExternalSellers]);
 
   const loadSales = useCallback(async () => {
     await flushPendingDelete();
@@ -142,6 +161,15 @@ export function useAdminSalesPanel() {
     }
   }, [page, searchQuery, flushPendingDelete, searchCacheRef]);
 
+  const refreshSalesList = useCallback(async () => {
+    setIsDataLoading(true);
+    try {
+      await Promise.all([loadSales(), loadSaleCatalog()]);
+    } finally {
+      setIsDataLoading(false);
+    }
+  }, [loadSales, loadSaleCatalog]);
+
   const refreshSalesPanel = useCallback(async () => {
     setIsDataLoading(true);
     try {
@@ -153,9 +181,17 @@ export function useAdminSalesPanel() {
 
   useEffect(() => {
     queueMicrotask(() => {
-      void refreshSalesPanel();
+      void refreshSalesList();
     });
-  }, [refreshSalesPanel, searchTick]);
+  }, [refreshSalesList, searchTick]);
+
+  useEffect(() => {
+    if (!showSaleForm && !editingSale) return;
+
+    queueMicrotask(() => {
+      void loadSaleFormData();
+    });
+  }, [showSaleForm, editingSale, loadSaleFormData]);
 
   const handleCreateSale = useCallback(
     async (payload: CreateSaleRequest) => {

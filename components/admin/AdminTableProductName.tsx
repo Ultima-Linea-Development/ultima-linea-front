@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
+import AdminTextLink from "@/components/admin/AdminTextLink";
 import { cn } from "@/lib/utils";
 
 type AdminTableProductNameProps = {
@@ -49,26 +49,23 @@ export default function AdminTableProductName({
 
   if (href) {
     return (
-      <Link
+      <AdminTextLink
         href={href}
-        className="block max-w-full text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+        tone="default"
+        className="block max-w-full"
         target="_blank"
         rel="noopener noreferrer"
       >
         {content}
-      </Link>
+      </AdminTextLink>
     );
   }
 
   if (onClick) {
     return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="block max-w-full cursor-pointer text-left text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
-      >
+      <AdminTextLink tone="default" onClick={onClick} className="block max-w-full text-left">
         {content}
-      </button>
+      </AdminTextLink>
     );
   }
 

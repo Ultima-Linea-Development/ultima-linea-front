@@ -7,20 +7,23 @@ import Modal from "@/components/ui/Modal";
 import AdminSaleDetail from "@/components/admin/AdminSaleDetail";
 import AdminSaleEditForm from "@/components/admin/AdminSaleEditForm";
 import AdminSaleForm from "@/components/admin/AdminSaleForm";
-import AdminDataLoading from "@/components/admin/AdminDataLoading";
+import AdminTableSkeleton from "@/components/admin/AdminTableSkeleton";
 import AdminSalesTable, { PER_PAGE } from "@/components/admin/AdminSalesTable";
+import { ADMIN_PAGE_PADDING_CLASS } from "@/components/admin/AdminTable";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
 import AdminSaleSearchSuggestion from "@/components/admin/AdminSaleSearchSuggestion";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
 import { formatSaleProductsLabel } from "@/lib/sale-items";
 import { Button } from "@/components/ui/button";
 import { useAdminSalesPanel } from "@/lib/hooks/use-admin-sales-panel";
+import { cn } from "@/lib/utils";
 
 export default function AdminSalesPage() {
   const panel = useAdminSalesPanel();
 
   return (
-    <Box display="flex" direction="col" gap="6" className="min-h-[calc(100dvh-7rem)]">
+    <Box display="flex" direction="col" gap="6" className="w-full min-w-0">
+      <div className={cn("flex flex-col gap-6", ADMIN_PAGE_PADDING_CLASS)}>
       <Box display="flex" className="items-center justify-between flex-wrap gap-4">
         <Typography variant="h1">Ventas</Typography>
         <Button type="button" onClick={() => panel.setShowSaleForm(true)}>
@@ -52,6 +55,7 @@ export default function AdminSalesPage() {
         onClose={panel.dismissDeleteToast}
         onUndo={panel.undoDelete}
       />
+      </div>
 
       {panel.showSaleForm && (
         <Modal
@@ -153,30 +157,32 @@ export default function AdminSalesPage() {
         ]}
       />
 
-      {panel.isDataLoading ? (
-        <AdminDataLoading />
-      ) : (
-        <AdminSalesTable
-          sales={panel.sales}
-          products={panel.products}
-          assignableUsers={panel.assignableUsers}
-          page={panel.currentPage}
-          perPage={PER_PAGE}
-          total={panel.total}
-          totalPages={panel.totalPages}
-          onPageChange={panel.setPage}
-          onViewDetails={panel.setViewingSale}
-          onEdit={(sale) => {
-            panel.setEditError("");
-            panel.setEditingSale(sale);
-          }}
-          onDelete={(sale) => {
-            panel.setDeleteConfirmSale(sale);
-            panel.setDeleteError("");
-          }}
-          canDeleteSale={panel.canDeleteSale}
-        />
-      )}
+      <div className="w-full min-w-0">
+        {panel.isDataLoading ? (
+          <AdminTableSkeleton variant="sales" />
+        ) : (
+          <AdminSalesTable
+            sales={panel.sales}
+            products={panel.products}
+            assignableUsers={panel.assignableUsers}
+            page={panel.currentPage}
+            perPage={PER_PAGE}
+            total={panel.total}
+            totalPages={panel.totalPages}
+            onPageChange={panel.setPage}
+            onViewDetails={panel.setViewingSale}
+            onEdit={(sale) => {
+              panel.setEditError("");
+              panel.setEditingSale(sale);
+            }}
+            onDelete={(sale) => {
+              panel.setDeleteConfirmSale(sale);
+              panel.setDeleteError("");
+            }}
+            canDeleteSale={panel.canDeleteSale}
+          />
+        )}
+      </div>
     </Box>
   );
 }

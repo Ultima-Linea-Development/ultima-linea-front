@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { fontVariable } from "@/lib/fonts";
 import AdminLayoutClient from "@/components/admin/AdminLayoutClient";
 import { getRoleFromAuthCookie } from "@/lib/server/auth-cookie";
+import { NOINDEX_METADATA } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  ...NOINDEX_METADATA,
+  title: "Admin",
+};
 
 export default async function AdminLayout({
   children,

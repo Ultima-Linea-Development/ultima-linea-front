@@ -21,7 +21,7 @@ export default function AdminShell({ children }: AdminShellProps) {
     <Box
       display="flex"
       align="stretch"
-      className="h-full min-h-0 flex-col md:flex-row"
+      className="h-full min-h-0 min-w-0 flex-col overflow-x-hidden md:flex-row"
     >
       {/* Sidebar: solo desktop */}
       <aside

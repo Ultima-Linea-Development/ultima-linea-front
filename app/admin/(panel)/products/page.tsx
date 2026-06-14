@@ -6,15 +6,20 @@ import Spinner from "@/components/ui/Spinner";
 import Typography from "@/components/ui/Typography";
 import Alert, { InlineAlert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
-import AdminDataLoading from "@/components/admin/AdminDataLoading";
+import AdminTableSkeleton from "@/components/admin/AdminTableSkeleton";
 import AdminProductsTable, { PER_PAGE } from "@/components/admin/AdminProductsTable";
+import { ADMIN_PAGE_PADDING_CLASS } from "@/components/admin/AdminTable";
 import AdminSearchInput from "@/components/admin/AdminSearchInput";
+import AdminCatalogStatusLinks from "@/components/admin/AdminCatalogStatusLinks";
 import AdminProductSearchSuggestion from "@/components/admin/AdminProductSearchSuggestion";
 import AdminProductEditForm from "@/components/admin/AdminProductEditForm";
 import AdminProductForm from "@/components/admin/AdminProductForm";
 import ConfirmDeleteModal from "@/components/admin/ConfirmDeleteModal";
 import Modal from "@/components/ui/Modal";
-import { isAdmin, getToken } from "@/lib/auth";
+import { useAdminRole } from "@/components/admin/AdminRoleProvider";
+import { getToken } from "@/lib/auth";
+import { isAdminRole } from "@/lib/roles";
+import { cn } from "@/lib/utils";
 import { type Product } from "@/lib/api";
 import {
   useAdminProductsCatalog,
@@ -29,6 +34,8 @@ export default function AdminProductsPage() {
 
   const catalog = useAdminProductsCatalog();
   const edit = useAdminProductEdit(catalog.refreshCatalog, catalog.flushPendingDelete);
+  const role = useAdminRole();
+  const canSelectProducts = isAdminRole(role);
 
   const handleDelete = (product: Product) => {
     setDeleteConfirmProduct(product);
@@ -65,7 +72,8 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <Box display="flex" direction="col" gap="6" className="min-h-[calc(100dvh-7rem)]">
+    <Box display="flex" direction="col" gap="6" className="w-full min-w-0">
+      <div className={cn("flex flex-col gap-6", ADMIN_PAGE_PADDING_CLASS)}>
       <Box display="flex" className="items-center justify-between flex-wrap gap-4">
         <Typography variant="h1">Catálogo</Typography>
         <Button type="button" onClick={() => setShowCreateModal(true)}>
@@ -73,18 +81,27 @@ export default function AdminProductsPage() {
         </Button>
       </Box>
 
-      <AdminSearchInput
-        value={catalog.searchInput}
-        onChange={catalog.setSearchInput}
-        onClear={catalog.clearSearch}
-        onSubmit={catalog.applySearchFromQuery}
-        onSuggestionSelect={(product) => catalog.applySearchFromQuery(product.name)}
-        suggestions={catalog.searchInput.trim() ? catalog.searchSuggestions : []}
-        getSuggestionKey={(product) => product.id}
-        renderSuggestion={(product) => <AdminProductSearchSuggestion product={product} />}
-        emptyMessage="No hay productos"
-        listboxId="catalog-product-listbox"
-      />
+      <Box display="flex" direction="col" gap="2" className="w-full">
+        <AdminSearchInput
+          value={catalog.searchInput}
+          onChange={catalog.setSearchInput}
+          onClear={catalog.clearSearch}
+          onSubmit={catalog.applySearchFromQuery}
+          onSuggestionSelect={(product) => catalog.applySearchFromQuery(product.name)}
+          suggestions={catalog.searchInput.trim() ? catalog.searchSuggestions : []}
+          getSuggestionKey={(product) => product.id}
+          renderSuggestion={(product) => <AdminProductSearchSuggestion product={product} />}
+          emptyMessage="No hay productos"
+          listboxId="catalog-product-listbox"
+        />
+        <AdminCatalogStatusLinks
+          todoCount={catalog.todoCount}
+          inactiveCount={catalog.inactiveCount}
+          showInactive={catalog.activeFilter === "false"}
+          onShowTodo={catalog.showTodoProducts}
+          onShowInactive={catalog.showInactiveProducts}
+        />
+      </Box>
 
       <Alert
         open={!!catalog.deleteToast}
@@ -97,6 +114,7 @@ export default function AdminProductsPage() {
       <Alert open={!!catalog.error} message={catalog.error} variant="destructive" onClose={() => catalog.setError("")} />
       <Alert open={!!catalog.success} message={catalog.success} variant="default" onClose={() => catalog.setSuccess("")} />
       <Alert open={!!catalog.bulkError} message={catalog.bulkError} variant="destructive" onClose={() => catalog.setBulkError("")} />
+      </div>
 
       {showCreateModal && (
         <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="Agregar producto" className="max-w-2xl">
@@ -105,7 +123,7 @@ export default function AdminProductsPage() {
               catalog.setSuccess("Producto creado correctamente.");
               setShowCreateModal(false);
               catalog.setPage(1);
-              void catalog.loadCatalog();
+              void catalog.refreshCatalog();
             }}
             onCancel={() => setShowCreateModal(false)}
           />
@@ -201,10 +219,15 @@ export default function AdminProductsPage() {
         </Modal>
       )}
 
-      {catalog.isDataLoading ? (
-        <AdminDataLoading />
-      ) : (
-        <AdminProductsTable
+      <div className="w-full min-w-0">
+        {catalog.isDataLoading ? (
+          <AdminTableSkeleton
+            variant="products"
+            showSelection={canSelectProducts}
+            showMobileFilters
+          />
+        ) : (
+          <AdminProductsTable
           products={catalog.list}
           page={catalog.currentPage}
           perPage={PER_PAGE}
@@ -217,14 +240,12 @@ export default function AdminProductsPage() {
           onDelete={handleDelete}
           canDeleteProduct={catalog.canDeleteProduct}
           selectedIds={catalog.selectedIds}
-          onSelectionChange={isAdmin() ? catalog.setSelectedIds : undefined}
+          onSelectionChange={canSelectProducts ? catalog.setSelectedIds : undefined}
           categoryFilter={catalog.categoryFilter}
           sizeFilter={catalog.sizeFilter}
-          activeFilter={catalog.activeFilter}
           sizeOptions={catalog.sizeOptions}
           onCategoryFilterChange={catalog.handleCategoryFilterChange}
           onSizeFilterChange={catalog.handleSizeFilterChange}
-          onActiveFilterChange={catalog.handleActiveFilterChange}
           tableFooter={
             catalog.selectedIds.length > 0 ? (
               <Box
@@ -275,7 +296,8 @@ export default function AdminProductsPage() {
             ) : null
           }
         />
-      )}
+        )}
+      </div>
     </Box>
   );
 }

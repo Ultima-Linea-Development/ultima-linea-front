@@ -13,13 +13,13 @@ export default function AdminSectionLinks() {
   const navItems = getAdminNavItemsForRole(useAdminRole());
 
   return (
-    <nav className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <nav className="contents">
       {navItems.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           className={cn(
-            "flex items-center gap-3 border border-border px-4 py-4 text-muted-foreground",
+            "flex h-full min-h-[4.5rem] items-center gap-3 border border-border px-4 py-4 text-muted-foreground",
             adminSurfaceInteractiveClassName(
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             )

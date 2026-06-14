@@ -10,11 +10,6 @@ export const ADMIN_CATEGORY_FILTER_OPTIONS: Array<{
   { value: "retro", label: "Retro" },
 ];
 
-export const ADMIN_ACTIVE_FILTER_OPTIONS = [
-  { value: "true", label: "Sí" },
-  { value: "false", label: "No" },
-] as const;
-
 export function parseIsActiveFilterParam(value: string | null): boolean | undefined {
   if (value === "true") return true;
   if (value === "false") return false;
@@ -56,11 +51,13 @@ export function buildAdminSearchTextMatch(query: string): Record<string, unknown
 }
 
 export function buildProductSizeFilter(size: string): Record<string, unknown> {
+  const trimmed = size.trim();
+  if (!trimmed) return {};
+
   return {
     $or: [
-      { sizes: { $in: [size] } },
-      { [`stock_by_sizes.${size}`]: { $exists: true } },
-      { size },
+      { [`stock_by_sizes.${trimmed}`]: { $gt: 0 } },
+      { size: trimmed, stock: { $gt: 0 } },
     ],
   };
 }

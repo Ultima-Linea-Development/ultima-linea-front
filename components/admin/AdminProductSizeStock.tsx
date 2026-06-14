@@ -1,5 +1,6 @@
 "use client";
 
+import AdminSizeStockChip from "@/components/admin/AdminSizeStockChip";
 import Typography from "@/components/ui/Typography";
 import type { Product } from "@/lib/api";
 import {
@@ -17,15 +18,6 @@ type AdminProductSizeStockProps = {
   highlightSize?: string;
 };
 
-function SizeStockBadge({ size, stock }: { size: string; stock: number }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs tabular-nums whitespace-nowrap">
-      <span className="font-medium">{size}</span>
-      <span className="text-muted-foreground">{stock}</span>
-    </span>
-  );
-}
-
 export default function AdminProductSizeStock({
   product,
   className,
@@ -36,6 +28,8 @@ export default function AdminProductSizeStock({
   );
 
   if (entries.length === 0) {
+    if (highlightSize) return null;
+
     const total = formatProductSizeStockDisplay(getProductTotalStock(product));
     if (!total) return null;
 
@@ -50,15 +44,20 @@ export default function AdminProductSizeStock({
   const hidden = entries.slice(VISIBLE_SIZE_LIMIT);
 
   return (
-    <div className={cn("flex max-w-[220px] flex-wrap items-center gap-1", className)}>
+    <div className={cn("flex flex-wrap items-center gap-x-1.5 gap-y-2 pt-0.5", className)}>
       {visible.map(([size, stock]) => (
-        <SizeStockBadge key={size} size={size} stock={stock} />
+        <AdminSizeStockChip
+          key={size}
+          size={size}
+          stock={stock}
+          highlighted={highlightSize === size}
+        />
       ))}
 
       {hidden.length > 0 && (
-        <div className="group relative">
+        <div className="group relative shrink-0">
           <span
-            className="inline-flex cursor-default rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground tabular-nums"
+            className="inline-flex cursor-default rounded-sm bg-muted/40 px-2 py-1 text-xs font-medium text-muted-foreground tabular-nums"
             tabIndex={0}
             aria-label={`${hidden.length} talles más`}
           >
@@ -66,10 +65,15 @@ export default function AdminProductSizeStock({
           </span>
           <div
             role="tooltip"
-            className="absolute left-0 top-full z-30 mt-1 hidden min-w-[9rem] max-w-[240px] flex-wrap gap-1 border border-border bg-background p-2 shadow-sm group-hover:flex group-focus-within:flex"
+            className="absolute left-0 top-full z-30 mt-1.5 hidden flex-wrap gap-x-1.5 gap-y-2 border border-border bg-background p-2 shadow-sm group-hover:flex group-focus-within:flex"
           >
             {hidden.map(([size, stock]) => (
-              <SizeStockBadge key={size} size={size} stock={stock} />
+              <AdminSizeStockChip
+                key={size}
+                size={size}
+                stock={stock}
+                highlighted={highlightSize === size}
+              />
             ))}
           </div>
         </div>

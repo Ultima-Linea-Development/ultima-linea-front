@@ -1,21 +1,25 @@
 import Box from "@/components/layout/Box";
-import Spinner from "@/components/ui/Spinner";
+import AdminLoadingShimmer from "@/components/admin/AdminLoadingShimmer";
 import { cn } from "@/lib/utils";
 
 type AdminDataLoadingProps = {
   className?: string;
+  minHeight?: string;
 };
 
-export default function AdminDataLoading({ className }: AdminDataLoadingProps) {
+export default function AdminDataLoading({
+  className,
+  minHeight = "min-h-[12rem]",
+}: AdminDataLoadingProps) {
   return (
     <Box
       display="flex"
       direction="col"
-      justify="start"
-      align="start"
-      className={cn("w-full", className)}
+      className={cn("w-full", minHeight, className)}
+      aria-busy="true"
+      aria-label="Cargando"
     >
-      <Spinner fullscreen={false} />
+      <AdminLoadingShimmer className="h-full min-h-[inherit] w-full rounded-sm" />
     </Box>
   );
 }

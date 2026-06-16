@@ -5,6 +5,13 @@ import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  ADMIN_PAGE_PADDING_CLASS,
+  ADMIN_TABLE_DESKTOP_CLASS,
+  ADMIN_TABLE_MOBILE_CLASS,
+} from "@/lib/admin-layout-styles";
+
+export { ADMIN_PAGE_PADDING_CLASS, ADMIN_TABLE_DESKTOP_CLASS, ADMIN_TABLE_MOBILE_CLASS };
 
 export const ADMIN_TABLE_CELL_CLASS = "px-3 py-2";
 export const ADMIN_TABLE_TH_CLASS = "px-3 py-2 text-left font-medium";
@@ -20,10 +27,8 @@ export const ADMIN_TABLE_ACTIONS_CELL_CLASS = cn(
 /** @deprecated Usar ADMIN_TABLE_CELL_CLASS */
 export const ADMIN_TABLE_TRUNCATE_CELL_CLASS = ADMIN_TABLE_CELL_CLASS;
 
-export const ADMIN_PAGE_PADDING_CLASS = "w-full px-4 sm:px-6 md:px-0";
-
 export const ADMIN_TABLE_MODAL_MOBILE_BLEED_CLASS =
-  "relative box-border -mx-4 w-[calc(100%+2rem)] max-w-none sm:-mx-6 sm:w-[calc(100%+3rem)] md:mx-0 md:w-full md:max-w-none";
+  "relative box-border -mx-4 w-[calc(100%+2rem)] max-w-none sm:-mx-6 sm:w-[calc(100%+3rem)] lg:mx-0 lg:w-full lg:max-w-none";
 
 export const ADMIN_TABLE_OUTER_BORDER_CLASS = "border border-gray-200";
 
@@ -53,7 +58,7 @@ type AdminTableProps = {
 
 export function AdminTable({ children, className, tableClassName }: AdminTableProps) {
   return (
-    <div className={cn("hidden md:block w-full", ADMIN_TABLE_OUTER_BORDER_CLASS, className)}>
+    <div className={cn(ADMIN_TABLE_DESKTOP_CLASS, "w-full", ADMIN_TABLE_OUTER_BORDER_CLASS, className)}>
       <table className={cn(ADMIN_TABLE_LAYOUT_CLASS, tableClassName)}>{children}</table>
     </div>
   );
@@ -73,7 +78,8 @@ export function AdminTableMobileList({
   return (
     <div
       className={cn(
-        "md:hidden flex w-full flex-col",
+        ADMIN_TABLE_MOBILE_CLASS,
+        "flex w-full flex-col",
         ADMIN_TABLE_OUTER_BORDER_CLASS,
         bleed === "modal" && ADMIN_TABLE_MODAL_MOBILE_BLEED_CLASS,
         className
@@ -190,7 +196,7 @@ type AdminTableMobileEmptyProps = {
 
 export function AdminTableMobileEmpty({ message }: AdminTableMobileEmptyProps) {
   return (
-    <div className={cn("md:hidden w-full p-8 text-center", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
+    <div className={cn(ADMIN_TABLE_MOBILE_CLASS, "w-full p-8 text-center", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
       <Typography variant="body2" color="muted">
         {message}
       </Typography>

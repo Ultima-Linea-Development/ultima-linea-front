@@ -11,6 +11,7 @@ import {
   AdminTableMobileList,
   ADMIN_DETAIL_TABLE_CLASS,
   ADMIN_TABLE_CELL_CLASS,
+  ADMIN_TABLE_DESKTOP_CLASS,
   ADMIN_TABLE_OUTER_BORDER_CLASS,
   ADMIN_TABLE_TH_CLASS,
   adminTableRowClassName,
@@ -129,7 +130,7 @@ export default function AdminCommissionDetail({
         </div>
       </AdminTableMobileList>
 
-      <div className={cn("hidden md:block", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
+      <div className={cn(ADMIN_TABLE_DESKTOP_CLASS, ADMIN_TABLE_OUTER_BORDER_CLASS)}>
         <table className={ADMIN_DETAIL_TABLE_CLASS}>
           <thead className="bg-muted/50">
             <tr>

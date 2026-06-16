@@ -6,6 +6,7 @@ import AdminLoadingShimmer from "@/components/admin/AdminLoadingShimmer";
 import {
   ADMIN_TABLE_ACTIONS_CELL_CLASS,
   ADMIN_TABLE_CELL_CLASS,
+  ADMIN_TABLE_MOBILE_CLASS,
   ADMIN_TABLE_PAGE_SIZE,
   ADMIN_TABLE_TH_CLASS,
   ADMIN_TABLE_OUTER_BORDER_CLASS,
@@ -245,7 +246,8 @@ export default function AdminTableSkeleton({
         <Box
           display="flex"
           className={cn(
-            "md:hidden w-full min-w-0 flex-wrap items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3",
+            ADMIN_TABLE_MOBILE_CLASS,
+            "w-full flex-wrap items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3",
             ADMIN_TABLE_OUTER_BORDER_CLASS
           )}
         >

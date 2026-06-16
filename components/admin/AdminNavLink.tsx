@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { adminNavLinkClassName } from "@/lib/admin-interactive-styles";
+import { ADMIN_NAV_LINK_LAYOUT_CLASS } from "@/lib/admin-layout-styles";
 import { cn } from "@/lib/utils";
 
 type AdminNavLinkProps = {
@@ -23,10 +24,7 @@ export default function AdminNavLink({
     <Link
       href={href}
       aria-current={isActive ? "page" : undefined}
-      className={cn(
-        "flex w-full flex-col items-center gap-1 px-2 py-2 text-xs font-medium md:flex-row md:items-center md:justify-start md:gap-3 md:px-3 md:text-left md:text-sm",
-        adminNavLinkClassName(isActive)
-      )}
+      className={cn(ADMIN_NAV_LINK_LAYOUT_CLASS, adminNavLinkClassName(isActive))}
     >
       {icon && <span className="shrink-0">{icon}</span>}
       <span className="truncate">{children}</span>

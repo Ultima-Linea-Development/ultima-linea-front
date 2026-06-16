@@ -13,11 +13,12 @@ import {
   AdminTablePagination,
   ADMIN_TABLE_ACTIONS_CELL_CLASS,
   ADMIN_TABLE_CELL_CLASS,
+  ADMIN_TABLE_MOBILE_CLASS,
   ADMIN_TABLE_TH_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { Product } from "@/lib/api";
-import { formatPrice, generateSlug } from "@/lib/utils";
+import { formatPrice, generateSlug, cn } from "@/lib/utils";
 import AdminTableProductName from "@/components/admin/AdminTableProductName";
 import AdminProductSizeStock from "@/components/admin/AdminProductSizeStock";
 import AdminTableColumnFilter from "@/components/admin/AdminTableColumnFilter";
@@ -124,7 +125,10 @@ export default function AdminProductsTable({
     return (
       <Box
         display="flex"
-        className="md:hidden w-full min-w-0 flex-wrap items-center gap-3 border border-gray-200 px-3 py-2.5 sm:px-4 sm:py-3"
+        className={cn(
+          ADMIN_TABLE_MOBILE_CLASS,
+          "w-full flex-wrap items-center gap-3 border border-gray-200 px-3 py-2.5 sm:px-4 sm:py-3"
+        )}
       >
         <AdminTableColumnFilter
           id="catalog-size-filter-mobile"

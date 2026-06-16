@@ -16,10 +16,9 @@ import {
   AdminTableMobileSummary,
   AdminTableMobileSubtext,
   AdminTablePagination,
-  ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
+  ADMIN_TABLE_ACTIONS_CELL_CLASS,
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
-  ADMIN_TABLE_TRUNCATE_CELL_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { Commission, SaleAssignableUser } from "@/lib/api";
@@ -27,42 +26,33 @@ import {
   getCommissionSellerLabel,
 } from "@/lib/commission-display";
 import { formatSaleDateDisplay } from "@/lib/sale-date";
-import { cn, formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 
 const PER_PAGE = 10;
 
-const COMMISSION_TABLE_COLUMN_CLASS = {
-  date: "w-[11%]",
-  customer: "w-[22%]",
-  seller: "w-[18%]",
-  status: "w-[13%]",
-  products: "w-[18%]",
-  total: "w-[10%]",
-} as const;
-
-function renderCommissionTableHeader(hasActions: boolean, thClass: string) {
+function renderCommissionTableHeader(hasActions: boolean) {
   return (
     <tr>
-      <th className={cn(thClass, COMMISSION_TABLE_COLUMN_CLASS.date)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Fecha</Typography>
       </th>
-      <th className={cn(thClass, COMMISSION_TABLE_COLUMN_CLASS.customer)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Cliente</Typography>
       </th>
-      <th className={cn(thClass, COMMISSION_TABLE_COLUMN_CLASS.seller)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Vendedor</Typography>
       </th>
-      <th className={cn(thClass, COMMISSION_TABLE_COLUMN_CLASS.status)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Estado</Typography>
       </th>
-      <th className={cn(thClass, COMMISSION_TABLE_COLUMN_CLASS.products)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Productos</Typography>
       </th>
-      <th className={cn(thClass, COMMISSION_TABLE_COLUMN_CLASS.total)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Total</Typography>
       </th>
       {hasActions && (
-        <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+        <th className={ADMIN_TABLE_TH_CLASS}>
           <Typography variant="body2">Acciones</Typography>
         </th>
       )}
@@ -110,8 +100,6 @@ export default function AdminCommissionsTable({
   canDeleteCommission,
 }: AdminCommissionsTableProps) {
   const cellClass = ADMIN_TABLE_CELL_CLASS;
-  const thClass = ADMIN_TABLE_TH_CLASS;
-  const truncateCellClass = ADMIN_TABLE_TRUNCATE_CELL_CLASS;
   const hasActions = Boolean(onViewDetails || onEdit || onExport || onDelete);
 
   const getCommissionCustomerHandler = (commission: Commission) => {
@@ -174,7 +162,7 @@ export default function AdminCommissionsTable({
           <AdminTableMobileEmpty message="No hay encargos" />
           <AdminTable>
             <thead className="bg-muted/50">
-              {renderCommissionTableHeader(hasActions, thClass)}
+              {renderCommissionTableHeader(hasActions)}
             </thead>
             <tbody>
               <AdminTableEmptyRow colSpan={hasActions ? 7 : 6} message="No hay encargos" />
@@ -225,53 +213,49 @@ export default function AdminCommissionsTable({
 
           <AdminTable>
             <thead className="bg-muted/50">
-              {renderCommissionTableHeader(hasActions, thClass)}
+              {renderCommissionTableHeader(hasActions)}
             </thead>
             <tbody>
               {commissions.map((commission, index) => (
                 <tr key={commission.id} className={adminTableRowClassName({ stripeIndex: index })}>
-                  <td className={cn(truncateCellClass, COMMISSION_TABLE_COLUMN_CLASS.date)}>
+                  <td className={cellClass}>
                     <Typography variant="body2" className="whitespace-nowrap">
                       {formatSaleDateDisplay(commission.created_at)}
                     </Typography>
                   </td>
-                  <td className={cn(truncateCellClass, COMMISSION_TABLE_COLUMN_CLASS.customer)}>
+                  <td className={cellClass}>
                     {getCommissionCustomerHandler(commission) ? (
                       <AdminTextLink
                         tone="default"
                         onClick={getCommissionCustomerHandler(commission)}
-                        className="block min-w-0 max-w-full truncate text-left"
+                        className="text-left"
                       >
-                        <Typography variant="body2" as="span" className="truncate">
+                        <Typography variant="body2" as="span">
                           {commission.customer_name}
                         </Typography>
                       </AdminTextLink>
                     ) : (
-                      <Typography variant="body2" className="truncate">
-                        {commission.customer_name}
-                      </Typography>
+                      <Typography variant="body2">{commission.customer_name}</Typography>
                     )}
                   </td>
-                  <td className={cn(truncateCellClass, COMMISSION_TABLE_COLUMN_CLASS.seller)}>
-                    <Typography variant="body2" className="truncate">
+                  <td className={cellClass}>
+                    <Typography variant="body2">
                       {getCommissionSellerLabel(commission, assignableUsers)}
                     </Typography>
                   </td>
-                  <td className={cn(truncateCellClass, COMMISSION_TABLE_COLUMN_CLASS.status)}>
+                  <td className={cellClass}>
                     <AdminCommissionStatusBadge status={commission.status} />
                   </td>
-                  <td className={cn(truncateCellClass, COMMISSION_TABLE_COLUMN_CLASS.products)}>
-                    <Typography variant="body2" className="truncate">
-                      {getCommissionItemsLabel(commission)}
-                    </Typography>
+                  <td className={cellClass}>
+                    <Typography variant="body2">{getCommissionItemsLabel(commission)}</Typography>
                   </td>
-                  <td className={cn(truncateCellClass, COMMISSION_TABLE_COLUMN_CLASS.total)}>
-                    <Typography variant="body2" className="whitespace-nowrap">
+                  <td className={cellClass}>
+                    <Typography variant="body2" className="whitespace-nowrap tabular-nums">
                       {formatPrice(getCommissionTotal(commission))}
                     </Typography>
                   </td>
                   {hasActions && (
-                    <td className={cn(cellClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+                    <td className={ADMIN_TABLE_ACTIONS_CELL_CLASS}>
                       <AdminTableMobileActionsMenu actions={getRowActions(commission)} />
                     </td>
                   )}

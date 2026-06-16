@@ -13,7 +13,7 @@ import {
   AdminTableMobileList,
   AdminTableMobileSubtext,
   AdminTablePagination,
-  ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
+  ADMIN_TABLE_ACTIONS_CELL_CLASS,
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
   adminTableRowClassName,
@@ -21,7 +21,6 @@ import {
 import type { AdminUser } from "@/lib/api";
 import { formatUserRole } from "@/lib/roles";
 import { formatSaleDateDisplay } from "@/lib/sale-date";
-import { cn } from "@/lib/utils";
 
 const PER_PAGE = 10;
 
@@ -41,6 +40,33 @@ function formatUserName(user: AdminUser) {
   return name || "—";
 }
 
+function renderUsersTableHeader(hasActions: boolean) {
+  return (
+    <tr>
+      <th className={ADMIN_TABLE_TH_CLASS}>
+        <Typography variant="body2">Nombre</Typography>
+      </th>
+      <th className={ADMIN_TABLE_TH_CLASS}>
+        <Typography variant="body2">Email</Typography>
+      </th>
+      <th className={ADMIN_TABLE_TH_CLASS}>
+        <Typography variant="body2">Teléfono</Typography>
+      </th>
+      <th className={ADMIN_TABLE_TH_CLASS}>
+        <Typography variant="body2">Rol</Typography>
+      </th>
+      <th className={ADMIN_TABLE_TH_CLASS}>
+        <Typography variant="body2">Creado</Typography>
+      </th>
+      {hasActions && (
+        <th className={ADMIN_TABLE_TH_CLASS}>
+          <Typography variant="body2">Acciones</Typography>
+        </th>
+      )}
+    </tr>
+  );
+}
+
 export default function AdminUsersTable({
   users,
   page,
@@ -52,7 +78,6 @@ export default function AdminUsersTable({
   onDelete,
 }: AdminUsersTableProps) {
   const cellClass = ADMIN_TABLE_CELL_CLASS;
-  const thClass = ADMIN_TABLE_TH_CLASS;
   const hasActions = Boolean(onEdit || onDelete);
   const columnCount = hasActions ? 6 : 5;
 
@@ -88,28 +113,7 @@ export default function AdminUsersTable({
           <AdminTableMobileEmpty message="No hay usuarios" />
           <AdminTable>
             <thead className="bg-muted/50">
-              <tr>
-                <th className={cn(thClass, "w-[16%]")}>
-                  <Typography variant="body2">Nombre</Typography>
-                </th>
-                <th className={cn(thClass, "w-[30%]")}>
-                  <Typography variant="body2">Email</Typography>
-                </th>
-                <th className={cn(thClass, "w-[14%]")}>
-                  <Typography variant="body2">Teléfono</Typography>
-                </th>
-                <th className={cn(thClass, "w-[12%]")}>
-                  <Typography variant="body2">Rol</Typography>
-                </th>
-                <th className={cn(thClass, "w-[14%]")}>
-                  <Typography variant="body2">Creado</Typography>
-                </th>
-                {hasActions && (
-                  <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
-                    <Typography variant="body2">Acciones</Typography>
-                  </th>
-                )}
-              </tr>
+              {renderUsersTableHeader(hasActions)}
             </thead>
             <tbody>
               <AdminTableEmptyRow colSpan={columnCount} message="No hay usuarios" />
@@ -142,28 +146,7 @@ export default function AdminUsersTable({
 
           <AdminTable>
             <thead className="bg-muted/50">
-              <tr>
-                <th className={cn(thClass, "w-[16%]")}>
-                  <Typography variant="body2">Nombre</Typography>
-                </th>
-                <th className={cn(thClass, "w-[30%]")}>
-                  <Typography variant="body2">Email</Typography>
-                </th>
-                <th className={cn(thClass, "w-[14%]")}>
-                  <Typography variant="body2">Teléfono</Typography>
-                </th>
-                <th className={cn(thClass, "w-[12%]")}>
-                  <Typography variant="body2">Rol</Typography>
-                </th>
-                <th className={cn(thClass, "w-[14%]")}>
-                  <Typography variant="body2">Creado</Typography>
-                </th>
-                {hasActions && (
-                  <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
-                    <Typography variant="body2">Acciones</Typography>
-                  </th>
-                )}
-              </tr>
+              {renderUsersTableHeader(hasActions)}
             </thead>
             <tbody>
               {users.map((user, index) => (
@@ -191,7 +174,7 @@ export default function AdminUsersTable({
                     </Typography>
                   </td>
                   {hasActions && (
-                    <td className={cn(cellClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+                    <td className={ADMIN_TABLE_ACTIONS_CELL_CLASS}>
                       <AdminTableMobileActionsMenu actions={getRowActions(user)} />
                     </td>
                   )}

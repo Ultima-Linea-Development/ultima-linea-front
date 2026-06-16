@@ -4,9 +4,8 @@ import type { ReactNode } from "react";
 import Box from "@/components/layout/Box";
 import AdminLoadingShimmer from "@/components/admin/AdminLoadingShimmer";
 import {
-  ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
+  ADMIN_TABLE_ACTIONS_CELL_CLASS,
   ADMIN_TABLE_CELL_CLASS,
-  ADMIN_TABLE_CHECKBOX_COLUMN_CLASS,
   ADMIN_TABLE_PAGE_SIZE,
   ADMIN_TABLE_TH_CLASS,
   ADMIN_TABLE_OUTER_BORDER_CLASS,
@@ -28,20 +27,12 @@ type AdminTableSkeletonProps = {
 };
 
 const DATA_COLUMNS: Record<AdminTableSkeletonVariant, number> = {
-  sales: 6,
+  sales: 5,
   users: 5,
   products: 4,
 };
 
-const HEADER_WIDTHS: Record<AdminTableSkeletonVariant, string[]> = {
-  sales: ["w-[12%]", "w-[30%]", "w-[8%]", "w-[8%]", "w-[10%]", "w-[20%]"],
-  users: ["w-[16%]", "w-[30%]", "w-[14%]", "w-[12%]", "w-[14%]"],
-  products: ["w-[32%]", "w-[14%]", "w-[28%]", "w-[18%]"],
-};
-
-const HEADER_WIDTHS_WITH_SELECTION = ["w-[28%]", "w-[14%]", "w-[26%]", "w-[18%]"];
-
-const SHIMMER_TEXT = "block h-4 w-full min-w-0 max-w-full rounded-sm";
+const SHIMMER_TEXT = "block h-4 w-full rounded-sm";
 const SHIMMER_CAPTION = "block h-3 w-full min-w-0 max-w-full rounded-sm";
 const DESKTOP_SKELETON_CELL_INNER_CLASS = "flex h-10 w-full min-w-0 items-center sm:h-12";
 const MOBILE_SKELETON_HEADER_MIN_H_CLASS = "min-h-9";
@@ -190,7 +181,7 @@ function DesktopBodyRow({
   return (
     <tr className={adminTableRowClassName({ stripeIndex: staggerIndex })}>
       {showSelection ? (
-        <td className={cn(ADMIN_TABLE_CELL_CLASS, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>
+        <td className={ADMIN_TABLE_CELL_CLASS}>
           <DesktopSkeletonCell>
             <AdminLoadingShimmer className="size-4 rounded-sm" staggerIndex={staggerIndex} />
           </DesktopSkeletonCell>
@@ -207,7 +198,7 @@ function DesktopBodyRow({
           </DesktopSkeletonCell>
         </td>
       ))}
-      <td className={cn(ADMIN_TABLE_CELL_CLASS, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+      <td className={ADMIN_TABLE_ACTIONS_CELL_CLASS}>
         <DesktopSkeletonCell>
           <AdminLoadingShimmer className="size-5 rounded-sm" staggerIndex={staggerIndex} />
         </DesktopSkeletonCell>
@@ -224,12 +215,6 @@ export default function AdminTableSkeleton({
   className,
 }: AdminTableSkeletonProps) {
   const dataColumns = DATA_COLUMNS[variant];
-  const headerWidths =
-    variant === "products" && showSelection
-      ? HEADER_WIDTHS_WITH_SELECTION
-      : variant === "products"
-        ? HEADER_WIDTHS.products
-        : HEADER_WIDTHS[variant];
 
   const renderMobileCard = (index: number) => {
     if (variant === "users") {
@@ -285,20 +270,20 @@ export default function AdminTableSkeleton({
           {Array.from({ length: rows }).map((_, index) => renderMobileCard(index))}
       </AdminTableMobileList>
 
-      <AdminTable className="overflow-x-hidden" tableClassName="h-auto">
+      <AdminTable>
           <thead className="bg-muted/50">
             <tr>
               {showSelection ? (
-                <th className={cn(ADMIN_TABLE_TH_CLASS, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>
+                <th className={ADMIN_TABLE_TH_CLASS}>
                   <AdminLoadingShimmer className="size-4 rounded-sm" />
                 </th>
               ) : null}
-              {headerWidths.map((width, index) => (
-                <th key={index} className={cn(ADMIN_TABLE_TH_CLASS, width)}>
+              {Array.from({ length: dataColumns }).map((_, index) => (
+                <th key={index} className={ADMIN_TABLE_TH_CLASS}>
                   <AdminLoadingShimmer className={cn(SHIMMER_TEXT, "max-w-[5rem]")} />
                 </th>
               ))}
-              <th className={cn(ADMIN_TABLE_TH_CLASS, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+              <th className={ADMIN_TABLE_TH_CLASS}>
                 <AdminLoadingShimmer className={cn(SHIMMER_TEXT, "max-w-[3.5rem]")} />
               </th>
             </tr>

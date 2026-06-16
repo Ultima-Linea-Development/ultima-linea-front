@@ -9,9 +9,9 @@ import {
   AdminTableMobileGrid,
   AdminTableMobileList,
   ADMIN_DETAIL_TABLE_CLASS,
+  ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_OUTER_BORDER_CLASS,
   ADMIN_TABLE_TH_CLASS,
-  ADMIN_TABLE_TRUNCATE_CELL_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { SupplierOrder } from "@/lib/api";
@@ -28,17 +28,7 @@ type AdminSupplierOrderDetailProps = {
 
 export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDetailProps) {
   const thClass = ADMIN_TABLE_TH_CLASS;
-  const truncateCellClass = ADMIN_TABLE_TRUNCATE_CELL_CLASS;
-
-  const itemTableColumnClass = {
-    product: "w-[24%]",
-    quantity: "w-[6%]",
-    type: "w-[10%]",
-    sizes: "w-[28%]",
-    dorsal: "w-[8%]",
-    description: "w-[18%]",
-    link: "w-[6%]",
-  } as const;
+  const cellClass = ADMIN_TABLE_CELL_CLASS;
   const totalPrice = order.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -170,29 +160,32 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
         </div>
       </AdminTableMobileList>
 
-      <div className={cn("hidden md:block overflow-x-auto", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
+      <div className={cn("hidden md:block", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
         <table className={ADMIN_DETAIL_TABLE_CLASS}>
           <thead className="bg-muted/50">
             <tr>
-              <th className={cn(thClass, itemTableColumnClass.product)}>
+              <th className={thClass}>
                 <Typography variant="body2">Producto</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.quantity)}>
+              <th className={thClass}>
                 <Typography variant="body2">Cant.</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.type)}>
+              <th className={thClass}>
                 <Typography variant="body2">Tipo</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.sizes)}>
+              <th className={thClass}>
                 <Typography variant="body2">Talles</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.dorsal)}>
+              <th className={thClass}>
+                <Typography variant="body2">Precio</Typography>
+              </th>
+              <th className={thClass}>
                 <Typography variant="body2">Dorsal</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.description)}>
+              <th className={thClass}>
                 <Typography variant="body2">Descripción</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.link)}>
+              <th className={thClass}>
                 <Typography variant="body2">Link</Typography>
               </th>
             </tr>
@@ -200,46 +193,36 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
           <tbody>
             {order.items.map((item, index) => (
               <tr key={item.id} className={adminTableRowClassName({ stripeIndex: index })}>
-                <td className={cn(truncateCellClass, itemTableColumnClass.product)}>
-                  <Typography variant="body2" className="truncate">
-                    {item.shirt_name}
+                <td className={cellClass}>
+                  <Typography variant="body2">{item.shirt_name}</Typography>
+                </td>
+                <td className={cellClass}>
+                  <Typography variant="body2">{item.quantity}</Typography>
+                </td>
+                <td className={cellClass}>
+                  <Typography variant="body2">{getSupplierOrderItemTypeLabel(item.type)}</Typography>
+                </td>
+                <td className={cellClass}>
+                  <AdminSupplierOrderSizeQuantity item={item} />
+                </td>
+                <td className={cellClass}>
+                  <Typography variant="body2" className="whitespace-nowrap tabular-nums">
+                    {formatPrice(item.price)}
                   </Typography>
                 </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.quantity)}>
-                  <Typography variant="body2" className="whitespace-nowrap">
-                    {item.quantity}
-                  </Typography>
+                <td className={cellClass}>
+                  <Typography variant="body2">{item.dorsal ?? "—"}</Typography>
                 </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.type)}>
-                  <Typography variant="body2" className="truncate">
-                    {getSupplierOrderItemTypeLabel(item.type)}
-                  </Typography>
+                <td className={cellClass}>
+                  <Typography variant="body2">{item.description ?? "—"}</Typography>
                 </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.sizes)}>
-                  <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
-                    <AdminSupplierOrderSizeQuantity item={item} className="min-w-0 flex-1 pt-0" />
-                    <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
-                      {formatPrice(item.price)}
-                    </Typography>
-                  </div>
-                </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.dorsal)}>
-                  <Typography variant="body2" className="truncate">
-                    {item.dorsal ?? "—"}
-                  </Typography>
-                </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.description)}>
-                  <Typography variant="body2" className="truncate">
-                    {item.description ?? "—"}
-                  </Typography>
-                </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.link)}>
+                <td className={cellClass}>
                   {item.link ? (
                     <a
                       href={item.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block truncate underline underline-offset-4"
+                      className="underline underline-offset-4"
                     >
                       Ver
                     </a>

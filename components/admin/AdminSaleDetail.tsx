@@ -12,6 +12,7 @@ import {
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
   ADMIN_TABLE_OUTER_BORDER_CLASS,
+  ADMIN_DETAIL_TABLE_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { Product, Sale, SaleAssignableUser } from "@/lib/api";
@@ -164,17 +165,20 @@ export default function AdminSaleDetail({
         </div>
       </AdminTableMobileList>
 
-      <div className={cn("hidden md:block overflow-x-auto", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
-        <table className="w-full table-fixed text-left text-sm">
+      <div className={cn("hidden md:block", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
+        <table className={ADMIN_DETAIL_TABLE_CLASS}>
           <thead className="bg-muted/50">
             <tr>
-              <th className={cn(thClass, "w-[40%]")}>
+              <th className={thClass}>
                 <Typography variant="body2">Producto</Typography>
               </th>
-              <th className={cn(thClass, "w-[28%]")}>
+              <th className={thClass}>
                 <Typography variant="body2">Talles</Typography>
               </th>
-              <th className={cn(thClass, "w-[17%]")}>
+              <th className={thClass}>
+                <Typography variant="body2">P. unit.</Typography>
+              </th>
+              <th className={thClass}>
                 <Typography variant="body2">Subtotal</Typography>
               </th>
             </tr>
@@ -185,8 +189,8 @@ export default function AdminSaleDetail({
                 key={`${item.product_id}-${item.size}-${index}`}
                 className={adminTableRowClassName({ stripeIndex: index })}
               >
-                <td className={cn(cellClass, "min-w-0")}>
-                  <Box display="flex" direction="col" gap="1" className="min-w-0">
+                <td className={cellClass}>
+                  <Box display="flex" direction="col" gap="1">
                     <AdminTableProductName
                       name={item.product_name}
                       imageUrl={productImages[item.product_id]}
@@ -200,23 +204,23 @@ export default function AdminSaleDetail({
                   </Box>
                 </td>
                 <td className={cellClass}>
-                  <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
-                    {item.size ? (
-                      <AdminSizeStockChip
-                        size={item.size}
-                        stock={item.quantity}
-                        badgeAriaLabel={`Cantidad ${item.quantity}`}
-                      />
-                    ) : (
-                      <Typography variant="body2">—</Typography>
-                    )}
-                    <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
-                      {formatPrice(item.unit_price)}
-                    </Typography>
-                  </div>
+                  {item.size ? (
+                    <AdminSizeStockChip
+                      size={item.size}
+                      stock={item.quantity}
+                      badgeAriaLabel={`Cantidad ${item.quantity}`}
+                    />
+                  ) : (
+                    <Typography variant="body2">—</Typography>
+                  )}
                 </td>
                 <td className={cellClass}>
-                  <Typography variant="body2" className="whitespace-nowrap">
+                  <Typography variant="body2" className="whitespace-nowrap tabular-nums">
+                    {formatPrice(item.unit_price)}
+                  </Typography>
+                </td>
+                <td className={cellClass}>
+                  <Typography variant="body2" className="whitespace-nowrap tabular-nums">
                     {formatPrice(item.total)}
                   </Typography>
                 </td>
@@ -225,13 +229,13 @@ export default function AdminSaleDetail({
           </tbody>
           <tfoot>
             <tr className="bg-muted/30">
-              <td colSpan={2} className={cn(cellClass, "text-right")}>
+              <td colSpan={3} className={cn(cellClass, "text-right")}>
                 <Typography variant="body2" className="font-medium">
                   Total
                 </Typography>
               </td>
               <td className={cellClass}>
-                <Typography variant="body2" className="whitespace-nowrap font-medium">
+                <Typography variant="body2" className="whitespace-nowrap font-medium tabular-nums">
                   {formatPrice(sale.total)}
                 </Typography>
               </td>

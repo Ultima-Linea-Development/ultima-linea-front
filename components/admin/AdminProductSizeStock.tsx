@@ -28,10 +28,22 @@ export default function AdminProductSizeStock({
   );
 
   if (entries.length === 0) {
-    if (highlightSize) return null;
+    if (highlightSize) {
+      return (
+        <Typography variant="body2" className={className}>
+          —
+        </Typography>
+      );
+    }
 
     const total = formatProductSizeStockDisplay(getProductTotalStock(product));
-    if (!total) return null;
+    if (!total) {
+      return (
+        <Typography variant="body2" className={className}>
+          —
+        </Typography>
+      );
+    }
 
     return (
       <Typography variant="body2" className={cn("tabular-nums", className)}>

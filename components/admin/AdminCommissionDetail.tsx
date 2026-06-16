@@ -10,9 +10,9 @@ import {
   AdminTableMobileGrid,
   AdminTableMobileList,
   ADMIN_DETAIL_TABLE_CLASS,
+  ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_OUTER_BORDER_CLASS,
   ADMIN_TABLE_TH_CLASS,
-  ADMIN_TABLE_TRUNCATE_CELL_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { Commission, SaleAssignableUser } from "@/lib/api";
@@ -37,14 +37,7 @@ export default function AdminCommissionDetail({
   onExport,
 }: AdminCommissionDetailProps) {
   const thClass = ADMIN_TABLE_TH_CLASS;
-  const truncateCellClass = ADMIN_TABLE_TRUNCATE_CELL_CLASS;
-
-  const itemTableColumnClass = {
-    product: "w-[32%]",
-    quantity: "w-[8%]",
-    type: "w-[12%]",
-    sizes: "w-[48%]",
-  } as const;
+  const cellClass = ADMIN_TABLE_CELL_CLASS;
   const totalPrice = commission.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -136,49 +129,46 @@ export default function AdminCommissionDetail({
         </div>
       </AdminTableMobileList>
 
-      <div className={cn("hidden md:block overflow-x-auto", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
+      <div className={cn("hidden md:block", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
         <table className={ADMIN_DETAIL_TABLE_CLASS}>
           <thead className="bg-muted/50">
             <tr>
-              <th className={cn(thClass, itemTableColumnClass.product)}>
+              <th className={thClass}>
                 <Typography variant="body2">Producto</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.quantity)}>
+              <th className={thClass}>
                 <Typography variant="body2">Cant.</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.type)}>
+              <th className={thClass}>
                 <Typography variant="body2">Tipo</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.sizes)}>
+              <th className={thClass}>
                 <Typography variant="body2">Talles</Typography>
+              </th>
+              <th className={thClass}>
+                <Typography variant="body2">Precio</Typography>
               </th>
             </tr>
           </thead>
           <tbody>
             {commission.items.map((item, index) => (
               <tr key={item.id} className={adminTableRowClassName({ stripeIndex: index })}>
-                <td className={cn(truncateCellClass, itemTableColumnClass.product)}>
-                  <Typography variant="body2" className="truncate">
-                    {item.shirt_name}
-                  </Typography>
+                <td className={cellClass}>
+                  <Typography variant="body2">{item.shirt_name}</Typography>
                 </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.quantity)}>
-                  <Typography variant="body2" className="whitespace-nowrap">
-                    {item.quantity}
-                  </Typography>
+                <td className={cellClass}>
+                  <Typography variant="body2">{item.quantity}</Typography>
                 </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.type)}>
-                  <Typography variant="body2" className="truncate">
-                    {item.type}
-                  </Typography>
+                <td className={cellClass}>
+                  <Typography variant="body2">{item.type}</Typography>
                 </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.sizes)}>
-                  <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
-                    <AdminSupplierOrderSizeQuantity item={item} className="min-w-0 flex-1 pt-0" />
-                    <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
-                      {formatPrice(item.price)}
-                    </Typography>
-                  </div>
+                <td className={cellClass}>
+                  <AdminSupplierOrderSizeQuantity item={item} />
+                </td>
+                <td className={cellClass}>
+                  <Typography variant="body2" className="whitespace-nowrap tabular-nums">
+                    {formatPrice(item.price)}
+                  </Typography>
                 </td>
               </tr>
             ))}

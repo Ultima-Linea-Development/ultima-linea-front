@@ -11,14 +11,13 @@ import {
   AdminTableMobileList,
   AdminTableMobileSummary,
   AdminTablePagination,
-  ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
+  ADMIN_TABLE_ACTIONS_CELL_CLASS,
   ADMIN_TABLE_CELL_CLASS,
-  ADMIN_TABLE_CHECKBOX_COLUMN_CLASS,
   ADMIN_TABLE_TH_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { Product } from "@/lib/api";
-import { formatPrice, generateSlug, cn } from "@/lib/utils";
+import { formatPrice, generateSlug } from "@/lib/utils";
 import AdminTableProductName from "@/components/admin/AdminTableProductName";
 import AdminProductSizeStock from "@/components/admin/AdminProductSizeStock";
 import AdminTableColumnFilter from "@/components/admin/AdminTableColumnFilter";
@@ -102,7 +101,7 @@ export default function AdminProductsTable({
     if (el) el.indeterminate = someVisibleSelected && !allVisibleSelected;
   }, [someVisibleSelected, allVisibleSelected]);
 
-  const colSpan = onSelectionChange ? 5 : 4;
+  const colSpan = onSelectionChange ? 6 : 5;
 
   const sortedSizeOptions = [...sizeOptions].sort(compareSizeLabels);
 
@@ -114,7 +113,6 @@ export default function AdminProductsTable({
         value={sizeFilter}
         onChange={onSizeFilterChange}
         options={sortedSizeOptions.map((size) => ({ value: size, label: size }))}
-        className="min-w-[5.5rem]"
       />
     ) : (
       <Typography variant="body2">Talles</Typography>
@@ -186,7 +184,7 @@ export default function AdminProductsTable({
   const renderDesktopHeaderRow = (withSelectAllRef = false) => (
     <tr>
       {onSelectionChange && (
-        <th className={cn(thClass, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>
+        <th className={thClass}>
           <input
             ref={withSelectAllRef ? selectAllRef : undefined}
             type="checkbox"
@@ -197,14 +195,17 @@ export default function AdminProductsTable({
           />
         </th>
       )}
-      <th className={cn(thClass, onSelectionChange ? "w-[28%]" : "w-[32%]")}>
+      <th className={thClass}>
         <Typography variant="body2">Nombre</Typography>
       </th>
-      <th className={cn(thClass, "w-[14%]")}>
+      <th className={thClass}>
         <Typography variant="body2">Equipo</Typography>
       </th>
-      <th className={cn(thClass, "w-[28%]")}>{renderSizeHeader()}</th>
-      <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+      <th className={thClass}>{renderSizeHeader()}</th>
+      <th className={thClass}>
+        <Typography variant="body2">Precio</Typography>
+      </th>
+      <th className={thClass}>
         <Typography variant="body2">Acciones</Typography>
       </th>
     </tr>
@@ -278,7 +279,6 @@ export default function AdminProductsTable({
                 <AdminProductSizeStock
                   product={p}
                   highlightSize={sizeFilter || undefined}
-                  className="min-w-0 max-w-none"
                 />
               </AdminTableMobileCard>
             ))}
@@ -298,7 +298,7 @@ export default function AdminProductsTable({
                   })}
                 >
                   {onSelectionChange && (
-                    <td className={cn(cellClass, ADMIN_TABLE_CHECKBOX_COLUMN_CLASS)}>
+                    <td className={cellClass}>
                       <input
                         type="checkbox"
                         checked={selectedSet.has(p.id)}
@@ -317,23 +317,20 @@ export default function AdminProductsTable({
                     />
                   </td>
                   <td className={cellClass}>
-                    <Typography variant="body2" className="truncate">
-                      {p.team ?? "—"}
-                    </Typography>
+                    <Typography variant="body2">{p.team ?? "—"}</Typography>
                   </td>
                   <td className={cellClass}>
-                    <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
-                      <AdminProductSizeStock
-                        product={p}
-                        highlightSize={sizeFilter || undefined}
-                        className="min-w-0 flex-1 pt-0"
-                      />
-                      <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
-                        {formatPrice(p.price)}
-                      </Typography>
-                    </div>
+                    <AdminProductSizeStock
+                      product={p}
+                      highlightSize={sizeFilter || undefined}
+                    />
                   </td>
-                  <td className={cn(cellClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+                  <td className={cellClass}>
+                    <Typography variant="body2" className="whitespace-nowrap tabular-nums">
+                      {formatPrice(p.price)}
+                    </Typography>
+                  </td>
+                  <td className={ADMIN_TABLE_ACTIONS_CELL_CLASS}>
                     <AdminTableMobileActionsMenu actions={getRowActions(p)} />
                   </td>
                 </tr>

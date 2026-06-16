@@ -14,10 +14,9 @@ import {
   AdminTableMobileSummary,
   AdminTableMobileSubtext,
   AdminTablePagination,
-  ADMIN_TABLE_ACTIONS_COLUMN_CLASS,
+  ADMIN_TABLE_ACTIONS_CELL_CLASS,
   ADMIN_TABLE_CELL_CLASS,
   ADMIN_TABLE_TH_CLASS,
-  ADMIN_TABLE_TRUNCATE_CELL_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import AdminTextLink from "@/components/admin/AdminTextLink";
@@ -25,46 +24,36 @@ import AdminSupplierOrderStatusBadge from "@/components/admin/AdminSupplierOrder
 import AdminSupplierOrderTrackingCell from "@/components/admin/AdminSupplierOrderTrackingCell";
 import type { SupplierOrder } from "@/lib/api";
 import { formatSaleDateDisplay } from "@/lib/sale-date";
-import { cn, formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 
 const PER_PAGE = 10;
 
-const ORDER_TABLE_COLUMN_CLASS = {
-  date: "w-[10%]",
-  name: "w-[15%]",
-  supplier: "w-[15%]",
-  status: "w-[12%]",
-  tracking: "w-[14%]",
-  items: "w-[13%]",
-  total: "w-[13%]",
-} as const;
-
-function renderOrderTableHeader(hasActions: boolean, thClass: string) {
+function renderOrderTableHeader(hasActions: boolean) {
   return (
     <tr>
-      <th className={cn(thClass, ORDER_TABLE_COLUMN_CLASS.date)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Fecha</Typography>
       </th>
-      <th className={cn(thClass, ORDER_TABLE_COLUMN_CLASS.name)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Pedido</Typography>
       </th>
-      <th className={cn(thClass, ORDER_TABLE_COLUMN_CLASS.supplier)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Proveedor</Typography>
       </th>
-      <th className={cn(thClass, ORDER_TABLE_COLUMN_CLASS.status)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Estado</Typography>
       </th>
-      <th className={cn(thClass, ORDER_TABLE_COLUMN_CLASS.tracking)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Nro. Seguimiento</Typography>
       </th>
-      <th className={cn(thClass, ORDER_TABLE_COLUMN_CLASS.items)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Ítems</Typography>
       </th>
-      <th className={cn(thClass, ORDER_TABLE_COLUMN_CLASS.total)}>
+      <th className={ADMIN_TABLE_TH_CLASS}>
         <Typography variant="body2">Total</Typography>
       </th>
       {hasActions && (
-        <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+        <th className={ADMIN_TABLE_TH_CLASS}>
           <Typography variant="body2">Acciones</Typography>
         </th>
       )}
@@ -108,8 +97,6 @@ export default function AdminSupplierOrdersTable({
   canDeleteOrder,
 }: AdminSupplierOrdersTableProps) {
   const cellClass = ADMIN_TABLE_CELL_CLASS;
-  const thClass = ADMIN_TABLE_TH_CLASS;
-  const truncateCellClass = ADMIN_TABLE_TRUNCATE_CELL_CLASS;
   const hasActions = Boolean(onViewDetails || onEdit || onDelete);
 
   const getRowActions = (order: SupplierOrder): AdminTableMobileAction[] => {
@@ -153,7 +140,7 @@ export default function AdminSupplierOrdersTable({
           <AdminTableMobileEmpty message="No hay pedidos" />
           <AdminTable>
             <thead className="bg-muted/50">
-              {renderOrderTableHeader(hasActions, thClass)}
+              {renderOrderTableHeader(hasActions)}
             </thead>
             <tbody>
               <AdminTableEmptyRow colSpan={hasActions ? 8 : 7} message="No hay pedidos" />
@@ -207,56 +194,50 @@ export default function AdminSupplierOrdersTable({
 
           <AdminTable>
             <thead className="bg-muted/50">
-              {renderOrderTableHeader(hasActions, thClass)}
+              {renderOrderTableHeader(hasActions)}
             </thead>
             <tbody>
               {orders.map((order, index) => (
                 <tr key={order.id} className={adminTableRowClassName({ stripeIndex: index })}>
-                  <td className={cn(truncateCellClass, ORDER_TABLE_COLUMN_CLASS.date)}>
+                  <td className={cellClass}>
                     <Typography variant="body2" className="whitespace-nowrap">
                       {formatSaleDateDisplay(order.created_at)}
                     </Typography>
                   </td>
-                  <td className={cn(truncateCellClass, ORDER_TABLE_COLUMN_CLASS.name)}>
+                  <td className={cellClass}>
                     {onViewDetails ? (
                       <AdminTextLink
                         tone="default"
                         onClick={() => onViewDetails(order)}
-                        className="block min-w-0 max-w-full truncate text-left"
+                        className="text-left"
                       >
-                        <Typography variant="body2" as="span" className="truncate">
+                        <Typography variant="body2" as="span">
                           {order.name}
                         </Typography>
                       </AdminTextLink>
                     ) : (
-                      <Typography variant="body2" className="truncate">
-                        {order.name}
-                      </Typography>
+                      <Typography variant="body2">{order.name}</Typography>
                     )}
                   </td>
-                  <td className={cn(truncateCellClass, ORDER_TABLE_COLUMN_CLASS.supplier)}>
-                    <Typography variant="body2" className="truncate">
-                      {order.supplier_name ?? "—"}
-                    </Typography>
+                  <td className={cellClass}>
+                    <Typography variant="body2">{order.supplier_name ?? "—"}</Typography>
                   </td>
-                  <td className={cn(truncateCellClass, ORDER_TABLE_COLUMN_CLASS.status)}>
-                    <AdminSupplierOrderStatusBadge status={order.status} className="max-w-full" />
+                  <td className={cellClass}>
+                    <AdminSupplierOrderStatusBadge status={order.status} />
                   </td>
-                  <td className={cn(truncateCellClass, ORDER_TABLE_COLUMN_CLASS.tracking)}>
+                  <td className={cellClass}>
                     <AdminSupplierOrderTrackingCell order={order} />
                   </td>
-                  <td className={cn(truncateCellClass, ORDER_TABLE_COLUMN_CLASS.items)}>
-                    <Typography variant="body2" className="truncate">
-                      {getOrderItemsLabel(order)}
-                    </Typography>
+                  <td className={cellClass}>
+                    <Typography variant="body2">{getOrderItemsLabel(order)}</Typography>
                   </td>
-                  <td className={cn(truncateCellClass, ORDER_TABLE_COLUMN_CLASS.total)}>
-                    <Typography variant="body2" className="whitespace-nowrap">
+                  <td className={cellClass}>
+                    <Typography variant="body2" className="whitespace-nowrap tabular-nums">
                       {formatPrice(getOrderTotal(order))}
                     </Typography>
                   </td>
                   {hasActions && (
-                    <td className={cn(cellClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
+                    <td className={ADMIN_TABLE_ACTIONS_CELL_CLASS}>
                       <AdminTableMobileActionsMenu actions={getRowActions(order)} />
                     </td>
                   )}

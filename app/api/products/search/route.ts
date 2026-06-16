@@ -27,15 +27,13 @@ export async function GET(request: NextRequest) {
 
     const textMatch = buildAdminSearchTextMatch(q);
 
-    const category = searchParams.get("category");
     const league = searchParams.get("league");
     const size = searchParams.get("size");
 
     const searchFilter: Record<string, unknown> = { is_active: true, ...textMatch };
 
-    if (category || league || size) {
+    if (league || size) {
       const andFilters: Record<string, unknown>[] = [textMatch];
-      if (category) andFilters.push({ category });
       if (league) andFilters.push({ league });
       if (size) andFilters.push(buildProductSizeFilter(size));
       delete searchFilter.$or;

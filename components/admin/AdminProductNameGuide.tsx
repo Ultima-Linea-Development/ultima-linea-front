@@ -26,8 +26,7 @@ export function AdminProductNameGuideModal({ open, onClose }: AdminProductNameGu
       <Box display="flex" direction="col" gap="4" className="p-4">
         <Typography variant="body2" color="muted">
           Usá este formato para que los productos queden uniformes en el catálogo y en los
-          enlaces. Al guardar, el sistema ajusta el nombre según equipo, temporada, categoría y
-          versión.
+          enlaces. Al guardar, el sistema ajusta el nombre según equipo, temporada y versión.
         </Typography>
 
         <Box display="flex" direction="col" gap="2">
@@ -64,8 +63,7 @@ export function AdminProductNameGuideModal({ open, onClose }: AdminProductNameGu
             </li>
             <li>
               <Typography variant="body2" as="span">
-                <strong>Versión</strong>: Fan, Jugador o Retro según el selector de versión y la
-                categoría del producto.
+                <strong>Versión</strong>: Fan, Jugador o Retro según el selector de versión.
               </Typography>
             </li>
           </ul>

@@ -24,7 +24,6 @@ export type ProductResponse = {
   sizes: string[];
   stock_by_sizes: Record<string, number>;
   image_urls: string[];
-  category: string;
   is_active: boolean;
 };
 
@@ -50,7 +49,6 @@ export function toProductResponse(product: Product, maxImages: number): ProductR
     sizes: product.sizes,
     stock_by_sizes: product.stock_by_sizes,
     image_urls: images,
-    category: product.category,
     is_active: product.is_active,
   };
 }

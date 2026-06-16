@@ -77,7 +77,7 @@ export default function ProductOptionSelect({
           </option>
         ))}
         <option value={CUSTOM_OPTION_VALUE}>
-          {customOptionLabel ?? `Nuevo ${label.toLocaleLowerCase()}`}
+          {customOptionLabel ?? `Agregar ${label.toLocaleLowerCase()}`}
         </option>
       </Select>
       {isCustom && (

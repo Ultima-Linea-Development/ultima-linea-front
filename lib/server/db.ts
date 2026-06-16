@@ -105,7 +105,6 @@ export async function ensureIndexes(): Promise<void> {
   await products.createIndexes([
     { key: { team: 1 } },
     { key: { league: 1 } },
-    { key: { category: 1 } },
     { key: { is_active: 1 } },
     { key: { slug: 1 } },
     { key: { sku: 1 }, unique: true, sparse: true },

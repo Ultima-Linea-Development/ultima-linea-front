@@ -1,15 +1,14 @@
 import Link from "next/link";
 import type { IconType } from "react-icons";
-import { HiOutlineSparkles, HiOutlineTag } from "react-icons/hi2";
+import { HiOutlineSparkles } from "react-icons/hi2";
 import { cn } from "@/lib/utils";
 
 export type ProductTagItem = {
-  id: "category" | "shirt-type";
+  id: "shirt-type";
   label: string;
 };
 
 const TAG_ICONS: Record<ProductTagItem["id"], IconType> = {
-  category: HiOutlineTag,
   "shirt-type": HiOutlineSparkles,
 };
 

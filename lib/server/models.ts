@@ -33,7 +33,6 @@ export type Product = {
   sizes: string[];
   stock_by_sizes: Record<string, number>;
   image_urls: string[];
-  category: string;
   is_active: boolean;
   yupoo_album_id?: string;
   created_by?: string;
@@ -230,7 +229,6 @@ export function beforeCreateProduct(product: Partial<Product>): Product {
     sizes: product.sizes || [],
     stock_by_sizes: product.stock_by_sizes || {},
     image_urls: product.image_urls || [],
-    category: product.category || "club",
     is_active: product.is_active ?? true,
     yupoo_album_id: product.yupoo_album_id,
     created_at: now,
@@ -246,7 +244,6 @@ export function beforeCreateProduct(product: Partial<Product>): Product {
       team: result.team,
       season: result.season,
       type: result.type,
-      category: result.category,
       name: result.name,
     });
     result.name = normalized.name;
@@ -265,15 +262,14 @@ export function beforeCreateProduct(product: Partial<Product>): Product {
 }
 
 export function normalizeProductUpdates(
-  current: Pick<Product, "name" | "team" | "season" | "type" | "category">,
-  updates: Partial<Pick<Product, "name" | "team" | "season" | "type" | "category">>
+  current: Pick<Product, "name" | "team" | "season" | "type">,
+  updates: Partial<Pick<Product, "name" | "team" | "season" | "type">>
 ): Partial<Pick<Product, "name" | "slug" | "season" | "type">> {
   const merged = {
     name: updates.name ?? current.name,
     team: updates.team ?? current.team,
     season: updates.season ?? current.season,
     type: updates.type ?? current.type,
-    category: updates.category ?? current.category,
   };
 
   if (!merged.team?.trim() || !merged.season?.trim()) {

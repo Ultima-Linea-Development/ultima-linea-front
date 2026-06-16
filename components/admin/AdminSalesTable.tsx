@@ -122,11 +122,8 @@ export default function AdminSalesTable({
                 <th className={cn(thClass, "w-[30%]")}>
                   <Typography variant="body2">Producto</Typography>
                 </th>
-                <th className={cn(thClass, "w-[16%]")}>
+                <th className={cn(thClass, "w-[22%]")}>
                   <Typography variant="body2">Talles</Typography>
-                </th>
-                <th className={cn(thClass, "w-[10%]")}>
-                  <Typography variant="body2">Total</Typography>
                 </th>
                 <th className={cn(thClass, "w-[20%]")}>
                   <Typography variant="body2">Vendedor</Typography>
@@ -139,7 +136,7 @@ export default function AdminSalesTable({
               </tr>
             </thead>
             <tbody>
-              <AdminTableEmptyRow colSpan={hasActions ? 6 : 5} message="No hay ventas" />
+              <AdminTableEmptyRow colSpan={hasActions ? 5 : 4} message="No hay ventas" />
             </tbody>
           </AdminTable>
         </>
@@ -187,11 +184,8 @@ export default function AdminSalesTable({
                 <th className={cn(thClass, "w-[30%]")}>
                   <Typography variant="body2">Producto</Typography>
                 </th>
-                <th className={cn(thClass, "w-[16%]")}>
+                <th className={cn(thClass, "w-[22%]")}>
                   <Typography variant="body2">Talles</Typography>
-                </th>
-                <th className={cn(thClass, "w-[10%]")}>
-                  <Typography variant="body2">Total</Typography>
                 </th>
                 <th className={cn(thClass, "w-[20%]")}>
                   <Typography variant="body2">Vendedor</Typography>
@@ -224,12 +218,12 @@ export default function AdminSalesTable({
                     />
                   </td>
                   <td className={cellClass}>
-                    <AdminSaleSizeQuantity sale={sale} className="w-full max-w-none" />
-                  </td>
-                  <td className={cellClass}>
-                    <span className="whitespace-nowrap">
-                      <Typography variant="body2">{formatPrice(sale.total)}</Typography>
-                    </span>
+                    <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
+                      <AdminSaleSizeQuantity sale={sale} className="min-w-0 flex-1 pt-0" />
+                      <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
+                        {formatPrice(sale.total)}
+                      </Typography>
+                    </div>
                   </td>
                   <td className={cellClass}>
                     <Typography variant="body2" className="whitespace-nowrap">

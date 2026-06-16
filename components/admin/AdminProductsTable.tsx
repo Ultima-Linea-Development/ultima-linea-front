@@ -25,9 +25,6 @@ import AdminTableColumnFilter from "@/components/admin/AdminTableColumnFilter";
 import AdminTableMobileActionsMenu, {
   type AdminTableMobileAction,
 } from "@/components/admin/AdminTableMobileActionsMenu";
-import {
-  ADMIN_CATEGORY_FILTER_OPTIONS,
-} from "@/lib/admin-catalog-filters";
 import { compareSizeLabels } from "@/lib/product-inventory";
 
 const PER_PAGE = 10;
@@ -47,10 +44,8 @@ type AdminProductsTableProps = {
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
   tableFooter?: ReactNode;
-  categoryFilter?: string;
   sizeFilter?: string;
   sizeOptions?: string[];
-  onCategoryFilterChange?: (value: string) => void;
   onSizeFilterChange?: (value: string) => void;
 };
 
@@ -69,10 +64,8 @@ export default function AdminProductsTable({
   selectedIds = [],
   onSelectionChange,
   tableFooter,
-  categoryFilter = "",
   sizeFilter = "",
   sizeOptions = [],
-  onCategoryFilterChange,
   onSizeFilterChange,
 }: AdminProductsTableProps) {
   const cellClass = ADMIN_TABLE_CELL_CLASS;
@@ -109,25 +102,9 @@ export default function AdminProductsTable({
     if (el) el.indeterminate = someVisibleSelected && !allVisibleSelected;
   }, [someVisibleSelected, allVisibleSelected]);
 
-  const colSpan = onSelectionChange ? 7 : 6;
+  const colSpan = onSelectionChange ? 5 : 4;
 
   const sortedSizeOptions = [...sizeOptions].sort(compareSizeLabels);
-
-  const renderCategoryHeader = () =>
-    onCategoryFilterChange ? (
-      <AdminTableColumnFilter
-        id="catalog-category-filter"
-        label="Categoría"
-        value={categoryFilter}
-        onChange={onCategoryFilterChange}
-        options={ADMIN_CATEGORY_FILTER_OPTIONS.map((option) => ({
-          value: option.value,
-          label: option.label,
-        }))}
-      />
-    ) : (
-      <Typography variant="body2">Categoría</Typography>
-    );
 
   const renderSizeHeader = () =>
     onSizeFilterChange ? (
@@ -144,34 +121,20 @@ export default function AdminProductsTable({
     );
 
   const renderMobileFilters = () => {
-    if (!onCategoryFilterChange && !onSizeFilterChange) return null;
+    if (!onSizeFilterChange) return null;
 
     return (
       <Box
         display="flex"
         className="md:hidden w-full min-w-0 flex-wrap items-center gap-3 border border-gray-200 px-3 py-2.5 sm:px-4 sm:py-3"
       >
-        {onCategoryFilterChange && (
-          <AdminTableColumnFilter
-            id="catalog-category-filter-mobile"
-            label="Categoría"
-            value={categoryFilter}
-            onChange={onCategoryFilterChange}
-            options={ADMIN_CATEGORY_FILTER_OPTIONS.map((option) => ({
-              value: option.value,
-              label: option.label,
-            }))}
-          />
-        )}
-        {onSizeFilterChange && (
-          <AdminTableColumnFilter
-            id="catalog-size-filter-mobile"
-            label="Talles"
-            value={sizeFilter}
-            onChange={onSizeFilterChange}
-            options={sortedSizeOptions.map((size) => ({ value: size, label: size }))}
-          />
-        )}
+        <AdminTableColumnFilter
+          id="catalog-size-filter-mobile"
+          label="Talles"
+          value={sizeFilter}
+          onChange={onSizeFilterChange}
+          options={sortedSizeOptions.map((size) => ({ value: size, label: size }))}
+        />
       </Box>
     );
   };
@@ -234,17 +197,13 @@ export default function AdminProductsTable({
           />
         </th>
       )}
-      <th className={cn(thClass, onSelectionChange ? "w-[24%]" : "w-[28%]")}>
+      <th className={cn(thClass, onSelectionChange ? "w-[28%]" : "w-[32%]")}>
         <Typography variant="body2">Nombre</Typography>
       </th>
-      <th className={cn(thClass, "w-[12%]")}>
+      <th className={cn(thClass, "w-[14%]")}>
         <Typography variant="body2">Equipo</Typography>
       </th>
-      <th className={cn(thClass, "w-[12%]")}>{renderCategoryHeader()}</th>
-      <th className={cn(thClass, "w-[10%]")}>
-        <Typography variant="body2">Precio</Typography>
-      </th>
-      <th className={cn(thClass, "w-[18%]")}>{renderSizeHeader()}</th>
+      <th className={cn(thClass, "w-[28%]")}>{renderSizeHeader()}</th>
       <th className={cn(thClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
         <Typography variant="body2">Acciones</Typography>
       </th>
@@ -313,13 +272,7 @@ export default function AdminProductsTable({
                   <AdminTableMobileActionsMenu actions={getRowActions(p)} />
                 </Box>
                 <AdminTableMobileSummary
-                  left={
-                    <>
-                      {p.team ?? "—"}
-                      {" · "}
-                      {p.category ?? "—"}
-                    </>
-                  }
+                  left={p.team ?? "—"}
                   right={formatPrice(p.price)}
                 />
                 <AdminProductSizeStock
@@ -369,21 +322,16 @@ export default function AdminProductsTable({
                     </Typography>
                   </td>
                   <td className={cellClass}>
-                    <Typography variant="body2" className="truncate">
-                      {p.category ?? "—"}
-                    </Typography>
-                  </td>
-                  <td className={cellClass}>
-                    <Typography variant="body2" className="whitespace-nowrap">
-                      {formatPrice(p.price)}
-                    </Typography>
-                  </td>
-                  <td className={cellClass}>
-                    <AdminProductSizeStock
-                      product={p}
-                      highlightSize={sizeFilter || undefined}
-                      className="w-full max-w-none"
-                    />
+                    <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
+                      <AdminProductSizeStock
+                        product={p}
+                        highlightSize={sizeFilter || undefined}
+                        className="min-w-0 flex-1 pt-0"
+                      />
+                      <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
+                        {formatPrice(p.price)}
+                      </Typography>
+                    </div>
                   </td>
                   <td className={cn(cellClass, ADMIN_TABLE_ACTIONS_COLUMN_CLASS)}>
                     <AdminTableMobileActionsMenu actions={getRowActions(p)} />

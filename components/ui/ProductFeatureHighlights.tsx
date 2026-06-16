@@ -4,7 +4,6 @@ import {
   HiOutlineCalendarDays,
   HiOutlineShieldCheck,
   HiOutlineSparkles,
-  HiOutlineTag,
   HiOutlineTrophy,
 } from "react-icons/hi2";
 import Typography from "@/components/ui/Typography";
@@ -20,7 +19,6 @@ const FEATURE_ICONS: Record<string, IconType> = {
   team: HiOutlineShieldCheck,
   league: HiOutlineTrophy,
   season: HiOutlineCalendarDays,
-  category: HiOutlineTag,
   "shirt-type": HiOutlineSparkles,
 };
 

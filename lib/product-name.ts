@@ -6,7 +6,6 @@ export type ProductNameInput = {
   team: string;
   season: string;
   type?: string | null;
-  category?: string | null;
   /** Nombre actual u original; se usa para inferir el tipo de camiseta. */
   name?: string | null;
   kitType?: string | null;
@@ -82,17 +81,14 @@ function getSeasonEndYear(season: string): number | null {
 
 export function resolveProductVersion(
   type?: string | null,
-  category?: string | null,
   name?: string | null,
   season?: string | null
 ): ProductVersion {
   const typeValue = (type ?? "").trim().toLowerCase();
   const nameValue = (name ?? "").trim().toLowerCase();
-  const categoryValue = (category ?? "").trim().toLowerCase();
 
   if (typeValue === "player") return "player";
   if (typeValue === "retro") return "retro";
-  if (categoryValue === "retro") return "retro";
   if (/\bretro\b/.test(nameValue) || /\bversi[oó]n\s+retro\b/.test(nameValue)) {
     return "retro";
   }
@@ -106,11 +102,10 @@ export function resolveProductVersion(
 
 export function inferProductType(input: {
   type?: string | null;
-  category?: string | null;
   name?: string | null;
   season?: string | null;
 }): ProductVersion {
-  return resolveProductVersion(input.type, input.category, input.name, input.season);
+  return resolveProductVersion(input.type, input.name, input.season);
 }
 
 export function labelProductVersion(version: ProductVersion): string {
@@ -124,7 +119,7 @@ export function buildProductName(input: ProductNameInput): string {
   const normalizedSeason = normalizeSeason(input.season);
   const kitType = (input.kitType ?? extractKitTypeFromName(input.name ?? ""))?.trim();
   const version = labelProductVersion(
-    resolveProductVersion(input.type, input.category, input.name, input.season)
+    resolveProductVersion(input.type, input.name, input.season)
   );
 
   const parts = ["Camiseta"];

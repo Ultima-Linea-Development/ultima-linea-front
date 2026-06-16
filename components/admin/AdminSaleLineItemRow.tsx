@@ -126,74 +126,88 @@ export default function AdminSaleLineItemRow({
         </Box>
       </Box>
 
-      <Box display="grid" cols={4} gap={4}>
-        {productSizes.length > 0 && (
-          <FormField htmlFor={`sale-size-${item.key}`} label="Talle" required>
-            <Select
-              id={`sale-size-${item.key}`}
-              value={item.size}
-              onChange={(event) => onChange(item.key, { size: event.target.value })}
+      <div
+        className={cn(
+          "grid w-full grid-cols-1 gap-4 md:grid-cols-2 md:items-start"
+        )}
+      >
+        <div className="flex min-w-0 flex-wrap items-end gap-2">
+          {productSizes.length > 0 && (
+            <div className="min-w-[120px] flex-1">
+              <FormField htmlFor={`sale-size-${item.key}`} label="Talle" required>
+                <Select
+                  id={`sale-size-${item.key}`}
+                  value={item.size}
+                  onChange={(event) => onChange(item.key, { size: event.target.value })}
+                  disabled={isSubmitting}
+                  required
+                >
+                  <option value="">Seleccionar talle</option>
+                  {productSizes.map(([optionSize]) => (
+                    <option key={optionSize} value={optionSize}>
+                      {optionSize}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+            </div>
+          )}
+
+          <div className="w-[100px] shrink-0">
+            <FormField htmlFor={`sale-stock-${item.key}`} label="Stock disponible">
+              <Input
+                id={`sale-stock-${item.key}`}
+                type="number"
+                value={selectedStock}
+                readOnly
+                disabled
+              />
+            </FormField>
+          </div>
+
+          <div className="w-[100px] shrink-0">
+            <FormField htmlFor={`sale-quantity-${item.key}`} label="Cantidad" required>
+              <Input
+                id={`sale-quantity-${item.key}`}
+                type="number"
+                min={1}
+                value={item.quantity}
+                onChange={(event) =>
+                  onChange(item.key, { quantity: normalizeQuantityValue(event.target.value) })
+                }
+                onBlur={() => {
+                  if (item.quantity === "") {
+                    onChange(item.key, { quantity: "1" });
+                  }
+                }}
+                disabled={isSubmitting}
+                required
+              />
+            </FormField>
+          </div>
+        </div>
+
+        <div className="min-w-[200px]">
+          <FormField htmlFor={`sale-unit-price-${item.key}`} label="Precio unitario" required>
+            <Input
+              id={`sale-unit-price-${item.key}`}
+              type="number"
+              min={0}
+              value={item.unitPrice}
+              onChange={(event) =>
+                onChange(item.key, { unitPrice: normalizeUnitPriceValue(event.target.value) })
+              }
+              onBlur={() => {
+                if (item.unitPrice === "") {
+                  onChange(item.key, { unitPrice: String(item.product.price) });
+                }
+              }}
               disabled={isSubmitting}
               required
-            >
-              <option value="">Seleccionar talle</option>
-              {productSizes.map(([optionSize]) => (
-                <option key={optionSize} value={optionSize}>
-                  {optionSize}
-                </option>
-              ))}
-            </Select>
+            />
           </FormField>
-        )}
-
-        <FormField htmlFor={`sale-stock-${item.key}`} label="Stock disponible">
-          <Input
-            id={`sale-stock-${item.key}`}
-            type="number"
-            value={selectedStock}
-            readOnly
-            disabled
-          />
-        </FormField>
-
-        <FormField htmlFor={`sale-quantity-${item.key}`} label="Cantidad" required>
-          <Input
-            id={`sale-quantity-${item.key}`}
-            type="number"
-            min={1}
-            value={item.quantity}
-            onChange={(event) =>
-              onChange(item.key, { quantity: normalizeQuantityValue(event.target.value) })
-            }
-            onBlur={() => {
-              if (item.quantity === "") {
-                onChange(item.key, { quantity: "1" });
-              }
-            }}
-            disabled={isSubmitting}
-            required
-          />
-        </FormField>
-
-        <FormField htmlFor={`sale-unit-price-${item.key}`} label="Precio unitario" required>
-          <Input
-            id={`sale-unit-price-${item.key}`}
-            type="number"
-            min={0}
-            value={item.unitPrice}
-            onChange={(event) =>
-              onChange(item.key, { unitPrice: normalizeUnitPriceValue(event.target.value) })
-            }
-            onBlur={() => {
-              if (item.unitPrice === "") {
-                onChange(item.key, { unitPrice: String(item.product.price) });
-              }
-            }}
-            disabled={isSubmitting}
-            required
-          />
-        </FormField>
-      </Box>
+        </div>
+      </div>
 
       <Typography variant="body2" className="text-right">
         Subtotal: {formatPrice(lineTotal)}

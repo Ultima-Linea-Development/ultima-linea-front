@@ -144,7 +144,6 @@ export type Product = {
   sizes?: string[];
   stock_by_sizes?: Record<string, number>;
   image_urls: string[];
-  category?: "club" | "national" | "retro";
   /** FAN / PLAYER (API puede enviar mayúsculas) */
   type?: string;
   is_active: boolean;
@@ -156,7 +155,6 @@ export type Product = {
 export type ProductFilters = {
   team?: string;
   league?: string;
-  category?: "club" | "national" | "retro";
   size?: string;
   season?: string;
   is_active?: boolean;
@@ -166,7 +164,7 @@ export type ProductFilters = {
 
 export type AdminProductSearchFilters = Pick<
   ProductFilters,
-  "category" | "size" | "league" | "is_active"
+  "size" | "league" | "is_active"
 >;
 
 export type PaginatedProductsResponse = {
@@ -211,7 +209,6 @@ export type CreateProductRequest = {
   sizes: string[];
   stock_by_sizes: Record<string, number>;
   image_urls: string[];
-  category?: "club" | "national" | "retro";
   type?: "fan" | "player" | "retro";
   is_active?: boolean;
 };
@@ -556,7 +553,6 @@ export const productsApi = {
     const params = new URLSearchParams();
     if (filters?.team) params.append("team", filters.team);
     if (filters?.league) params.append("league", filters.league);
-    if (filters?.category) params.append("category", filters.category);
     if (filters?.size) params.append("size", filters.size);
     if (filters?.season) params.append("season", filters.season);
     if (filters?.page != null) params.append("page", String(filters.page));
@@ -569,10 +565,9 @@ export const productsApi = {
   getById: (id: string) => api.get<Product>(`/products/${id}`),
   getBySlug: (slug: string) => api.get<Product>(`/products/slug/${slug}`),
 
-  search: (query: string, filters?: Pick<ProductFilters, "category" | "size" | "league">) => {
+  search: (query: string, filters?: Pick<ProductFilters, "size" | "league">) => {
     const params = new URLSearchParams();
     params.append("q", query);
-    if (filters?.category) params.append("category", filters.category);
     if (filters?.size) params.append("size", filters.size);
     if (filters?.league) params.append("league", filters.league);
     return api.get<SearchResponse>(`/products/search?${params.toString()}`);
@@ -628,7 +623,6 @@ export const adminProductsApi = {
     const params = new URLSearchParams();
     if (filters?.team) params.append("team", filters.team);
     if (filters?.league) params.append("league", filters.league);
-    if (filters?.category) params.append("category", filters.category);
     if (filters?.size) params.append("size", filters.size);
     if (filters?.season) params.append("season", filters.season);
     if (filters?.is_active !== undefined) {
@@ -647,7 +641,6 @@ export const adminProductsApi = {
   search: (token: string, query: string, filters?: AdminProductSearchFilters) => {
     const params = new URLSearchParams();
     params.append("q", query);
-    if (filters?.category) params.append("category", filters.category);
     if (filters?.size) params.append("size", filters.size);
     if (filters?.league) params.append("league", filters.league);
     if (filters?.is_active !== undefined) {

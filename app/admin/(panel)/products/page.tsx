@@ -241,10 +241,8 @@ export default function AdminProductsPage() {
           canDeleteProduct={catalog.canDeleteProduct}
           selectedIds={catalog.selectedIds}
           onSelectionChange={canSelectProducts ? catalog.setSelectedIds : undefined}
-          categoryFilter={catalog.categoryFilter}
           sizeFilter={catalog.sizeFilter}
           sizeOptions={catalog.sizeOptions}
-          onCategoryFilterChange={catalog.handleCategoryFilterChange}
           onSizeFilterChange={catalog.handleSizeFilterChange}
           tableFooter={
             catalog.selectedIds.length > 0 ? (

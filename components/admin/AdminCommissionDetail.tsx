@@ -43,8 +43,7 @@ export default function AdminCommissionDetail({
     product: "w-[32%]",
     quantity: "w-[8%]",
     type: "w-[12%]",
-    sizes: "w-[36%]",
-    price: "w-[12%]",
+    sizes: "w-[48%]",
   } as const;
   const totalPrice = commission.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -153,9 +152,6 @@ export default function AdminCommissionDetail({
               <th className={cn(thClass, itemTableColumnClass.sizes)}>
                 <Typography variant="body2">Talles</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.price)}>
-                <Typography variant="body2">Precio</Typography>
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -177,12 +173,12 @@ export default function AdminCommissionDetail({
                   </Typography>
                 </td>
                 <td className={cn(truncateCellClass, itemTableColumnClass.sizes)}>
-                  <AdminSupplierOrderSizeQuantity item={item} className="min-w-0 max-w-full" />
-                </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.price)}>
-                  <Typography variant="body2" className="whitespace-nowrap">
-                    {formatPrice(item.price)}
-                  </Typography>
+                  <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
+                    <AdminSupplierOrderSizeQuantity item={item} className="min-w-0 flex-1 pt-0" />
+                    <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
+                      {formatPrice(item.price)}
+                    </Typography>
+                  </div>
                 </td>
               </tr>
             ))}

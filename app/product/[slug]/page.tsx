@@ -27,12 +27,6 @@ import ProductTags, { type ProductTagItem } from "@/components/ui/ProductTags";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-const categoryDisplay: Record<NonNullable<Product["category"]>, string> = {
-  club: "Club",
-  national: "Selección",
-  retro: "Retro",
-};
-
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
@@ -70,7 +64,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     product.team ||
       product.league ||
       product.season ||
-      product.category ||
       shirtType
   );
   const imageUrls = product.image_urls ?? [];
@@ -108,9 +101,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   const productTags = [
-    product.category
-      ? { id: "category" as const, label: categoryDisplay[product.category] }
-      : null,
     shirtType
       ? { id: "shirt-type" as const, label: labelShirtType(shirtType) }
       : null,

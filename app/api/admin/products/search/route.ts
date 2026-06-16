@@ -36,16 +36,14 @@ export async function GET(request: NextRequest) {
     if (perPage > 50) perPage = 50;
 
     const textMatch = buildAdminSearchTextMatch(q);
-    const category = searchParams.get("category");
     const league = searchParams.get("league");
     const size = searchParams.get("size");
     const isActive = parseIsActiveFilterParam(searchParams.get("is_active"));
 
     const searchFilter: Record<string, unknown> = { ...textMatch };
 
-    if (category || league || size || isActive !== undefined) {
+    if (league || size || isActive !== undefined) {
       const andFilters: Record<string, unknown>[] = [textMatch];
-      if (category) andFilters.push({ category });
       if (league) andFilters.push({ league });
       if (size) andFilters.push(buildProductSizeFilter(size));
       if (isActive !== undefined) andFilters.push({ is_active: isActive });

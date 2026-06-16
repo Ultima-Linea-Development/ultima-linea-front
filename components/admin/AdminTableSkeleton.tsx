@@ -30,16 +30,16 @@ type AdminTableSkeletonProps = {
 const DATA_COLUMNS: Record<AdminTableSkeletonVariant, number> = {
   sales: 6,
   users: 5,
-  products: 5,
+  products: 4,
 };
 
 const HEADER_WIDTHS: Record<AdminTableSkeletonVariant, string[]> = {
   sales: ["w-[12%]", "w-[30%]", "w-[8%]", "w-[8%]", "w-[10%]", "w-[20%]"],
   users: ["w-[16%]", "w-[30%]", "w-[14%]", "w-[12%]", "w-[14%]"],
-  products: ["w-[28%]", "w-[12%]", "w-[12%]", "w-[10%]", "w-[18%]"],
+  products: ["w-[32%]", "w-[14%]", "w-[28%]", "w-[18%]"],
 };
 
-const HEADER_WIDTHS_WITH_SELECTION = ["w-[24%]", "w-[12%]", "w-[12%]", "w-[10%]", "w-[18%]"];
+const HEADER_WIDTHS_WITH_SELECTION = ["w-[28%]", "w-[14%]", "w-[26%]", "w-[18%]"];
 
 const SHIMMER_TEXT = "block h-4 w-full min-w-0 max-w-full rounded-sm";
 const SHIMMER_CAPTION = "block h-3 w-full min-w-0 max-w-full rounded-sm";

@@ -16,17 +16,16 @@ export default function AdminSizeStockChip({
   className,
 }: AdminSizeStockChipProps) {
   return (
-    <span className={cn("relative inline-flex shrink-0", className)}>
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-baseline gap-1 rounded-sm bg-muted/40 px-1.5 py-1 leading-none",
+        highlighted && "bg-muted",
+        className
+      )}
+    >
+      <span className="text-xs font-medium">{size}</span>
       <span
-        className={cn(
-          "inline-flex min-w-[1.75rem] items-center justify-center rounded-sm bg-muted/40 px-2 py-1 text-xs font-medium leading-none",
-          highlighted && "bg-muted"
-        )}
-      >
-        {size}
-      </span>
-      <span
-        className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-green-100 px-1 text-[10px] font-semibold leading-none text-green-800 tabular-nums"
+        className="text-[10px] font-medium text-muted-foreground tabular-nums"
         aria-label={badgeAriaLabel ?? `Stock ${stock}`}
       >
         {stock}

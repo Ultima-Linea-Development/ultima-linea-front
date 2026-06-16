@@ -31,14 +31,13 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
   const truncateCellClass = ADMIN_TABLE_TRUNCATE_CELL_CLASS;
 
   const itemTableColumnClass = {
-    product: "w-[22%]",
+    product: "w-[24%]",
     quantity: "w-[6%]",
     type: "w-[10%]",
-    sizes: "w-[22%]",
+    sizes: "w-[28%]",
     dorsal: "w-[8%]",
-    description: "w-[20%]",
+    description: "w-[18%]",
     link: "w-[6%]",
-    price: "w-[6%]",
   } as const;
   const totalPrice = order.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -196,9 +195,6 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
               <th className={cn(thClass, itemTableColumnClass.link)}>
                 <Typography variant="body2">Link</Typography>
               </th>
-              <th className={cn(thClass, itemTableColumnClass.price)}>
-                <Typography variant="body2">Precio</Typography>
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -220,7 +216,12 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
                   </Typography>
                 </td>
                 <td className={cn(truncateCellClass, itemTableColumnClass.sizes)}>
-                  <AdminSupplierOrderSizeQuantity item={item} className="min-w-0 max-w-full" />
+                  <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
+                    <AdminSupplierOrderSizeQuantity item={item} className="min-w-0 flex-1 pt-0" />
+                    <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
+                      {formatPrice(item.price)}
+                    </Typography>
+                  </div>
                 </td>
                 <td className={cn(truncateCellClass, itemTableColumnClass.dorsal)}>
                   <Typography variant="body2" className="truncate">
@@ -245,11 +246,6 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
                   ) : (
                     <Typography variant="body2">—</Typography>
                   )}
-                </td>
-                <td className={cn(truncateCellClass, itemTableColumnClass.price)}>
-                  <Typography variant="body2" className="whitespace-nowrap">
-                    {formatPrice(item.price)}
-                  </Typography>
                 </td>
               </tr>
             ))}

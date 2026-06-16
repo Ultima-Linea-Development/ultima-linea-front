@@ -178,44 +178,23 @@ export default function AdminSupplierOrderLineItemRow({
         </Box>
       )}
 
-      <Box display="grid" cols={2} gap={4} className="w-full min-w-0">
-        <FormField htmlFor={`order-type-${item.key}`} label="Tipo" required className={fieldLabelClassName}>
-          <Select
-            id={`order-type-${item.key}`}
-            value={item.type}
-            onChange={(event) =>
-              onChange(item.key, { type: event.target.value as SupplierOrderItemType })
-            }
-            disabled={isSubmitting}
-            required
-          >
-            {SUPPLIER_ORDER_ITEM_TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </FormField>
-
-        <FormField htmlFor={`order-price-${item.key}`} label="Precio unitario" required className={fieldLabelClassName}>
-          <Input
-            id={`order-price-${item.key}`}
-            type="number"
-            min={0}
-            value={item.price}
-            onChange={(event) =>
-              onChange(item.key, { price: normalizePriceValue(event.target.value) })
-            }
-            onBlur={() => {
-              if (item.price === "") {
-                onChange(item.key, { price: "0" });
-              }
-            }}
-            disabled={isSubmitting}
-            required
-          />
-        </FormField>
-      </Box>
+      <FormField htmlFor={`order-type-${item.key}`} label="Tipo" required className={fieldLabelClassName}>
+        <Select
+          id={`order-type-${item.key}`}
+          value={item.type}
+          onChange={(event) =>
+            onChange(item.key, { type: event.target.value as SupplierOrderItemType })
+          }
+          disabled={isSubmitting}
+          required
+        >
+          {SUPPLIER_ORDER_ITEM_TYPE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+      </FormField>
 
       <SupplierOrderSizeQuantityFields
         rows={item.sizeRows}
@@ -224,6 +203,11 @@ export default function AdminSupplierOrderLineItemRow({
         idPrefix={`order-size-${item.key}`}
         sizeOptions={sizeOptions}
         required
+        priceField={{
+          id: `order-price-${item.key}`,
+          value: item.price,
+          onChange: (price) => onChange(item.key, { price: normalizePriceValue(price) }),
+        }}
       />
 
       <Box display="grid" cols={2} gap={4} className="w-full min-w-0">

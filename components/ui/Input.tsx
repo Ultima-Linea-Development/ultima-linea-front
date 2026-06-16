@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { formControlFocusClassName, formControlSizeClassName } from "@/lib/form-field-classes";
 import {
   forwardRef,
   type ButtonHTMLAttributes,
@@ -101,7 +102,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cn(
-            "block",
+            formControlSizeClassName,
             widthStyles[width],
             paddingYStyles[py],
             paddingXStyles[px],
@@ -109,7 +110,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             hasEndIcon && "pr-10",
             backgroundStyles[background],
             size && sizeStyles[size as InputSize],
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            formControlFocusClassName
           )}
           {...props}
         />

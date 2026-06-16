@@ -27,12 +27,6 @@ import { validateRequiredProductFields } from "@/lib/product-form-validation";
 import { emptySizeStockRow, rowsToPayload, type SizeStockRow } from "@/lib/product-inventory";
 import { AdminProductNameFieldLabel } from "@/components/admin/AdminProductNameGuide";
 
-const CATEGORY_OPTIONS: Array<{ value: CreateProductRequest["category"]; label: string }> = [
-  { value: "club", label: "Club" },
-  { value: "national", label: "Selección" },
-  { value: "retro", label: "Retro" },
-];
-
 const SHIRT_TYPE_OPTIONS: Array<{ value: ShirtType; label: string }> = [
   { value: "fan", label: "Fan" },
   { value: "player", label: "Jugador" },
@@ -56,7 +50,6 @@ function getInitialFormState() {
     price: "",
     sizeRows: [emptySizeStockRow()] as SizeStockRow[],
     imageFiles: [] as File[],
-    category: "club" as CreateProductRequest["category"],
     shirtType: "fan" as ShirtType,
   };
 }
@@ -74,7 +67,6 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
   const [price, setPrice] = useState("");
   const [sizeRows, setSizeRows] = useState<SizeStockRow[]>(() => [emptySizeStockRow()]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [category, setCategory] = useState<CreateProductRequest["category"]>("club");
   const [shirtType, setShirtType] = useState<ShirtType>("fan");
   const [productOptions, setProductOptions] = useState<ProductOptionsResponse>({
     teams: [],
@@ -112,7 +104,6 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
     setPrice(initial.price);
     setSizeRows(initial.sizeRows);
     setImageFiles(initial.imageFiles);
-    setCategory(initial.category);
     setShirtType(initial.shirtType);
   };
 
@@ -186,7 +177,6 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
         sizes: inventory.sizes,
         stock_by_sizes: inventory.stock_by_sizes,
         image_urls: uploadResponse.data.urls,
-        category,
         type: shirtType,
       };
 
@@ -278,23 +268,6 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
           </FormField>
         </Div>
         <Div spacing="md" className="flex-1 min-w-[120px]">
-          <FormField htmlFor="category" label="Categoría" required>
-            <Select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as CreateProductRequest["category"])}
-              required
-              disabled={isSubmitting}
-            >
-              {CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        </Div>
-        <Div spacing="md" className="flex-1 min-w-[120px]">
           <FormField htmlFor="shirt-type" label="Versión" required>
             <Select
               id="shirt-type"
@@ -313,23 +286,6 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
         </Div>
       </Box>
 
-      <Box display="flex" gap="4" className="flex-wrap">
-        <Div spacing="md" className="flex-1 min-w-[120px]">
-          <FormField htmlFor="price" label="Precio" required>
-            <Input
-              id="price"
-              type="number"
-              min={0}
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              required
-              placeholder="50000"
-              disabled={isSubmitting}
-            />
-          </FormField>
-        </Div>
-      </Box>
-
       <Div spacing="md">
         <ProductSizeStockFields
           idPrefix="add"
@@ -338,6 +294,11 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
           disabled={isSubmitting}
           sizeOptions={productOptions.sizes}
           required
+          priceField={{
+            id: "price",
+            value: price,
+            onChange: setPrice,
+          }}
         />
       </Div>
 

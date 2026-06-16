@@ -22,12 +22,10 @@ export async function GET(request: NextRequest) {
 
     const team = searchParams.get("team");
     const league = searchParams.get("league");
-    const category = searchParams.get("category");
     const size = searchParams.get("size");
 
     if (team) filter.team = { $regex: escapeRegex(team), $options: "i" };
     if (league) filter.league = league;
-    if (category) filter.category = category;
     if (size) Object.assign(filter, buildProductSizeFilter(size));
 
     const collection = await getProductsCollection<ProductDocument>();

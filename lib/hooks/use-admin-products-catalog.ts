@@ -24,7 +24,6 @@ export function useAdminProductsCatalog() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [page, setPage] = useState(1);
-  const [categoryFilter, setCategoryFilter] = useState("");
   const [sizeFilter, setSizeFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
   const [todoCount, setTodoCount] = useState(0);
@@ -63,7 +62,6 @@ export function useAdminProductsCatalog() {
   });
 
   const catalogFilters = {
-    ...(categoryFilter ? { category: categoryFilter as Product["category"] } : {}),
     ...(sizeFilter ? { size: sizeFilter } : {}),
     ...(activeFilter === "false" ? { is_active: false } : {}),
   };
@@ -138,7 +136,7 @@ export function useAdminProductsCatalog() {
     } finally {
       setIsDataLoading(false);
     }
-  }, [searchQuery, page, categoryFilter, sizeFilter, activeFilter, flushPendingDelete, searchCacheRef]);
+  }, [searchQuery, page, sizeFilter, activeFilter, flushPendingDelete, searchCacheRef]);
 
   const refreshCatalog = useCallback(async () => {
     invalidateSearchCache();
@@ -164,16 +162,6 @@ export function useAdminProductsCatalog() {
       }
     });
   }, []);
-
-  const handleCategoryFilterChange = useCallback(
-    (value: string) => {
-      setCategoryFilter(value);
-      invalidateSearchCache();
-      setPage(1);
-      bumpSearch();
-    },
-    [invalidateSearchCache, bumpSearch]
-  );
 
   const handleSizeFilterChange = useCallback(
     (value: string) => {
@@ -405,7 +393,6 @@ export function useAdminProductsCatalog() {
     isBulkSubmitting,
     bulkConfirmIds,
     setBulkConfirmIds,
-    categoryFilter,
     sizeFilter,
     activeFilter,
     todoCount,
@@ -425,7 +412,6 @@ export function useAdminProductsCatalog() {
     refreshCatalog,
     applySearchFromQuery: (query: string) => applySearchFromQuery(query, resetPage),
     clearSearch: () => clearSearch(resetPage),
-    handleCategoryFilterChange,
     handleSizeFilterChange,
     handleActiveFilterChange,
     handleDeactivate,

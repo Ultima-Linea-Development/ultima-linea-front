@@ -19,6 +19,7 @@ import { getSaleLineItems } from "@/lib/sale-items";
 import { formatSaleDateDisplay } from "@/lib/sale-date";
 import { getSaleSellerLabel } from "@/lib/sale-seller";
 import { cn, formatPrice, generateSlug } from "@/lib/utils";
+import AdminSizeStockChip from "@/components/admin/AdminSizeStockChip";
 
 type AdminSaleDetailProps = {
   sale: Sale;
@@ -170,14 +171,8 @@ export default function AdminSaleDetail({
               <th className={cn(thClass, "w-[40%]")}>
                 <Typography variant="body2">Producto</Typography>
               </th>
-              <th className={cn(thClass, "w-[15%]")}>
-                <Typography variant="body2">Talle</Typography>
-              </th>
-              <th className={cn(thClass, "w-[12%]")}>
-                <Typography variant="body2">Cant.</Typography>
-              </th>
-              <th className={cn(thClass, "w-[16%]")}>
-                <Typography variant="body2">P. unit.</Typography>
+              <th className={cn(thClass, "w-[28%]")}>
+                <Typography variant="body2">Talles</Typography>
               </th>
               <th className={cn(thClass, "w-[17%]")}>
                 <Typography variant="body2">Subtotal</Typography>
@@ -205,15 +200,20 @@ export default function AdminSaleDetail({
                   </Box>
                 </td>
                 <td className={cellClass}>
-                  <Typography variant="body2">{item.size || "—"}</Typography>
-                </td>
-                <td className={cellClass}>
-                  <Typography variant="body2">{item.quantity}</Typography>
-                </td>
-                <td className={cellClass}>
-                  <Typography variant="body2" className="whitespace-nowrap">
-                    {formatPrice(item.unit_price)}
-                  </Typography>
+                  <div className="flex w-full min-w-0 items-center justify-between gap-x-3 gap-y-1.5">
+                    {item.size ? (
+                      <AdminSizeStockChip
+                        size={item.size}
+                        stock={item.quantity}
+                        badgeAriaLabel={`Cantidad ${item.quantity}`}
+                      />
+                    ) : (
+                      <Typography variant="body2">—</Typography>
+                    )}
+                    <Typography variant="body2" className="shrink-0 whitespace-nowrap tabular-nums">
+                      {formatPrice(item.unit_price)}
+                    </Typography>
+                  </div>
                 </td>
                 <td className={cellClass}>
                   <Typography variant="body2" className="whitespace-nowrap">
@@ -225,7 +225,7 @@ export default function AdminSaleDetail({
           </tbody>
           <tfoot>
             <tr className="bg-muted/30">
-              <td colSpan={4} className={cn(cellClass, "text-right")}>
+              <td colSpan={2} className={cn(cellClass, "text-right")}>
                 <Typography variant="body2" className="font-medium">
                   Total
                 </Typography>

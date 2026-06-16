@@ -27,12 +27,6 @@ import {
 import ProductSizeStockFields from "@/components/admin/ProductSizeStockFields";
 import { AdminProductNameFieldLabel } from "@/components/admin/AdminProductNameGuide";
 
-const CATEGORY_OPTIONS: Array<{ value: "club" | "national" | "retro"; label: string }> = [
-  { value: "club", label: "Club" },
-  { value: "national", label: "Selección" },
-  { value: "retro", label: "Retro" },
-];
-
 const SHIRT_TYPE_OPTIONS: Array<{ value: ShirtType; label: string }> = [
   { value: "fan", label: "Fan" },
   { value: "player", label: "Jugador" },
@@ -82,9 +76,8 @@ export default function AdminProductEditForm({
   const [sizeRows, setSizeRows] = useState<SizeStockRow[]>(() => productToRows(product));
   const [inventoryError, setInventoryError] = useState("");
   const [fieldError, setFieldError] = useState("");
-  const [category, setCategory] = useState<Product["category"]>(product.category ?? "club");
   const [shirtType, setShirtType] = useState<ShirtType>(
-    () => normalizeShirtType(product.type) ?? (product.category === "retro" ? "retro" : "fan")
+    () => normalizeShirtType(product.type) ?? "fan"
   );
   const [isActive, setIsActive] = useState(product.is_active);
   const [currentImageUrls, setCurrentImageUrls] = useState<string[]>(product.image_urls ?? []);
@@ -130,8 +123,7 @@ export default function AdminProductEditForm({
     setSizeRows(productToRows(product));
     setInventoryError("");
     setFieldError("");
-    setCategory(product.category ?? "club");
-    setShirtType(normalizeShirtType(product.type) ?? (product.category === "retro" ? "retro" : "fan"));
+    setShirtType(normalizeShirtType(product.type) ?? "fan");
     setIsActive(product.is_active);
     setCurrentImageUrls(product.image_urls ?? []);
     setNewFiles([]);
@@ -205,7 +197,6 @@ export default function AdminProductEditForm({
       price: priceNum,
       sizes: inventory.sizes,
       stock_by_sizes: inventory.stock_by_sizes,
-      category,
       type: shirtType,
       is_active: isActive,
       image_urls: finalUrls,
@@ -284,22 +275,6 @@ export default function AdminProductEditForm({
             </FormField>
           </Div>
           <Div spacing="md" className="flex-1 min-w-[120px]">
-            <FormField htmlFor="edit-category" label="Categoría" required>
-              <Select
-                id="edit-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value as Product["category"])}
-                required
-              >
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-          </Div>
-          <Div spacing="md" className="flex-1 min-w-[120px]">
             <FormField htmlFor="edit-shirt-type" label="Versión" required>
               <Select
                 id="edit-shirt-type"
@@ -317,32 +292,18 @@ export default function AdminProductEditForm({
           </Div>
         </Box>
 
-        <Box display="flex" gap="4" className="flex-wrap items-end">
-          <Div spacing="md" className="flex-1 min-w-[120px]">
-            <FormField htmlFor="edit-price" label="Precio" required>
-              <Input
-                id="edit-price"
-                type="number"
-                min={0}
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                required
-              />
-            </FormField>
-          </Div>
-          <Div spacing="md" className="flex items-center gap-2 pb-2">
-            <input
-              id="edit-is-active"
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="size-4"
-            />
-            <Label htmlFor="edit-is-active">
-              <Typography variant="body2">Activo</Typography>
-            </Label>
-          </Div>
-        </Box>
+        <Div spacing="md" className="flex items-center gap-2">
+          <input
+            id="edit-is-active"
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="size-4"
+          />
+          <Label htmlFor="edit-is-active">
+            <Typography variant="body2">Activo</Typography>
+          </Label>
+        </Div>
 
         <Div spacing="md">
           <ProductSizeStockFields
@@ -352,6 +313,11 @@ export default function AdminProductEditForm({
             disabled={isSubmitting}
             sizeOptions={productOptions.sizes}
             minRows={0}
+            priceField={{
+              id: "edit-price",
+              value: price,
+              onChange: setPrice,
+            }}
           />
         </Div>
 

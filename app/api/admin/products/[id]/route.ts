@@ -97,7 +97,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (updates.sizes !== undefined) setFields.sizes = updates.sizes;
     if (updates.size) setFields.size = updates.size;
     if (updates.image_urls?.length > 0) setFields.image_urls = updates.image_urls;
-    if (updates.category) setFields.category = updates.category;
     if (updates.is_active !== undefined) setFields.is_active = updates.is_active;
 
     if (needsSKUUpdate) {

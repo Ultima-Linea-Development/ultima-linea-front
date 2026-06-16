@@ -58,7 +58,6 @@ async function main() {
         team,
         season,
         type: doc.type,
-        category: doc.category,
         name: doc.name,
       });
 

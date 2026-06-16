@@ -9,9 +9,15 @@ import {
   ADMIN_PAGE_PADDING_CLASS,
   ADMIN_TABLE_DESKTOP_CLASS,
   ADMIN_TABLE_MOBILE_CLASS,
+  ADMIN_TABLE_MODAL_WRAPPER_CLASS,
 } from "@/lib/admin-layout-styles";
 
-export { ADMIN_PAGE_PADDING_CLASS, ADMIN_TABLE_DESKTOP_CLASS, ADMIN_TABLE_MOBILE_CLASS };
+export {
+  ADMIN_PAGE_PADDING_CLASS,
+  ADMIN_TABLE_DESKTOP_CLASS,
+  ADMIN_TABLE_MOBILE_CLASS,
+  ADMIN_TABLE_MODAL_WRAPPER_CLASS,
+};
 
 export const ADMIN_TABLE_CELL_CLASS = "px-3 py-2";
 export const ADMIN_TABLE_TH_CLASS = "px-3 py-2 text-left font-medium";
@@ -26,9 +32,6 @@ export const ADMIN_TABLE_ACTIONS_CELL_CLASS = cn(
 
 /** @deprecated Usar ADMIN_TABLE_CELL_CLASS */
 export const ADMIN_TABLE_TRUNCATE_CELL_CLASS = ADMIN_TABLE_CELL_CLASS;
-
-export const ADMIN_TABLE_MODAL_MOBILE_BLEED_CLASS =
-  "relative box-border -mx-4 w-[calc(100%+2rem)] max-w-none sm:-mx-6 sm:w-[calc(100%+3rem)] lg:mx-0 lg:w-full lg:max-w-none";
 
 export const ADMIN_TABLE_OUTER_BORDER_CLASS = "border border-gray-200";
 
@@ -67,13 +70,11 @@ export function AdminTable({ children, className, tableClassName }: AdminTablePr
 type AdminTableMobileListProps = {
   children: ReactNode;
   className?: string;
-  bleed?: "page" | "modal";
 };
 
 export function AdminTableMobileList({
   children,
   className,
-  bleed = "page",
 }: AdminTableMobileListProps) {
   return (
     <div
@@ -81,7 +82,6 @@ export function AdminTableMobileList({
         ADMIN_TABLE_MOBILE_CLASS,
         "flex w-full flex-col",
         ADMIN_TABLE_OUTER_BORDER_CLASS,
-        bleed === "modal" && ADMIN_TABLE_MODAL_MOBILE_BLEED_CLASS,
         className
       )}
     >

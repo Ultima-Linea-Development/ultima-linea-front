@@ -33,6 +33,8 @@ export const ADMIN_MAIN_CONTENT_INNER_CLASS =
 
 export const ADMIN_PAGE_PADDING_CLASS = "w-full px-4 sm:px-6 lg:px-0";
 
+export const ADMIN_TABLE_MODAL_WRAPPER_CLASS = "w-full border border-border";
+
 /** Alias de tablas: misma regla `lg` que el shell. */
 export const ADMIN_TABLE_DESKTOP_CLASS = ADMIN_LAYOUT_DESKTOP_CLASS;
 export const ADMIN_TABLE_MOBILE_CLASS = ADMIN_LAYOUT_MOBILE_CLASS;

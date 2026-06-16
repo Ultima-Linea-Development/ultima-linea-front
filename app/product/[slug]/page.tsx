@@ -131,14 +131,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <Typography
             variant="h1"
             uppercase
-            className="text-xl leading-tight sm:text-2xl md:text-3xl lg:text-4xl"
+            className="text-xl leading-tight sm:text-2xl md:text-2xl"
           >
             {product.name}
           </Typography>
           <Typography
             variant="h3"
             as="p"
-            className="text-lg md:text-2xl"
+            className="text-lg sm:text-xl"
           >
             {formatPrice(product.price)}
           </Typography>

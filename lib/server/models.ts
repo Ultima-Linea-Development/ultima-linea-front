@@ -1,3 +1,4 @@
+import { applyProductNameNormalization } from "@/lib/product-name";
 import { monotonicFactory } from "ulid";
 
 const ulid = monotonicFactory();
@@ -64,10 +65,12 @@ export type SupplierOrderStatus = "draft" | "sent" | "partial" | "completed" | "
 
 export type SupplierOrderLineItem = {
   id: string;
+  product_id?: string;
   shirt_name: string;
   quantity: number;
   type: SupplierOrderItemType;
   sizes: string;
+  quantity_by_sizes?: Record<string, number>;
   dorsal?: string;
   description?: string;
   link?: string;
@@ -96,7 +99,37 @@ export type SupplierOrder = {
   supplier_name?: string;
   status: SupplierOrderStatus;
   notes?: string;
+  tracking_number?: string;
+  tracking_link?: string;
+  paid_at?: Date;
+  sent_at?: Date;
+  received_at?: Date;
   items: SupplierOrderLineItem[];
+  created_by?: string;
+  created_at: Date;
+  updated_at: Date;
+};
+
+export type CommissionStatus = "pending" | "exported" | "cancelled";
+
+export type CommissionLineItem = Omit<
+  SupplierOrderLineItem,
+  "downloaded" | "cleaned" | "ordered"
+>;
+
+export type Commission = {
+  id: string;
+  name: string;
+  customer_name: string;
+  customer_contact?: string;
+  seller_user_id?: string;
+  external_seller_id?: string;
+  external_seller_name?: string;
+  status: CommissionStatus;
+  supplier_order_id?: string;
+  supplier_order_name?: string;
+  notes?: string;
+  items: CommissionLineItem[];
   created_by?: string;
   created_at: Date;
   updated_at: Date;
@@ -204,17 +237,56 @@ export function beforeCreateProduct(product: Partial<Product>): Product {
     updated_at: now,
   };
 
-  if (!result.slug && result.name) {
-    result.slug = generateSlug(result.name);
-  }
   if (!result.type) {
     result.type = extractTypeFromName(result.name);
   }
+
+  if (result.team && result.season) {
+    const normalized = applyProductNameNormalization({
+      team: result.team,
+      season: result.season,
+      type: result.type,
+      category: result.category,
+      name: result.name,
+    });
+    result.name = normalized.name;
+    result.slug = normalized.slug;
+    result.season = normalized.season;
+    result.type = normalized.type;
+  } else if (!result.slug && result.name) {
+    result.slug = generateSlug(result.name);
+  }
+
   if (!result.sku) {
     result.sku = generateSKUBase(result.team, result.type);
   }
 
   return result;
+}
+
+export function normalizeProductUpdates(
+  current: Pick<Product, "name" | "team" | "season" | "type" | "category">,
+  updates: Partial<Pick<Product, "name" | "team" | "season" | "type" | "category">>
+): Partial<Pick<Product, "name" | "slug" | "season" | "type">> {
+  const merged = {
+    name: updates.name ?? current.name,
+    team: updates.team ?? current.team,
+    season: updates.season ?? current.season,
+    type: updates.type ?? current.type,
+    category: updates.category ?? current.category,
+  };
+
+  if (!merged.team?.trim() || !merged.season?.trim()) {
+    return {};
+  }
+
+  const normalized = applyProductNameNormalization(merged);
+  return {
+    name: normalized.name,
+    slug: normalized.slug,
+    season: normalized.season,
+    type: normalized.type,
+  };
 }
 
 export type UserDocument = Omit<User, "id"> & { _id: string };
@@ -223,6 +295,7 @@ export type SaleDocument = Omit<Sale, "id"> & { _id: string };
 export type ExternalSellerDocument = Omit<ExternalSeller, "id"> & { _id: string };
 export type SupplierDocument = Omit<Supplier, "id"> & { _id: string };
 export type SupplierOrderDocument = Omit<SupplierOrder, "id"> & { _id: string };
+export type CommissionDocument = Omit<Commission, "id"> & { _id: string };
 
 export function userFromDoc(doc: UserDocument): User {
   const { _id, password, ...rest } = doc;
@@ -281,5 +354,15 @@ export function supplierOrderFromDoc(doc: SupplierOrderDocument): SupplierOrder 
 
 export function supplierOrderToDoc(order: SupplierOrder): SupplierOrderDocument {
   const { id, ...rest } = order;
+  return { _id: id, ...rest };
+}
+
+export function commissionFromDoc(doc: CommissionDocument): Commission {
+  const { _id, ...rest } = doc;
+  return { id: _id, ...rest };
+}
+
+export function commissionToDoc(commission: Commission): CommissionDocument {
+  const { id, ...rest } = commission;
   return { _id: id, ...rest };
 }

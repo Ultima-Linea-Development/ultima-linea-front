@@ -6,6 +6,7 @@ const SALES_COLLECTION = "sales";
 const EXTERNAL_SELLERS_COLLECTION = "external_sellers";
 const SUPPLIERS_COLLECTION = "suppliers";
 const SUPPLIER_ORDERS_COLLECTION = "supplier_orders";
+const COMMISSIONS_COLLECTION = "commissions";
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
@@ -87,6 +88,10 @@ export async function getSupplierOrdersCollection<T extends Document = Document>
   return getCollection<T>(SUPPLIER_ORDERS_COLLECTION);
 }
 
+export async function getCommissionsCollection<T extends Document = Document>() {
+  return getCollection<T>(COMMISSIONS_COLLECTION);
+}
+
 let indexesCreated = false;
 
 export async function ensureIndexes(): Promise<void> {
@@ -129,6 +134,16 @@ export async function ensureIndexes(): Promise<void> {
     { key: { name: 1 } },
   ]);
 
+  const commissions = db.collection(COMMISSIONS_COLLECTION);
+  await commissions.createIndexes([
+    { key: { created_at: -1 } },
+    { key: { status: 1 } },
+    { key: { customer_name: 1 } },
+    { key: { seller_user_id: 1 } },
+    { key: { external_seller_id: 1 } },
+    { key: { supplier_order_id: 1 } },
+  ]);
+
   indexesCreated = true;
 }
 
@@ -139,4 +154,5 @@ export {
   EXTERNAL_SELLERS_COLLECTION,
   SUPPLIERS_COLLECTION,
   SUPPLIER_ORDERS_COLLECTION,
+  COMMISSIONS_COLLECTION,
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
 import Input from "@/components/ui/Input";
@@ -10,27 +10,45 @@ import Typography from "@/components/ui/Typography";
 import Select from "@/components/ui/Select";
 import { Button } from "@/components/ui/button";
 import AdminSupplierField from "@/components/admin/AdminSupplierField";
+import AdminSupplierOrderMilestoneDateFields from "@/components/admin/AdminSupplierOrderMilestoneDateFields";
+import AdminSaleDateField from "@/components/admin/AdminSaleDateField";
+import AdminSupplierOrderTrackingFields from "@/components/admin/AdminSupplierOrderTrackingFields";
 import AdminSupplierOrderLineItemRow, {
   createEmptySupplierOrderLineItemDraft,
   getSupplierOrderLineItemDraftTotal,
   type SupplierOrderLineItemDraft,
 } from "@/components/admin/AdminSupplierOrderLineItemRow";
 import type {
+  Product,
   Supplier,
   SupplierOrder,
   SupplierOrderStatus,
   UpdateSupplierOrderRequest,
 } from "@/lib/api";
+import { productsApi } from "@/lib/api";
 import {
   supplierToFormValue,
   supplierValueToPayload,
   validateSupplierValue,
 } from "@/lib/supplier-field";
-import { SUPPLIER_ORDER_STATUS_OPTIONS } from "@/lib/supplier-order-display";
+import { sizeRowsFromLineItem, sizeRowsToPayload } from "@/lib/supplier-order-sizes";
+import {
+  SUPPLIER_ORDER_STATUS_OPTIONS,
+  normalizeSupplierOrderTrackingLink,
+  validateSupplierOrderTrackingLink,
+} from "@/lib/supplier-order-display";
+import {
+  orderMilestoneDatesFromOrder,
+  supplierOrderMilestoneDatesToUpdatePayload,
+  validateSupplierOrderMilestoneDates,
+  type SupplierOrderMilestoneDates,
+} from "@/lib/supplier-order-dates";
+import { saleDateInputToApiValue, saleDateIsoToDisplayValue } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
 
 type AdminSupplierOrderEditFormProps = {
   order: SupplierOrder;
+  products: Product[];
   suppliers: Supplier[];
   isSubmitting: boolean;
   onSave: (payload: UpdateSupplierOrderRequest) => Promise<boolean>;
@@ -40,37 +58,48 @@ type AdminSupplierOrderEditFormProps = {
 
 const fieldLabelClassName = "w-full min-w-0";
 
-function orderItemToDraft(item: SupplierOrder["items"][number]): SupplierOrderLineItemDraft {
+function orderItemToDraft(
+  item: SupplierOrder["items"][number],
+  products: Product[]
+): SupplierOrderLineItemDraft {
+  const matchedProduct = item.product_id
+    ? products.find((product) => product.id === item.product_id)
+    : products.find(
+        (product) => product.name.toLocaleLowerCase() === item.shirt_name.toLocaleLowerCase()
+      );
+
   return {
     key: item.id,
-    shirtName: item.shirt_name,
-    quantity: String(item.quantity),
+    productId: item.product_id ?? matchedProduct?.id,
+    productName: item.shirt_name,
+    isCustomProduct: !item.product_id && !matchedProduct,
     type: item.type,
-    sizes: item.sizes,
+    sizeRows: sizeRowsFromLineItem(item),
     dorsal: item.dorsal ?? "",
     description: item.description ?? "",
     link: item.link ?? "",
-    downloaded: item.downloaded,
-    cleaned: item.cleaned,
     price: String(item.price),
-    ordered: item.ordered,
   };
 }
 
 function draftToRequestItem(item: SupplierOrderLineItemDraft) {
+  const sizesPayload = sizeRowsToPayload(item.sizeRows);
+  if (!sizesPayload) {
+    throw new Error("invalid sizes");
+  }
+
   return {
     id: item.key,
-    shirt_name: item.shirtName.trim(),
-    quantity: Number(item.quantity),
+    product_id: item.productId,
+    shirt_name: item.productName.trim(),
+    quantity: sizesPayload.quantity,
     type: item.type,
-    sizes: item.sizes.trim(),
+    sizes: sizesPayload.sizes,
+    quantity_by_sizes: sizesPayload.quantity_by_sizes,
     dorsal: item.dorsal.trim() || undefined,
     description: item.description.trim() || undefined,
     link: item.link.trim() || undefined,
-    downloaded: item.downloaded,
-    cleaned: item.cleaned,
     price: Number(item.price),
-    ordered: item.ordered,
   };
 }
 
@@ -80,22 +109,18 @@ function validateLineItems(lineItems: SupplierOrderLineItemDraft[]): string | nu
   }
 
   for (const item of lineItems) {
-    if (!item.shirtName.trim()) {
-      return "Cada ítem necesita un nombre de camiseta.";
+    if (!item.productName.trim()) {
+      return "Cada ítem necesita un nombre de producto.";
     }
 
-    const quantity = Number(item.quantity);
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      return `Cantidad inválida para ${item.shirtName || "un ítem"}.`;
-    }
-
-    if (!item.sizes.trim()) {
-      return `Indicá el talle para ${item.shirtName}.`;
+    const sizesPayload = sizeRowsToPayload(item.sizeRows);
+    if (!sizesPayload) {
+      return `Indicá al menos un talle con cantidad para ${item.productName || "un ítem"}.`;
     }
 
     const price = Number(item.price);
     if (!Number.isFinite(price) || price < 0) {
-      return `Precio inválido para ${item.shirtName}.`;
+      return `Precio inválido para ${item.productName}.`;
     }
   }
 
@@ -104,6 +129,7 @@ function validateLineItems(lineItems: SupplierOrderLineItemDraft[]): string | nu
 
 export default function AdminSupplierOrderEditForm({
   order,
+  products,
   suppliers,
   isSubmitting,
   onSave,
@@ -125,12 +151,36 @@ export default function AdminSupplierOrderEditForm({
   );
 
   const [name, setName] = useState(order.name);
+  const [orderDate, setOrderDate] = useState(() => saleDateIsoToDisplayValue(order.created_at));
   const [status, setStatus] = useState<SupplierOrderStatus>(order.status);
   const [notes, setNotes] = useState(order.notes ?? "");
+  const [trackingNumber, setTrackingNumber] = useState(order.tracking_number ?? "");
+  const [trackingLink, setTrackingLink] = useState(order.tracking_link ?? "");
+  const [milestoneDates, setMilestoneDates] = useState<SupplierOrderMilestoneDates>(() =>
+    orderMilestoneDatesFromOrder(order)
+  );
   const [supplierValue, setSupplierValue] = useState(() => supplierToFormValue(initialSupplier));
   const [lineItems, setLineItems] = useState<SupplierOrderLineItemDraft[]>(() =>
-    order.items.map(orderItemToDraft)
+    order.items.map((item) => orderItemToDraft(item, products))
   );
+  const [sizeOptions, setSizeOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSizeOptions = async () => {
+      const response = await productsApi.getOptions();
+      if (isMounted && response.data) {
+        setSizeOptions(response.data.sizes);
+      }
+    };
+
+    void loadSizeOptions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const orderTotal = useMemo(
     () => lineItems.reduce((sum, item) => sum + getSupplierOrderLineItemDraftTotal(item), 0),
@@ -171,11 +221,35 @@ export default function AdminSupplierOrderEditForm({
       return;
     }
 
+    const datesError = validateSupplierOrderMilestoneDates(milestoneDates);
+    if (datesError) {
+      onError(datesError);
+      return;
+    }
+
+    const trackingLinkError = validateSupplierOrderTrackingLink(trackingLink);
+    if (trackingLinkError) {
+      onError(trackingLinkError);
+      return;
+    }
+
+    const normalizedTrackingLink = normalizeSupplierOrderTrackingLink(trackingLink);
+
+    const orderDateApiValue = saleDateInputToApiValue(orderDate);
+    if (!orderDateApiValue) {
+      onError("Fecha del pedido inválida.");
+      return;
+    }
+
     await onSave({
       name: trimmedName,
       status,
-      notes: notes.trim() || undefined,
+      order_date: orderDateApiValue,
+      notes: notes.trim(),
+      tracking_number: trackingNumber.trim(),
+      tracking_link: normalizedTrackingLink ?? "",
       ...supplierValueToPayload(supplierValue),
+      ...supplierOrderMilestoneDatesToUpdatePayload(milestoneDates),
       items: lineItems.map(draftToRequestItem),
     });
   };
@@ -215,6 +289,23 @@ export default function AdminSupplierOrderEditForm({
           </div>
         </div>
 
+        <FormField htmlFor="edit-order-date" label="Fecha del pedido" required className={fieldLabelClassName}>
+          <AdminSaleDateField
+            id="edit-order-date"
+            value={orderDate}
+            onChange={setOrderDate}
+            disabled={isSubmitting}
+            required
+          />
+        </FormField>
+
+        <AdminSupplierOrderMilestoneDateFields
+          idPrefix="edit-order"
+          value={milestoneDates}
+          onChange={setMilestoneDates}
+          disabled={isSubmitting}
+        />
+
         <AdminSupplierField
           value={supplierValue}
           onChange={setSupplierValue}
@@ -231,6 +322,15 @@ export default function AdminSupplierOrderEditForm({
             rows={2}
           />
         </FormField>
+
+        <AdminSupplierOrderTrackingFields
+          idPrefix="edit-order"
+          trackingNumber={trackingNumber}
+          trackingLink={trackingLink}
+          onTrackingNumberChange={setTrackingNumber}
+          onTrackingLinkChange={setTrackingLink}
+          disabled={isSubmitting}
+        />
 
         <Box display="flex" direction="col" gap="3" align="stretch" className="w-full min-w-0">
           <Box display="flex" className="items-center justify-between gap-4">
@@ -251,6 +351,8 @@ export default function AdminSupplierOrderEditForm({
             <AdminSupplierOrderLineItemRow
               key={item.key}
               item={item}
+              products={products}
+              sizeOptions={sizeOptions}
               isSubmitting={isSubmitting}
               onChange={updateLineItem}
               onRemove={removeLineItem}

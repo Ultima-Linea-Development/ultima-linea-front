@@ -7,6 +7,11 @@ import {
   generateULID,
   supplierOrderFromDoc,
 } from "@/lib/server/models";
+import {
+  formatSupplierOrderSizesDisplay,
+  getSupplierOrderLineItemQuantity,
+} from "@/lib/supplier-order-sizes";
+import { parseSaleDateInput } from "@/lib/sale-date";
 
 const VALID_TYPES: SupplierOrderItemType[] = ["FAN", "PLAYER", "RETRO"];
 const VALID_STATUSES: SupplierOrderStatus[] = [
@@ -19,10 +24,12 @@ const VALID_STATUSES: SupplierOrderStatus[] = [
 
 export type SupplierOrderLineItemInput = {
   id?: string;
+  product_id?: string;
   shirt_name?: string;
   quantity?: number;
   type?: string;
   sizes?: string;
+  quantity_by_sizes?: Record<string, number>;
   dorsal?: string;
   description?: string;
   link?: string;
@@ -45,12 +52,72 @@ function parseItemType(value?: string): SupplierOrderItemType | null {
   return null;
 }
 
+function parseQuantityBySizes(
+  value: Record<string, number> | undefined
+): Record<string, number> | null {
+  if (!value || typeof value !== "object") return null;
+
+  const parsed: Record<string, number> = {};
+
+  for (const [size, quantity] of Object.entries(value)) {
+    const trimmedSize = size.trim();
+    const numericQuantity = Number(quantity);
+
+    if (!trimmedSize) continue;
+    if (!Number.isInteger(numericQuantity) || numericQuantity <= 0) return null;
+
+    const key = trimmedSize.toLocaleLowerCase();
+    const existing = Object.entries(parsed).find(
+      ([existingSize]) => existingSize.toLocaleLowerCase() === key
+    );
+
+    if (existing) {
+      parsed[existing[0]] += numericQuantity;
+    } else {
+      parsed[trimmedSize] = numericQuantity;
+    }
+  }
+
+  return Object.keys(parsed).length > 0 ? parsed : null;
+}
+
 export function parseSupplierOrderStatus(value?: string): SupplierOrderStatus | null {
   const normalized = value?.trim().toLowerCase();
   if (normalized && VALID_STATUSES.includes(normalized as SupplierOrderStatus)) {
     return normalized as SupplierOrderStatus;
   }
   return null;
+}
+
+export function parseSupplierOrderOptionalDate(
+  value?: string | null
+): Date | null | "invalid" {
+  if (value == null) return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const parsed = parseSaleDateInput(trimmed);
+  if (!parsed) return "invalid";
+  return parsed;
+}
+
+export function applySupplierOrderDateField(
+  bodyValue: string | undefined,
+  fieldPresent: boolean,
+  updateFields: Record<string, unknown>,
+  unsetFields: Record<string, "">,
+  fieldName: "paid_at" | "sent_at" | "received_at"
+): "invalid" | void {
+  if (!fieldPresent) return;
+
+  const parsed = parseSupplierOrderOptionalDate(bodyValue);
+  if (parsed === "invalid") return "invalid";
+  if (parsed) {
+    updateFields[fieldName] = parsed;
+  } else {
+    unsetFields[fieldName] = "";
+  }
 }
 
 export function parseSupplierOrderLineItems(
@@ -65,12 +132,7 @@ export function parseSupplierOrderLineItems(
   for (const item of items) {
     const shirtName = item.shirt_name?.trim();
     if (!shirtName) {
-      return { error: "Cada ítem necesita un nombre de camiseta" };
-    }
-
-    const quantity = Number(item.quantity);
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      return { error: `Cantidad inválida para ${shirtName}` };
+      return { error: "Cada ítem necesita un nombre de producto" };
     }
 
     const type = parseItemType(item.type);
@@ -78,9 +140,26 @@ export function parseSupplierOrderLineItems(
       return { error: `Tipo inválido para ${shirtName}` };
     }
 
+    const quantityBySizes = parseQuantityBySizes(item.quantity_by_sizes);
     const sizes = item.sizes?.trim();
-    if (!sizes) {
-      return { error: `Indicá el talle para ${shirtName}` };
+    const quantityFromSizes = quantityBySizes
+      ? getSupplierOrderLineItemQuantity(quantityBySizes)
+      : null;
+
+    let quantity = quantityFromSizes ?? Number(item.quantity);
+    let normalizedSizes = sizes;
+    let normalizedQuantityBySizes = quantityBySizes ?? undefined;
+
+    if (quantityFromSizes !== null) {
+      normalizedSizes = formatSupplierOrderSizesDisplay(quantityBySizes ?? undefined, sizes);
+    } else {
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        return { error: `Cantidad inválida para ${shirtName}` };
+      }
+
+      if (!normalizedSizes) {
+        return { error: `Indicá al menos un talle para ${shirtName}` };
+      }
     }
 
     const price = Number(item.price);
@@ -90,10 +169,12 @@ export function parseSupplierOrderLineItems(
 
     parsed.push({
       id: item.id?.trim() || generateULID(),
+      product_id: trimOptional(item.product_id),
       shirt_name: shirtName,
       quantity,
       type,
-      sizes,
+      sizes: normalizedSizes ?? "",
+      quantity_by_sizes: normalizedQuantityBySizes,
       dorsal: trimOptional(item.dorsal),
       description: trimOptional(item.description),
       link: trimOptional(item.link),
@@ -119,15 +200,17 @@ export function normalizeSupplierOrderForResponse(
 
 export function getSupplierOrderProgress(order: SupplierOrder): {
   totalItems: number;
-  orderedItems: number;
   totalQuantity: number;
   totalPrice: number;
 } {
   const items = order.items ?? [];
   return {
     totalItems: items.length,
-    orderedItems: items.filter((item) => item.ordered).length,
-    totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
+    totalQuantity: items.reduce(
+      (sum, item) =>
+        sum + getSupplierOrderLineItemQuantity(item.quantity_by_sizes, item.quantity),
+      0
+    ),
     totalPrice: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
   };
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureIndexes, getProductsCollection } from "@/lib/server/db";
 import {
   generateSKUBase,
-  generateSlug,
+  normalizeProductUpdates,
   ProductDocument,
   productFromDoc,
 } from "@/lib/server/models";
@@ -67,10 +67,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     let productType = currentProduct.type;
     let needsSKUUpdate = false;
 
-    if (updates.name) {
-      setFields.name = updates.name;
-      setFields.slug = generateSlug(updates.name);
-    }
     if (updates.description) setFields.description = updates.description;
     if (updates.team) {
       setFields.team = updates.team;
@@ -78,12 +74,17 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       needsSKUUpdate = true;
     }
     if (updates.league) setFields.league = updates.league;
-    if (updates.season) setFields.season = updates.season;
     if (updates.type) {
       setFields.type = updates.type;
       productType = updates.type;
       needsSKUUpdate = true;
     }
+
+    const normalizedFields = normalizeProductUpdates(currentProduct, updates);
+    if (normalizedFields.name) setFields.name = normalizedFields.name;
+    if (normalizedFields.slug) setFields.slug = normalizedFields.slug;
+    if (normalizedFields.season) setFields.season = normalizedFields.season;
+    if (normalizedFields.type) setFields.type = normalizedFields.type;
     if (updates.price > 0) setFields.price = updates.price;
 
     if (updates.stock_by_sizes !== undefined) {

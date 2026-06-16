@@ -40,10 +40,12 @@ export default function AdminSupplierOrdersPage() {
           }
           suggestions={panel.searchInput.trim() ? panel.searchSuggestions : []}
           getSuggestionKey={(order) => order.id}
-          renderSuggestion={(order) => <AdminSupplierOrderSearchSuggestion order={order} />}
+          renderSuggestion={(order) => (
+            <AdminSupplierOrderSearchSuggestion order={order} products={panel.products} />
+          )}
           emptyMessage="No hay pedidos"
-          listboxId="supplier-orders-search-listbox"
-          placeholder="Buscar por pedido, proveedor, camiseta, dorsal..."
+          listboxId="orders-search-listbox"
+          placeholder="Buscar por pedido, proveedor, producto, dorsal..."
         />
 
         <Alert open={!!panel.error} message={panel.error} variant="destructive" onClose={() => panel.setError("")} />
@@ -69,6 +71,7 @@ export default function AdminSupplierOrdersPage() {
           className="max-w-4xl"
         >
           <AdminSupplierOrderForm
+            products={panel.products}
             suppliers={panel.suppliers}
             isSubmitting={panel.isSubmitting}
             onCreate={panel.handleCreateOrder}
@@ -105,6 +108,7 @@ export default function AdminSupplierOrdersPage() {
         >
           <AdminSupplierOrderEditForm
             order={panel.editingOrder}
+            products={panel.products}
             suppliers={panel.suppliers}
             isSubmitting={panel.isEditSubmitting}
             onSave={panel.handleSaveEdit}

@@ -30,8 +30,6 @@ function getToastPortalHost(): HTMLElement {
     host.id = TOAST_PORTAL_HOST_ID;
     host.style.cssText = `position:fixed;inset:0;z-index:${zIndex.toast};pointer-events:none;`;
     document.body.appendChild(host);
-  } else {
-    document.body.appendChild(host);
   }
 
   return host;
@@ -61,6 +59,19 @@ export default function Alert({
   const startRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
 
+  const stopProgress = () => {
+    if (frameRef.current != null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    startRef.current = null;
+  };
+
+  const handleDismiss = () => {
+    stopProgress();
+    onClose();
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -79,7 +90,7 @@ export default function Alert({
       setProgress(remaining);
 
       if (elapsed >= duration) {
-        onClose();
+        handleDismiss();
         return;
       }
 
@@ -89,9 +100,7 @@ export default function Alert({
     frameRef.current = requestAnimationFrame(tick);
 
     return () => {
-      if (frameRef.current != null) {
-        cancelAnimationFrame(frameRef.current);
-      }
+      stopProgress();
     };
   }, [open, message, duration, onClose]);
 
@@ -127,7 +136,7 @@ export default function Alert({
           type="button"
           className="shrink-0 cursor-pointer p-1 text-gray-500 transition-colors hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label="Cerrar aviso"
-          onClick={onClose}
+          onClick={handleDismiss}
         >
           <Icon name="close" size={20} />
         </button>

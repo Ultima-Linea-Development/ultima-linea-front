@@ -212,7 +212,7 @@ export type CreateProductRequest = {
   stock_by_sizes: Record<string, number>;
   image_urls: string[];
   category?: "club" | "national" | "retro";
-  type?: "fan" | "player";
+  type?: "fan" | "player" | "retro";
   is_active?: boolean;
 };
 
@@ -247,10 +247,12 @@ export type SupplierOrderStatus = "draft" | "sent" | "partial" | "completed" | "
 
 export type SupplierOrderLineItem = {
   id: string;
+  product_id?: string;
   shirt_name: string;
   quantity: number;
   type: SupplierOrderItemType;
   sizes: string;
+  quantity_by_sizes?: Record<string, number>;
   dorsal?: string;
   description?: string;
   link?: string;
@@ -283,6 +285,11 @@ export type SupplierOrder = {
   supplier_name?: string;
   status: SupplierOrderStatus;
   notes?: string;
+  tracking_number?: string;
+  tracking_link?: string;
+  paid_at?: string;
+  sent_at?: string;
+  received_at?: string;
   items: SupplierOrderLineItem[];
   created_by?: string;
   created_at: string;
@@ -291,10 +298,12 @@ export type SupplierOrder = {
 
 export type CreateSupplierOrderItemRequest = {
   id?: string;
+  product_id?: string;
   shirt_name: string;
   quantity: number;
   type: SupplierOrderItemType;
   sizes: string;
+  quantity_by_sizes?: Record<string, number>;
   dorsal?: string;
   description?: string;
   link?: string;
@@ -315,6 +324,12 @@ export type CreateSupplierOrderRequest = {
   supplier_link?: string;
   status?: SupplierOrderStatus;
   notes?: string;
+  order_date?: string;
+  tracking_number?: string;
+  tracking_link?: string;
+  paid_at?: string;
+  sent_at?: string;
+  received_at?: string;
   items: CreateSupplierOrderItemRequest[];
 };
 
@@ -343,6 +358,70 @@ export type AdminSupplierOrdersSearchResponse = {
   query: string;
   total: number;
   results: SupplierOrder[];
+};
+
+export type CommissionStatus = "pending" | "exported" | "cancelled";
+
+export type CommissionLineItem = Omit<
+  SupplierOrderLineItem,
+  "downloaded" | "cleaned" | "ordered"
+>;
+
+export type Commission = {
+  id: string;
+  name: string;
+  customer_name: string;
+  customer_contact?: string;
+  seller_user_id?: string;
+  external_seller_id?: string;
+  external_seller_name?: string;
+  status: CommissionStatus;
+  supplier_order_id?: string;
+  supplier_order_name?: string;
+  notes?: string;
+  items: CommissionLineItem[];
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateCommissionItemRequest = Omit<
+  CreateSupplierOrderItemRequest,
+  "downloaded" | "cleaned" | "ordered"
+>;
+
+export type CreateCommissionRequest = {
+  customer_name: string;
+  customer_contact?: string;
+  commission_date?: string;
+  seller_type?: SaleSellerType;
+  seller_user_id?: string;
+  external_seller_id?: string;
+  external_seller_name?: string;
+  notes?: string;
+  items: CreateCommissionItemRequest[];
+};
+
+export type UpdateCommissionRequest = Partial<CreateCommissionRequest> & {
+  status?: CommissionStatus;
+};
+
+export type ExportCommissionRequest = {
+  supplier_order_id: string;
+};
+
+export type PaginatedCommissionsResponse = {
+  commissions: Commission[];
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+};
+
+export type AdminCommissionsSearchResponse = {
+  query: string;
+  total: number;
+  results: Commission[];
 };
 
 export type Sale = {
@@ -665,7 +744,7 @@ export const adminUsersApi = {
     api.delete<{ message: string }>(`/admin/users/${id}`, token),
 };
 
-export const adminSupplierOrdersApi = {
+export const adminOrdersApi = {
   getAll: (token: string, filters?: { page?: number; per_page?: number }) => {
     const params = new URLSearchParams();
     if (filters?.page != null) params.append("page", String(filters.page));
@@ -673,7 +752,7 @@ export const adminSupplierOrdersApi = {
 
     const query = params.toString();
     return api.get<PaginatedSupplierOrdersResponse>(
-      `/admin/supplier-orders${query ? `?${query}` : ""}`,
+      `/admin/orders${query ? `?${query}` : ""}`,
       token
     );
   },
@@ -682,19 +761,58 @@ export const adminSupplierOrdersApi = {
     const params = new URLSearchParams();
     params.append("q", query);
     return api.get<AdminSupplierOrdersSearchResponse>(
-      `/admin/supplier-orders/search?${params.toString()}`,
+      `/admin/orders/search?${params.toString()}`,
       token
     );
   },
 
   create: (order: CreateSupplierOrderRequest, token: string) =>
-    api.post<{ order: SupplierOrder }>("/admin/supplier-orders", order, token),
+    api.post<{ order: SupplierOrder }>("/admin/orders", order, token),
 
   update: (id: string, order: UpdateSupplierOrderRequest, token: string) =>
-    api.put<{ order: SupplierOrder }>(`/admin/supplier-orders/${id}`, order, token),
+    api.put<{ order: SupplierOrder }>(`/admin/orders/${id}`, order, token),
 
   delete: (id: string, token: string) =>
-    api.delete<{ message: string }>(`/admin/supplier-orders/${id}`, token),
+    api.delete<{ message: string }>(`/admin/orders/${id}`, token),
+};
+
+export const adminCommissionsApi = {
+  getAll: (token: string, filters?: { page?: number; per_page?: number }) => {
+    const params = new URLSearchParams();
+    if (filters?.page != null) params.append("page", String(filters.page));
+    if (filters?.per_page != null) params.append("per_page", String(filters.per_page));
+
+    const query = params.toString();
+    return api.get<PaginatedCommissionsResponse>(
+      `/admin/commissions${query ? `?${query}` : ""}`,
+      token
+    );
+  },
+
+  search: (token: string, query: string) => {
+    const params = new URLSearchParams();
+    params.append("q", query);
+    return api.get<AdminCommissionsSearchResponse>(
+      `/admin/commissions/search?${params.toString()}`,
+      token
+    );
+  },
+
+  create: (commission: CreateCommissionRequest, token: string) =>
+    api.post<{ commission: Commission }>("/admin/commissions", commission, token),
+
+  update: (id: string, commission: UpdateCommissionRequest, token: string) =>
+    api.put<{ commission: Commission }>(`/admin/commissions/${id}`, commission, token),
+
+  exportToOrder: (id: string, payload: ExportCommissionRequest, token: string) =>
+    api.post<{ commission: Commission; order: SupplierOrder }>(
+      `/admin/commissions/${id}/export`,
+      payload,
+      token
+    ),
+
+  delete: (id: string, token: string) =>
+    api.delete<{ message: string }>(`/admin/commissions/${id}`, token),
 };
 
 export const adminSuppliersApi = {

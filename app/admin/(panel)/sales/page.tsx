@@ -39,7 +39,9 @@ export default function AdminSalesPage() {
         onSuggestionSelect={(sale) => panel.applySearchFromQuery(getSalePrimaryProductName(sale))}
         suggestions={panel.searchInput.trim() ? panel.searchSuggestions : []}
         getSuggestionKey={(sale) => sale.id}
-        renderSuggestion={(sale) => <AdminSaleSearchSuggestion sale={sale} />}
+        renderSuggestion={(sale) => (
+          <AdminSaleSearchSuggestion sale={sale} products={panel.products} />
+        )}
         emptyMessage="No hay ventas"
         listboxId="sales-search-listbox"
         placeholder="Buscar por producto, vendedor, alias o talle..."

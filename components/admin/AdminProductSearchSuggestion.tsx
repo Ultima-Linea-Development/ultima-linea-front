@@ -1,5 +1,7 @@
 import Typography from "@/components/ui/Typography";
+import AdminSearchSuggestionRow from "@/components/admin/AdminSearchSuggestionRow";
 import type { Product } from "@/lib/api";
+import { getProductPrimaryImageUrl } from "@/lib/admin-product-image";
 import { getProductTotalStock } from "@/lib/product-inventory";
 
 type AdminProductSearchSuggestionProps = {
@@ -8,15 +10,13 @@ type AdminProductSearchSuggestionProps = {
 
 export default function AdminProductSearchSuggestion({ product }: AdminProductSearchSuggestionProps) {
   return (
-    <>
-      <span className="min-w-0">
-        <Typography variant="body2" as="span">
-          {product.name}
-        </Typography>
-      </span>
-      <span className="shrink-0 text-muted-foreground text-xs">
-        Stock {getProductTotalStock(product)}
-      </span>
-    </>
+    <AdminSearchSuggestionRow
+      imageUrl={getProductPrimaryImageUrl(product)}
+      trailing={`Stock ${getProductTotalStock(product)}`}
+    >
+      <Typography variant="body2" as="span">
+        {product.name}
+      </Typography>
+    </AdminSearchSuggestionRow>
   );
 }

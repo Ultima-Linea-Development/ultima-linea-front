@@ -38,7 +38,7 @@ export default function AdminTextLink({
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={cn(linkClassName, "cursor-pointer text-left")}>
+      <button type="button" onClick={onClick} className={cn(linkClassName, "text-left")}>
         {children}
       </button>
     );

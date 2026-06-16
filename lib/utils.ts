@@ -18,7 +18,7 @@ export function formatPrice(price: number): string {
   }).format(price);
 }
 
-export type ShirtType = "fan" | "player";
+export type ShirtType = "fan" | "player" | "retro";
 
 export function normalizeShirtType(
   value: string | undefined | null
@@ -27,11 +27,14 @@ export function normalizeShirtType(
   const v = String(value).trim().toLowerCase();
   if (v === "fan") return "fan";
   if (v === "player") return "player";
+  if (v === "retro") return "retro";
   return undefined;
 }
 
 export function labelShirtType(value: ShirtType): string {
-  return value === "fan" ? "Fan" : "Jugador";
+  if (value === "fan") return "Fan";
+  if (value === "player") return "Jugador";
+  return "Retro";
 }
 
 export function generateSlug(text: string): string {

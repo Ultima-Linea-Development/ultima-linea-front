@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import {
@@ -7,44 +8,81 @@ import {
   AdminTableMobileField,
   AdminTableMobileGrid,
   AdminTableMobileList,
-  ADMIN_TABLE_CELL_CLASS,
-  ADMIN_TABLE_TH_CLASS,
+  ADMIN_DETAIL_TABLE_CLASS,
   ADMIN_TABLE_OUTER_BORDER_CLASS,
+  ADMIN_TABLE_TH_CLASS,
+  ADMIN_TABLE_TRUNCATE_CELL_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
 import type { SupplierOrder } from "@/lib/api";
-import {
-  getSupplierOrderItemTypeLabel,
-  getSupplierOrderStatusLabel,
-} from "@/lib/supplier-order-display";
+import AdminSupplierOrderSizeQuantity from "@/components/admin/AdminSupplierOrderSizeQuantity";
+import AdminSupplierOrderStatusBadge from "@/components/admin/AdminSupplierOrderStatusBadge";
+import AdminSupplierOrderTrackingCell from "@/components/admin/AdminSupplierOrderTrackingCell";
+import { getSupplierOrderItemTypeLabel } from "@/lib/supplier-order-display";
+import { formatSaleDateDisplay } from "@/lib/sale-date";
 import { cn, formatPrice } from "@/lib/utils";
 
 type AdminSupplierOrderDetailProps = {
   order: SupplierOrder;
 };
 
-function formatBoolean(value: boolean): string {
-  return value ? "Sí" : "No";
-}
-
 export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDetailProps) {
-  const cellClass = ADMIN_TABLE_CELL_CLASS;
   const thClass = ADMIN_TABLE_TH_CLASS;
+  const truncateCellClass = ADMIN_TABLE_TRUNCATE_CELL_CLASS;
+
+  const itemTableColumnClass = {
+    product: "w-[22%]",
+    quantity: "w-[6%]",
+    type: "w-[10%]",
+    sizes: "w-[22%]",
+    dorsal: "w-[8%]",
+    description: "w-[20%]",
+    link: "w-[6%]",
+    price: "w-[6%]",
+  } as const;
   const totalPrice = order.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  const metadataItems = [
+  const metadataItems: {
+    key: string;
+    label: string;
+    value: ReactNode;
+    preWrap?: boolean;
+  }[] = [
     { key: "supplier", label: "Proveedor", value: order.supplier_name ?? "—" },
-    { key: "status", label: "Estado", value: getSupplierOrderStatusLabel(order.status) },
+    {
+      key: "status",
+      label: "Estado",
+      value: <AdminSupplierOrderStatusBadge status={order.status} />,
+    },
+    {
+      key: "paid_at",
+      label: "Fecha de pago",
+      value: order.paid_at ? formatSaleDateDisplay(order.paid_at) : "—",
+    },
+    {
+      key: "sent_at",
+      label: "Fecha de envío",
+      value: order.sent_at ? formatSaleDateDisplay(order.sent_at) : "—",
+    },
+    {
+      key: "received_at",
+      label: "Fecha de recepción",
+      value: order.received_at ? formatSaleDateDisplay(order.received_at) : "—",
+    },
+    {
+      key: "tracking",
+      label: "Nro. Seguimiento",
+      value: <AdminSupplierOrderTrackingCell order={order} />,
+    },
     ...(order.notes
       ? [{ key: "notes", label: "Notas", value: order.notes, preWrap: true as const }]
       : []),
   ];
 
-  const metadataGridClass =
-    metadataItems.length >= 3 ? "md:grid-cols-3" : "md:grid-cols-2";
+  const metadataGridClass = "md:grid-cols-3";
 
   return (
     <Box display="flex" direction="col" gap="4" className="w-full min-w-0">
@@ -60,12 +98,16 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
             <Typography variant="caption" color="muted">
               {item.label}
             </Typography>
-            <Typography
-              variant="body2"
-              className={item.preWrap ? "whitespace-pre-wrap break-words" : "break-words"}
-            >
-              {item.value}
-            </Typography>
+            {typeof item.value === "string" ? (
+              <Typography
+                variant="body2"
+                className={item.preWrap ? "whitespace-pre-wrap break-words" : "break-words"}
+              >
+                {item.value}
+              </Typography>
+            ) : (
+              item.value
+            )}
           </div>
         ))}
       </div>
@@ -75,6 +117,11 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
           <AdminTableMobileCard key={item.id} stripeIndex={index}>
             <Box display="flex" direction="col" gap="3">
               <Typography variant="body2">{item.shirt_name}</Typography>
+              {item.product_id && (
+                <Typography variant="body2" color="muted">
+                  Producto del catálogo
+                </Typography>
+              )}
               <AdminTableMobileGrid>
                 <AdminTableMobileField label="Cantidad">
                   <Typography variant="body2">{item.quantity}</Typography>
@@ -84,23 +131,14 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
                     {getSupplierOrderItemTypeLabel(item.type)}
                   </Typography>
                 </AdminTableMobileField>
-                <AdminTableMobileField label="Talles">
-                  <Typography variant="body2">{item.sizes}</Typography>
+                <AdminTableMobileField label="Talles" fullWidth>
+                  <AdminSupplierOrderSizeQuantity item={item} />
                 </AdminTableMobileField>
                 <AdminTableMobileField label="Dorsal">
                   <Typography variant="body2">{item.dorsal ?? "—"}</Typography>
                 </AdminTableMobileField>
                 <AdminTableMobileField label="Precio">
                   <Typography variant="body2">{formatPrice(item.price)}</Typography>
-                </AdminTableMobileField>
-                <AdminTableMobileField label="Descargada">
-                  <Typography variant="body2">{formatBoolean(item.downloaded)}</Typography>
-                </AdminTableMobileField>
-                <AdminTableMobileField label="Limpieza">
-                  <Typography variant="body2">{formatBoolean(item.cleaned)}</Typography>
-                </AdminTableMobileField>
-                <AdminTableMobileField label="Pedida">
-                  <Typography variant="body2">{formatBoolean(item.ordered)}</Typography>
                 </AdminTableMobileField>
                 {item.description && (
                   <AdminTableMobileField label="Descripción" fullWidth>
@@ -134,49 +172,85 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
       </AdminTableMobileList>
 
       <div className={cn("hidden md:block overflow-x-auto", ADMIN_TABLE_OUTER_BORDER_CLASS)}>
-        <table className="w-full min-w-[960px] border-collapse text-left">
+        <table className={ADMIN_DETAIL_TABLE_CLASS}>
           <thead className="bg-muted/50">
             <tr>
-              <th className={thClass}>Camiseta</th>
-              <th className={thClass}>Cant.</th>
-              <th className={thClass}>Tipo</th>
-              <th className={thClass}>Talles</th>
-              <th className={thClass}>Dorsal</th>
-              <th className={thClass}>Descripción</th>
-              <th className={thClass}>Link</th>
-              <th className={thClass}>Desc.</th>
-              <th className={thClass}>Limp.</th>
-              <th className={thClass}>Precio</th>
-              <th className={thClass}>Pedida</th>
+              <th className={cn(thClass, itemTableColumnClass.product)}>
+                <Typography variant="body2">Producto</Typography>
+              </th>
+              <th className={cn(thClass, itemTableColumnClass.quantity)}>
+                <Typography variant="body2">Cant.</Typography>
+              </th>
+              <th className={cn(thClass, itemTableColumnClass.type)}>
+                <Typography variant="body2">Tipo</Typography>
+              </th>
+              <th className={cn(thClass, itemTableColumnClass.sizes)}>
+                <Typography variant="body2">Talles</Typography>
+              </th>
+              <th className={cn(thClass, itemTableColumnClass.dorsal)}>
+                <Typography variant="body2">Dorsal</Typography>
+              </th>
+              <th className={cn(thClass, itemTableColumnClass.description)}>
+                <Typography variant="body2">Descripción</Typography>
+              </th>
+              <th className={cn(thClass, itemTableColumnClass.link)}>
+                <Typography variant="body2">Link</Typography>
+              </th>
+              <th className={cn(thClass, itemTableColumnClass.price)}>
+                <Typography variant="body2">Precio</Typography>
+              </th>
             </tr>
           </thead>
           <tbody>
             {order.items.map((item, index) => (
               <tr key={item.id} className={adminTableRowClassName({ stripeIndex: index })}>
-                <td className={cellClass}>{item.shirt_name}</td>
-                <td className={cellClass}>{item.quantity}</td>
-                <td className={cellClass}>{getSupplierOrderItemTypeLabel(item.type)}</td>
-                <td className={cellClass}>{item.sizes}</td>
-                <td className={cellClass}>{item.dorsal ?? "—"}</td>
-                <td className={cellClass}>{item.description ?? "—"}</td>
-                <td className={cellClass}>
+                <td className={cn(truncateCellClass, itemTableColumnClass.product)}>
+                  <Typography variant="body2" className="truncate">
+                    {item.shirt_name}
+                  </Typography>
+                </td>
+                <td className={cn(truncateCellClass, itemTableColumnClass.quantity)}>
+                  <Typography variant="body2" className="whitespace-nowrap">
+                    {item.quantity}
+                  </Typography>
+                </td>
+                <td className={cn(truncateCellClass, itemTableColumnClass.type)}>
+                  <Typography variant="body2" className="truncate">
+                    {getSupplierOrderItemTypeLabel(item.type)}
+                  </Typography>
+                </td>
+                <td className={cn(truncateCellClass, itemTableColumnClass.sizes)}>
+                  <AdminSupplierOrderSizeQuantity item={item} className="min-w-0 max-w-full" />
+                </td>
+                <td className={cn(truncateCellClass, itemTableColumnClass.dorsal)}>
+                  <Typography variant="body2" className="truncate">
+                    {item.dorsal ?? "—"}
+                  </Typography>
+                </td>
+                <td className={cn(truncateCellClass, itemTableColumnClass.description)}>
+                  <Typography variant="body2" className="truncate">
+                    {item.description ?? "—"}
+                  </Typography>
+                </td>
+                <td className={cn(truncateCellClass, itemTableColumnClass.link)}>
                   {item.link ? (
                     <a
                       href={item.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline underline-offset-4"
+                      className="block truncate underline underline-offset-4"
                     >
                       Ver
                     </a>
                   ) : (
-                    "—"
+                    <Typography variant="body2">—</Typography>
                   )}
                 </td>
-                <td className={cellClass}>{formatBoolean(item.downloaded)}</td>
-                <td className={cellClass}>{formatBoolean(item.cleaned)}</td>
-                <td className={cellClass}>{formatPrice(item.price)}</td>
-                <td className={cellClass}>{formatBoolean(item.ordered)}</td>
+                <td className={cn(truncateCellClass, itemTableColumnClass.price)}>
+                  <Typography variant="body2" className="whitespace-nowrap">
+                    {formatPrice(item.price)}
+                  </Typography>
+                </td>
               </tr>
             ))}
           </tbody>

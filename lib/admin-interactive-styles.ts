@@ -55,7 +55,7 @@ export function adminTextLinkClassName(options?: {
   const { tone = "default", selected = false, className } = options ?? {};
 
   return cn(
-    "max-w-full underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
+    "cursor-pointer max-w-full underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
     ADMIN_INTERACTIVE_TRANSITION,
     tone === "default"
       ? "text-foreground"

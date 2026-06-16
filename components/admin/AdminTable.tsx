@@ -8,9 +8,11 @@ import { cn } from "@/lib/utils";
 
 export const ADMIN_TABLE_CELL_CLASS =
   "min-w-0 px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2";
+export const ADMIN_TABLE_TRUNCATE_CELL_CLASS = cn(ADMIN_TABLE_CELL_CLASS, "max-w-0");
 export const ADMIN_TABLE_TH_CLASS =
   "min-w-0 px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-3 font-medium";
-export const ADMIN_TABLE_LAYOUT_CLASS = "w-full min-w-full table-fixed";
+export const ADMIN_TABLE_LAYOUT_CLASS = "w-full min-w-full table-fixed text-sm";
+export const ADMIN_DETAIL_TABLE_CLASS = cn(ADMIN_TABLE_LAYOUT_CLASS, "border-collapse");
 export const ADMIN_TABLE_PAGE_SIZE = 10;
 export const ADMIN_TABLE_ACTIONS_COLUMN_CLASS = "w-14";
 export const ADMIN_TABLE_CHECKBOX_COLUMN_CLASS = "w-10";

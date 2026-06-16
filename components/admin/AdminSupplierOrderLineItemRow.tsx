@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Box from "@/components/layout/Box";
 import Input from "@/components/ui/Input";
 import FormField from "@/components/ui/FormField";
@@ -7,28 +8,38 @@ import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
-import type { SupplierOrderItemType } from "@/lib/api";
+import AdminCatalogProductSelect from "@/components/admin/AdminCatalogProductSelect";
+import SupplierOrderSizeQuantityFields from "@/components/admin/SupplierOrderSizeQuantityFields";
+import AdminProductImagePreview from "@/components/admin/AdminProductImagePreview";
+import type { Product, SupplierOrderItemType } from "@/lib/api";
 import { adminIconTriggerClassName } from "@/lib/admin-interactive-styles";
+import { getProductPrimaryImageUrl } from "@/lib/admin-product-image";
 import { SUPPLIER_ORDER_ITEM_TYPE_OPTIONS } from "@/lib/supplier-order-display";
+import {
+  emptySupplierOrderSizeRow,
+  getSupplierOrderLineItemQuantity,
+  sizeRowsToPayload,
+  type SupplierOrderSizeQuantityRow,
+} from "@/lib/supplier-order-sizes";
 import { cn, formatPrice } from "@/lib/utils";
 
 export type SupplierOrderLineItemDraft = {
   key: string;
-  shirtName: string;
-  quantity: string;
+  productId?: string;
+  productName: string;
+  isCustomProduct: boolean;
   type: SupplierOrderItemType;
-  sizes: string;
+  sizeRows: SupplierOrderSizeQuantityRow[];
   dorsal: string;
   description: string;
   link: string;
-  downloaded: boolean;
-  cleaned: boolean;
   price: string;
-  ordered: boolean;
 };
 
 type AdminSupplierOrderLineItemRowProps = {
   item: SupplierOrderLineItemDraft;
+  products: Product[];
+  sizeOptions: string[];
   isSubmitting: boolean;
   onChange: (
     key: string,
@@ -39,13 +50,6 @@ type AdminSupplierOrderLineItemRowProps = {
 
 const fieldLabelClassName = "w-full min-w-0";
 
-function normalizeQuantityValue(value: string): string {
-  if (value === "") return "";
-  const parsed = Number(value);
-  if (Number.isNaN(parsed)) return "1";
-  return String(Math.max(1, Math.floor(parsed)));
-}
-
 function normalizePriceValue(value: string): string {
   if (value === "") return "";
   const parsed = Number(value);
@@ -53,8 +57,17 @@ function normalizePriceValue(value: string): string {
   return String(Math.max(0, parsed));
 }
 
+function parseProductType(type?: string): SupplierOrderItemType | null {
+  const normalized = type?.trim().toUpperCase();
+  if (normalized === "FAN" || normalized === "PLAYER" || normalized === "RETRO") {
+    return normalized;
+  }
+  return null;
+}
+
 export function getSupplierOrderLineItemDraftTotal(item: SupplierOrderLineItemDraft): number {
-  const quantity = Number(item.quantity);
+  const payload = sizeRowsToPayload(item.sizeRows);
+  const quantity = payload?.quantity ?? 0;
   const price = Number(item.price);
   if (!Number.isFinite(quantity) || !Number.isFinite(price)) return 0;
   return Math.max(0, quantity) * Math.max(0, price);
@@ -63,27 +76,54 @@ export function getSupplierOrderLineItemDraftTotal(item: SupplierOrderLineItemDr
 export function createEmptySupplierOrderLineItemDraft(): SupplierOrderLineItemDraft {
   return {
     key: crypto.randomUUID(),
-    shirtName: "",
-    quantity: "1",
+    productId: undefined,
+    productName: "",
+    isCustomProduct: false,
     type: "FAN",
-    sizes: "",
+    sizeRows: [emptySupplierOrderSizeRow()],
     dorsal: "",
     description: "",
     link: "",
-    downloaded: false,
-    cleaned: false,
     price: "0",
-    ordered: false,
   };
 }
 
 export default function AdminSupplierOrderLineItemRow({
   item,
+  products,
+  sizeOptions,
   isSubmitting,
   onChange,
   onRemove,
 }: AdminSupplierOrderLineItemRowProps) {
+  const handleSelectProduct = (product: Product) => {
+    onChange(item.key, {
+      productName: product.name,
+      productId: product.id,
+      isCustomProduct: false,
+      price: String(product.price),
+      type: parseProductType(product.type) ?? item.type,
+    });
+  };
+
+  const handleClearProduct = () => {
+    onChange(item.key, {
+      productName: "",
+      productId: undefined,
+      isCustomProduct: false,
+    });
+  };
+
+  const matchedProduct = useMemo(
+    () => (item.productId ? products.find((product) => product.id === item.productId) : undefined),
+    [item.productId, products]
+  );
+
   const lineTotal = getSupplierOrderLineItemDraftTotal(item);
+  const totalQuantity = getSupplierOrderLineItemQuantity(
+    sizeRowsToPayload(item.sizeRows)?.quantity_by_sizes,
+    0
+  );
 
   return (
     <Box display="flex" direction="col" gap="3" align="stretch" className="relative w-full min-w-0 border border-border p-3 pr-10">
@@ -100,36 +140,45 @@ export default function AdminSupplierOrderLineItemRow({
         <Icon name="delete" className="size-5" />
       </button>
 
-      <FormField htmlFor={`order-shirt-${item.key}`} label="Camiseta" required className={fieldLabelClassName}>
-        <Input
-          id={`order-shirt-${item.key}`}
-          value={item.shirtName}
-          onChange={(event) => onChange(item.key, { shirtName: event.target.value })}
-          disabled={isSubmitting}
-          required
-        />
-      </FormField>
+      <AdminCatalogProductSelect
+        id={`order-product-${item.key}`}
+        label="Producto"
+        products={products}
+        productName={item.productName}
+        isCustomProduct={item.isCustomProduct}
+        disabled={isSubmitting}
+        required
+        onSelectProduct={handleSelectProduct}
+        onClearProduct={handleClearProduct}
+        onCustomChange={(isCustom) =>
+          onChange(item.key, {
+            isCustomProduct: isCustom,
+            productId: isCustom ? undefined : item.productId,
+            productName: isCustom ? "" : item.productName,
+          })
+        }
+        onCustomNameChange={(name) => onChange(item.key, { productName: name })}
+      />
 
-      <Box display="grid" cols={4} gap={4} className="w-full min-w-0">
-        <FormField htmlFor={`order-quantity-${item.key}`} label="Cantidad" required className={fieldLabelClassName}>
-          <Input
-            id={`order-quantity-${item.key}`}
-            type="number"
-            min={1}
-            value={item.quantity}
-            onChange={(event) =>
-              onChange(item.key, { quantity: normalizeQuantityValue(event.target.value) })
-            }
-            onBlur={() => {
-              if (item.quantity === "") {
-                onChange(item.key, { quantity: "1" });
-              }
-            }}
-            disabled={isSubmitting}
-            required
+      {matchedProduct && (
+        <Box display="flex" align="center" gap="3" className="min-w-0">
+          <AdminProductImagePreview
+            imageUrl={getProductPrimaryImageUrl(matchedProduct)}
+            alt={matchedProduct.name}
+            size="lg"
           />
-        </FormField>
+          <Box display="flex" direction="col" gap="1" className="min-w-0">
+            <Typography variant="body2" className="line-clamp-2">
+              {matchedProduct.name}
+            </Typography>
+            <Typography variant="body2" color="muted">
+              Producto del catálogo · {formatPrice(matchedProduct.price)}
+            </Typography>
+          </Box>
+        </Box>
+      )}
 
+      <Box display="grid" cols={2} gap={4} className="w-full min-w-0">
         <FormField htmlFor={`order-type-${item.key}`} label="Tipo" required className={fieldLabelClassName}>
           <Select
             id={`order-type-${item.key}`}
@@ -148,18 +197,7 @@ export default function AdminSupplierOrderLineItemRow({
           </Select>
         </FormField>
 
-        <FormField htmlFor={`order-sizes-${item.key}`} label="Talles" required className={fieldLabelClassName}>
-          <Input
-            id={`order-sizes-${item.key}`}
-            value={item.sizes}
-            onChange={(event) => onChange(item.key, { sizes: event.target.value })}
-            disabled={isSubmitting}
-            placeholder="M, L, XL..."
-            required
-          />
-        </FormField>
-
-        <FormField htmlFor={`order-price-${item.key}`} label="Precio" required className={fieldLabelClassName}>
+        <FormField htmlFor={`order-price-${item.key}`} label="Precio unitario" required className={fieldLabelClassName}>
           <Input
             id={`order-price-${item.key}`}
             type="number"
@@ -178,6 +216,15 @@ export default function AdminSupplierOrderLineItemRow({
           />
         </FormField>
       </Box>
+
+      <SupplierOrderSizeQuantityFields
+        rows={item.sizeRows}
+        onRowsChange={(sizeRows) => onChange(item.key, { sizeRows })}
+        disabled={isSubmitting}
+        idPrefix={`order-size-${item.key}`}
+        sizeOptions={sizeOptions}
+        required
+      />
 
       <Box display="grid" cols={2} gap={4} className="w-full min-w-0">
         <FormField htmlFor={`order-dorsal-${item.key}`} label="Dorsal" className={fieldLabelClassName}>
@@ -211,38 +258,8 @@ export default function AdminSupplierOrderLineItemRow({
         />
       </FormField>
 
-      <Box display="flex" gap="4" className="flex-wrap">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={item.downloaded}
-            onChange={(event) => onChange(item.key, { downloaded: event.target.checked })}
-            disabled={isSubmitting}
-          />
-          Descargada
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={item.cleaned}
-            onChange={(event) => onChange(item.key, { cleaned: event.target.checked })}
-            disabled={isSubmitting}
-          />
-          Limpieza
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={item.ordered}
-            onChange={(event) => onChange(item.key, { ordered: event.target.checked })}
-            disabled={isSubmitting}
-          />
-          Pedida
-        </label>
-      </Box>
-
       <Typography variant="body2" className="text-right">
-        Subtotal: {formatPrice(lineTotal)}
+        Cantidad total: {totalQuantity} · Subtotal: {formatPrice(lineTotal)}
       </Typography>
     </Box>
   );

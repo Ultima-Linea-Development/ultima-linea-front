@@ -21,9 +21,16 @@ import { resolveSupplier } from "@/lib/server/suppliers";
 import {
   normalizeSupplierOrderForResponse,
   parseSupplierOrderLineItems,
+  parseSupplierOrderOptionalDate,
   parseSupplierOrderStatus,
   type SupplierOrderLineItemInput,
 } from "@/lib/server/supplier-orders";
+import {
+  normalizeSupplierOrderTrackingLink,
+  validateSupplierOrderTrackingLink,
+} from "@/lib/supplier-order-display";
+
+import { parseSaleDateInput } from "@/lib/sale-date";
 
 type CreateSupplierOrderBody = {
   name?: string;
@@ -36,6 +43,12 @@ type CreateSupplierOrderBody = {
   supplier_link?: string;
   status?: string;
   notes?: string;
+  order_date?: string;
+  tracking_number?: string;
+  tracking_link?: string;
+  paid_at?: string;
+  sent_at?: string;
+  received_at?: string;
   items?: SupplierOrderLineItemInput[];
 };
 
@@ -100,6 +113,16 @@ export async function POST(request: NextRequest) {
     }
 
     const status = parseSupplierOrderStatus(body.status) ?? "draft";
+    const paidAt = parseSupplierOrderOptionalDate(body.paid_at);
+    if (paidAt === "invalid") return jsonError("Fecha de pago inválida", 400);
+    const sentAt = parseSupplierOrderOptionalDate(body.sent_at);
+    if (sentAt === "invalid") return jsonError("Fecha de envío inválida", 400);
+    const receivedAt = parseSupplierOrderOptionalDate(body.received_at);
+    if (receivedAt === "invalid") return jsonError("Fecha de recepción inválida", 400);
+
+    const trackingLinkError = validateSupplierOrderTrackingLink(body.tracking_link ?? "");
+    if (trackingLinkError) return jsonError(trackingLinkError, 400);
+
     const suppliers = await getSuppliersCollection<SupplierDocument>();
     const supplier = await resolveSupplier(suppliers, {
       id: body.supplier_id,
@@ -112,6 +135,14 @@ export async function POST(request: NextRequest) {
     });
 
     const now = new Date();
+    const orderDateInput = body.order_date?.trim();
+    let createdAt = now;
+    if (orderDateInput) {
+      const parsedOrderDate = parseSaleDateInput(orderDateInput);
+      if (!parsedOrderDate) return jsonError("Fecha del pedido inválida", 400);
+      createdAt = parsedOrderDate;
+    }
+
     const order: SupplierOrder = {
       id: generateULID(),
       name,
@@ -123,9 +154,18 @@ export async function POST(request: NextRequest) {
         : {}),
       status,
       notes: trimOptional(body.notes),
+      ...(trimOptional(body.tracking_number)
+        ? { tracking_number: trimOptional(body.tracking_number) }
+        : {}),
+      ...(normalizeSupplierOrderTrackingLink(body.tracking_link ?? "")
+        ? { tracking_link: normalizeSupplierOrderTrackingLink(body.tracking_link ?? "") }
+        : {}),
+      ...(paidAt ? { paid_at: paidAt } : {}),
+      ...(sentAt ? { sent_at: sentAt } : {}),
+      ...(receivedAt ? { received_at: receivedAt } : {}),
       items: itemsResult.items,
       created_by: auth.user_id,
-      created_at: now,
+      created_at: createdAt,
       updated_at: now,
     };
 

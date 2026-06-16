@@ -25,6 +25,7 @@ import {
   type SizeStockRow,
 } from "@/lib/product-inventory";
 import ProductSizeStockFields from "@/components/admin/ProductSizeStockFields";
+import { AdminProductNameFieldLabel } from "@/components/admin/AdminProductNameGuide";
 
 const CATEGORY_OPTIONS: Array<{ value: "club" | "national" | "retro"; label: string }> = [
   { value: "club", label: "Club" },
@@ -35,6 +36,7 @@ const CATEGORY_OPTIONS: Array<{ value: "club" | "national" | "retro"; label: str
 const SHIRT_TYPE_OPTIONS: Array<{ value: ShirtType; label: string }> = [
   { value: "fan", label: "Fan" },
   { value: "player", label: "Jugador" },
+  { value: "retro", label: "Retro" },
 ];
 
 function resolveOptionValue(
@@ -82,7 +84,7 @@ export default function AdminProductEditForm({
   const [fieldError, setFieldError] = useState("");
   const [category, setCategory] = useState<Product["category"]>(product.category ?? "club");
   const [shirtType, setShirtType] = useState<ShirtType>(
-    () => normalizeShirtType(product.type) ?? "fan"
+    () => normalizeShirtType(product.type) ?? (product.category === "retro" ? "retro" : "fan")
   );
   const [isActive, setIsActive] = useState(product.is_active);
   const [currentImageUrls, setCurrentImageUrls] = useState<string[]>(product.image_urls ?? []);
@@ -129,7 +131,7 @@ export default function AdminProductEditForm({
     setInventoryError("");
     setFieldError("");
     setCategory(product.category ?? "club");
-    setShirtType(normalizeShirtType(product.type) ?? "fan");
+    setShirtType(normalizeShirtType(product.type) ?? (product.category === "retro" ? "retro" : "fan"));
     setIsActive(product.is_active);
     setCurrentImageUrls(product.image_urls ?? []);
     setNewFiles([]);
@@ -215,13 +217,14 @@ export default function AdminProductEditForm({
     <Box display="flex" direction="col" gap="4">
       <Form onSubmit={handleSubmit} spacing="md">
         <Div spacing="md">
-          <FormField htmlFor="edit-name" label="Nombre" required>
+          <FormField htmlFor="edit-name" label={<AdminProductNameFieldLabel />}>
             <Input
               id="edit-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              placeholder="Camiseta Titular Inter Milan 2010 Versión Retro"
             />
           </FormField>
         </Div>
@@ -297,7 +300,7 @@ export default function AdminProductEditForm({
             </FormField>
           </Div>
           <Div spacing="md" className="flex-1 min-w-[120px]">
-            <FormField htmlFor="edit-shirt-type" label="Tipo" required>
+            <FormField htmlFor="edit-shirt-type" label="Versión" required>
               <Select
                 id="edit-shirt-type"
                 value={shirtType}

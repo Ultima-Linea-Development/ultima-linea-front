@@ -20,15 +20,22 @@ import {
   type CreateProductRequest,
   type ProductOptionsResponse,
 } from "@/lib/api";
-import { generateSlug } from "@/lib/utils";
+import { generateSlug, normalizeShirtType, type ShirtType } from "@/lib/utils";
 import FormField from "@/components/ui/FormField";
 import Select from "@/components/ui/Select";
 import { validateRequiredProductFields } from "@/lib/product-form-validation";
 import { emptySizeStockRow, rowsToPayload, type SizeStockRow } from "@/lib/product-inventory";
+import { AdminProductNameFieldLabel } from "@/components/admin/AdminProductNameGuide";
 
 const CATEGORY_OPTIONS: Array<{ value: CreateProductRequest["category"]; label: string }> = [
   { value: "club", label: "Club" },
   { value: "national", label: "Selección" },
+  { value: "retro", label: "Retro" },
+];
+
+const SHIRT_TYPE_OPTIONS: Array<{ value: ShirtType; label: string }> = [
+  { value: "fan", label: "Fan" },
+  { value: "player", label: "Jugador" },
   { value: "retro", label: "Retro" },
 ];
 
@@ -50,6 +57,7 @@ function getInitialFormState() {
     sizeRows: [emptySizeStockRow()] as SizeStockRow[],
     imageFiles: [] as File[],
     category: "club" as CreateProductRequest["category"],
+    shirtType: "fan" as ShirtType,
   };
 }
 
@@ -67,6 +75,7 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
   const [sizeRows, setSizeRows] = useState<SizeStockRow[]>(() => [emptySizeStockRow()]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [category, setCategory] = useState<CreateProductRequest["category"]>("club");
+  const [shirtType, setShirtType] = useState<ShirtType>("fan");
   const [productOptions, setProductOptions] = useState<ProductOptionsResponse>({
     teams: [],
     leagues: [],
@@ -104,6 +113,7 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
     setSizeRows(initial.sizeRows);
     setImageFiles(initial.imageFiles);
     setCategory(initial.category);
+    setShirtType(initial.shirtType);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -177,6 +187,7 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
         stock_by_sizes: inventory.stock_by_sizes,
         image_urls: uploadResponse.data.urls,
         category,
+        type: shirtType,
       };
 
       const response = await adminProductsApi.create(payload, token);
@@ -199,14 +210,14 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
   return (
     <Form onSubmit={handleSubmit} spacing="md">
       <Div spacing="md">
-        <FormField htmlFor="name" label="Nombre" required>
+        <FormField htmlFor="name" label={<AdminProductNameFieldLabel />}>
           <Input
             id="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            placeholder="Nombre del producto"
+            placeholder="Camiseta Titular Inter Milan 2010 Versión Retro"
             disabled={isSubmitting}
           />
         </FormField>
@@ -276,6 +287,23 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
               disabled={isSubmitting}
             >
               {CATEGORY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        </Div>
+        <Div spacing="md" className="flex-1 min-w-[120px]">
+          <FormField htmlFor="shirt-type" label="Versión" required>
+            <Select
+              id="shirt-type"
+              value={shirtType}
+              onChange={(e) => setShirtType(e.target.value as ShirtType)}
+              required
+              disabled={isSubmitting}
+            >
+              {SHIRT_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>

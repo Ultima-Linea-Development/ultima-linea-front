@@ -5,9 +5,11 @@ import { PER_PAGE } from "@/components/admin/AdminSupplierOrdersTable";
 import { getToken, getUserFromToken, getCurrentUserId } from "@/lib/auth";
 import { canDeleteOwnedResource } from "@/lib/roles";
 import {
-  adminSupplierOrdersApi,
+  adminOrdersApi,
   adminSuppliersApi,
+  adminProductsApi,
   type CreateSupplierOrderRequest,
+  type Product,
   type Supplier,
   type SupplierOrder,
   type UpdateSupplierOrderRequest,
@@ -29,6 +31,7 @@ export function useAdminSupplierOrdersPanel() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [ordersData, setOrdersData] = useState<SupplierOrdersListData>();
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
@@ -64,7 +67,7 @@ export function useAdminSupplierOrdersPanel() {
     clearSearch,
     invalidateSearchCache,
   } = useAdminSearch<SupplierOrder>({
-    searchApi: (token, query) => adminSupplierOrdersApi.search(token, query),
+    searchApi: (token, query) => adminOrdersApi.search(token, query),
     filterCached: filterSupplierOrdersByQuery,
   });
 
@@ -74,6 +77,19 @@ export function useAdminSupplierOrdersPanel() {
 
     const response = await adminSuppliersApi.getAll(token);
     setSuppliers(response.data?.suppliers ?? []);
+  }, []);
+
+  const loadProducts = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    const response = await adminProductsApi.getAll(token, {
+      page: 1,
+      per_page: 200,
+      is_active: true,
+    });
+
+    setProducts(response.data?.products ?? []);
   }, []);
 
   const loadOrders = useCallback(async () => {
@@ -86,7 +102,7 @@ export function useAdminSupplierOrdersPanel() {
 
     const q = searchQuery.trim();
     if (!q) {
-      const response = await adminSupplierOrdersApi.getAll(token, { page, per_page: PER_PAGE });
+      const response = await adminOrdersApi.getAll(token, { page, per_page: PER_PAGE });
       if (response.error || !response.data) {
         setError(response.error || "No se pudieron cargar los pedidos.");
         setOrdersData(undefined);
@@ -98,7 +114,7 @@ export function useAdminSupplierOrdersPanel() {
 
     let all = searchCacheRef.current?.query === q ? searchCacheRef.current.results : null;
     if (!all) {
-      const response = await adminSupplierOrdersApi.search(token, q);
+      const response = await adminOrdersApi.search(token, q);
       if (response.error || !response.data) {
         setError(response.error || "Error al buscar pedidos.");
         setOrdersData(undefined);
@@ -127,20 +143,20 @@ export function useAdminSupplierOrdersPanel() {
   const refreshOrdersList = useCallback(async () => {
     setIsDataLoading(true);
     try {
-      await Promise.all([loadOrders(), loadSuppliers()]);
+      await Promise.all([loadOrders(), loadSuppliers(), loadProducts()]);
     } finally {
       setIsDataLoading(false);
     }
-  }, [loadOrders, loadSuppliers]);
+  }, [loadOrders, loadSuppliers, loadProducts]);
 
   const refreshOrdersPanel = useCallback(async () => {
     setIsDataLoading(true);
     try {
-      await Promise.all([loadSuppliers(), loadOrders()]);
+      await Promise.all([loadSuppliers(), loadProducts(), loadOrders()]);
     } finally {
       setIsDataLoading(false);
     }
-  }, [loadSuppliers, loadOrders]);
+  }, [loadSuppliers, loadProducts, loadOrders]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -152,9 +168,9 @@ export function useAdminSupplierOrdersPanel() {
     if (!showOrderForm && !editingOrder) return;
 
     queueMicrotask(() => {
-      void loadSuppliers();
+      void Promise.all([loadSuppliers(), loadProducts()]);
     });
-  }, [showOrderForm, editingOrder, loadSuppliers]);
+  }, [showOrderForm, editingOrder, loadSuppliers, loadProducts]);
 
   const handleCreateOrder = useCallback(
     async (payload: CreateSupplierOrderRequest) => {
@@ -169,7 +185,7 @@ export function useAdminSupplierOrdersPanel() {
       setSuccess("");
       setIsSubmitting(true);
 
-      const response = await adminSupplierOrdersApi.create(payload, token);
+      const response = await adminOrdersApi.create(payload, token);
       if (response.error || !response.data) {
         setError(response.error || "No se pudo crear el pedido.");
         setIsSubmitting(false);
@@ -200,7 +216,7 @@ export function useAdminSupplierOrdersPanel() {
       setEditError("");
       setIsEditSubmitting(true);
 
-      const response = await adminSupplierOrdersApi.update(editingOrder.id, payload, token);
+      const response = await adminOrdersApi.update(editingOrder.id, payload, token);
       if (response.error || !response.data) {
         setEditError(response.error || "No se pudo actualizar el pedido.");
         setIsEditSubmitting(false);
@@ -248,7 +264,7 @@ export function useAdminSupplierOrdersPanel() {
           return;
         }
 
-        const response = await adminSupplierOrdersApi.delete(order.id, token);
+        const response = await adminOrdersApi.delete(order.id, token);
         if (response.error) {
           setOrdersData(ordersSnapshot);
           setError(response.error);
@@ -282,6 +298,7 @@ export function useAdminSupplierOrdersPanel() {
     page,
     setPage,
     suppliers,
+    products,
     error,
     setError,
     success,

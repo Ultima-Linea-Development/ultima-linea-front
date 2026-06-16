@@ -19,6 +19,14 @@ import {
   MdOutlineVisibility,
   MdOutlinePeople,
   MdOutlineLocalShipping,
+  MdOutlineAssignment,
+  MdOutlineAdd,
+  MdOutlinePayments,
+  MdOutlineCheckCircle,
+  MdOutlineCancel,
+  MdOutlineEditNote,
+  MdOutlineSchedule,
+  MdOutlineInfo,
 } from "react-icons/md";
 import { ComponentProps } from "react";
 
@@ -35,6 +43,7 @@ export const Icons = {
   sales: MdOutlinePointOfSale,
   users: MdOutlinePeople,
   orders: MdOutlineLocalShipping,
+  commissions: MdOutlineAssignment,
   logout: MdOutlineLogout,
   filter: MdOutlineFilterList,
   filterActive: MdFilterList,
@@ -42,6 +51,13 @@ export const Icons = {
   calendar: MdOutlineCalendarToday,
   visibilityOff: MdOutlineVisibilityOff,
   visibility: MdOutlineVisibility,
+  add: MdOutlineAdd,
+  paid: MdOutlinePayments,
+  checkCircle: MdOutlineCheckCircle,
+  cancel: MdOutlineCancel,
+  draft: MdOutlineEditNote,
+  pending: MdOutlineSchedule,
+  info: MdOutlineInfo,
 } as const;
 
 export type IconName = keyof typeof Icons;

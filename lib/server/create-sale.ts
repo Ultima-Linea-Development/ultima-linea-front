@@ -39,7 +39,7 @@ export async function processSaleItem(
     return { error: "Cantidad inválida", status: 400 };
   }
 
-  const productDoc = await products.findOne({ _id: productId, is_active: true });
+  const productDoc = await products.findOne({ _id: productId });
   if (!productDoc) return { error: "Producto no encontrado", status: 404 };
 
   const product = productFromDoc(productDoc);
@@ -71,7 +71,6 @@ export async function processSaleItem(
   if (deductStock && deductQty > 0) {
     const filter: Record<string, unknown> = {
       _id: productId,
-      is_active: true,
       stock: { $gte: deductQty },
     };
     const increment: Record<string, number> = { stock: -deductQty };

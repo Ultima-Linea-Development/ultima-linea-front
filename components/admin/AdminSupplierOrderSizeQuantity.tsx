@@ -11,11 +11,13 @@ const VISIBLE_SIZE_LIMIT = 4;
 type AdminSupplierOrderSizeQuantityProps = {
   item: Pick<SupplierOrderLineItem, "quantity" | "sizes" | "quantity_by_sizes">;
   className?: string;
+  showAll?: boolean;
 };
 
 export default function AdminSupplierOrderSizeQuantity({
   item,
   className,
+  showAll = false,
 }: AdminSupplierOrderSizeQuantityProps) {
   const entries = getSupplierOrderSizeQuantityEntries(item);
 
@@ -27,8 +29,8 @@ export default function AdminSupplierOrderSizeQuantity({
     );
   }
 
-  const visible = entries.slice(0, VISIBLE_SIZE_LIMIT);
-  const hidden = entries.slice(VISIBLE_SIZE_LIMIT);
+  const visible = showAll ? entries : entries.slice(0, VISIBLE_SIZE_LIMIT);
+  const hidden = showAll ? [] : entries.slice(VISIBLE_SIZE_LIMIT);
 
   return (
     <div className={cn("flex flex-wrap items-center gap-x-1.5 gap-y-2 pt-0.5", className)}>

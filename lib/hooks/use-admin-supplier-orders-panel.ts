@@ -86,7 +86,6 @@ export function useAdminSupplierOrdersPanel() {
     const response = await adminProductsApi.getAll(token, {
       page: 1,
       per_page: 200,
-      is_active: true,
     });
 
     setProducts(response.data?.products ?? []);

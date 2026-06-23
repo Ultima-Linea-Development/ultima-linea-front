@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     if (Number.isNaN(page) || page < 1) page = 1;
     if (Number.isNaN(perPage) || perPage < 1) perPage = 10;
-    if (perPage > 50) perPage = 50;
+    if (perPage > 200) perPage = 200;
 
     const filter = buildAdminCatalogMongoFilter(searchParams);
     const collection = await getProductsCollection<ProductDocument>();

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const collection = await getProductsCollection<ProductDocument>();
     const docs = await collection
-      .find({ is_active: true })
+      .find({})
       .sort({ created_at: -1, _id: -1 })
       .toArray();
 

@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
+import AdminTableProductName from "@/components/admin/AdminTableProductName";
 import {
   AdminTableMobileCard,
   AdminTableMobileField,
@@ -15,25 +17,44 @@ import {
   ADMIN_TABLE_TH_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
-import type { SupplierOrder } from "@/lib/api";
+import type { Product, SupplierOrder, SupplierOrderLineItem } from "@/lib/api";
 import AdminSupplierOrderSizeQuantity from "@/components/admin/AdminSupplierOrderSizeQuantity";
 import AdminSupplierOrderStatusBadge from "@/components/admin/AdminSupplierOrderStatusBadge";
 import AdminSupplierOrderTrackingCell from "@/components/admin/AdminSupplierOrderTrackingCell";
+import { getProductPrimaryImageUrl } from "@/lib/admin-product-image";
 import { getSupplierOrderItemTypeLabel } from "@/lib/supplier-order-display";
 import { formatSaleDateDisplay } from "@/lib/sale-date";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn, formatPrice, generateSlug } from "@/lib/utils";
 
 type AdminSupplierOrderDetailProps = {
   order: SupplierOrder;
+  products?: Product[];
 };
 
-export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDetailProps) {
+export default function AdminSupplierOrderDetail({
+  order,
+  products = [],
+}: AdminSupplierOrderDetailProps) {
   const thClass = ADMIN_TABLE_TH_CLASS;
   const cellClass = ADMIN_TABLE_CELL_CLASS;
   const totalPrice = order.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+  const productById = useMemo(
+    () => Object.fromEntries(products.map((product) => [product.id, product] as const)),
+    [products]
+  );
+
+  const getProductHref = (item: SupplierOrderLineItem) => {
+    if (!item.product_id) return undefined;
+
+    const product = productById[item.product_id];
+    if (!product) return undefined;
+
+    const slug = product.slug || generateSlug(product.name);
+    return `/product/${slug}-${product.id}`;
+  };
 
   const metadataItems: {
     key: string;
@@ -106,7 +127,14 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
         {order.items.map((item, index) => (
           <AdminTableMobileCard key={item.id} stripeIndex={index}>
             <Box display="flex" direction="col" gap="3">
-              <Typography variant="body2">{item.shirt_name}</Typography>
+              <AdminTableProductName
+                name={item.shirt_name}
+                imageUrl={getProductPrimaryImageUrl(
+                  item.product_id ? productById[item.product_id] : undefined
+                )}
+                href={getProductHref(item)}
+                className="items-start"
+              />
               {item.product_id && (
                 <Typography variant="body2" color="muted">
                   Producto del catálogo
@@ -122,7 +150,7 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
                   </Typography>
                 </AdminTableMobileField>
                 <AdminTableMobileField label="Talles" fullWidth>
-                  <AdminSupplierOrderSizeQuantity item={item} />
+                  <AdminSupplierOrderSizeQuantity item={item} showAll />
                 </AdminTableMobileField>
                 <AdminTableMobileField label="Dorsal">
                   <Typography variant="body2">{item.dorsal ?? "—"}</Typography>
@@ -195,7 +223,13 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
             {order.items.map((item, index) => (
               <tr key={item.id} className={adminTableRowClassName({ stripeIndex: index })}>
                 <td className={cellClass}>
-                  <Typography variant="body2">{item.shirt_name}</Typography>
+                  <AdminTableProductName
+                    name={item.shirt_name}
+                    imageUrl={getProductPrimaryImageUrl(
+                      item.product_id ? productById[item.product_id] : undefined
+                    )}
+                    href={getProductHref(item)}
+                  />
                 </td>
                 <td className={cellClass}>
                   <Typography variant="body2">{item.quantity}</Typography>
@@ -204,7 +238,7 @@ export default function AdminSupplierOrderDetail({ order }: AdminSupplierOrderDe
                   <Typography variant="body2">{getSupplierOrderItemTypeLabel(item.type)}</Typography>
                 </td>
                 <td className={cellClass}>
-                  <AdminSupplierOrderSizeQuantity item={item} />
+                  <AdminSupplierOrderSizeQuantity item={item} showAll />
                 </td>
                 <td className={cellClass}>
                   <Typography variant="body2" className="whitespace-nowrap tabular-nums">

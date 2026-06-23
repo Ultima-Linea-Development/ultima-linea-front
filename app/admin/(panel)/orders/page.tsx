@@ -91,7 +91,7 @@ export default function AdminSupplierOrdersPage() {
           title={panel.viewingOrder.name}
           className="max-w-5xl"
         >
-          <AdminSupplierOrderDetail order={panel.viewingOrder} />
+          <AdminSupplierOrderDetail order={panel.viewingOrder} products={panel.products} />
         </Modal>
       )}
 

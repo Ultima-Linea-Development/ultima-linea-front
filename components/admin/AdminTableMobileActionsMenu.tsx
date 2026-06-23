@@ -24,14 +24,24 @@ type AdminTableMobileActionsMenuProps = {
   ariaLabel?: string;
 };
 
+type MenuPosition = {
+  top?: number;
+  bottom?: number;
+  right: number;
+  maxHeight: number;
+};
+
+const MENU_EDGE_MARGIN = 8;
+const MENU_TRIGGER_GAP = 4;
+const ESTIMATED_MENU_ITEM_HEIGHT = 40;
+const MENU_VERTICAL_PADDING = 8;
+
 export default function AdminTableMobileActionsMenu({
   actions,
   ariaLabel = "Opciones",
 }: AdminTableMobileActionsMenuProps) {
   const [open, setOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(
-    null
-  );
+  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
@@ -39,8 +49,28 @@ export default function AdminTableMobileActionsMenu({
   const updateMenuPosition = () => {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
+    const estimatedMenuHeight =
+      actions.length * ESTIMATED_MENU_ITEM_HEIGHT + MENU_VERTICAL_PADDING;
+    const spaceAbove = rect.top - MENU_EDGE_MARGIN - MENU_TRIGGER_GAP;
+    const spaceBelow = window.innerHeight - rect.bottom - MENU_EDGE_MARGIN - MENU_TRIGGER_GAP;
+    const opensUp = spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow;
+
     setMenuPosition({
-      top: rect.bottom + 4,
+      ...(opensUp
+        ? {
+            bottom: Math.max(
+              MENU_EDGE_MARGIN,
+              window.innerHeight - rect.top + MENU_TRIGGER_GAP
+            ),
+            maxHeight: Math.max(ESTIMATED_MENU_ITEM_HEIGHT, spaceAbove),
+          }
+        : {
+            top: Math.min(
+              rect.bottom + MENU_TRIGGER_GAP,
+              window.innerHeight - MENU_EDGE_MARGIN
+            ),
+            maxHeight: Math.max(ESTIMATED_MENU_ITEM_HEIGHT, spaceBelow),
+          }),
       right: window.innerWidth - rect.right,
     });
   };
@@ -111,10 +141,12 @@ export default function AdminTableMobileActionsMenu({
         <div
           id={menuId}
           role="menu"
-          className="fixed min-w-40 border border-border bg-background py-1 shadow-md"
+          className="fixed min-w-40 overflow-y-auto border border-border bg-background py-1 shadow-md"
           style={{
             top: menuPosition.top,
+            bottom: menuPosition.bottom,
             right: menuPosition.right,
+            maxHeight: menuPosition.maxHeight,
             zIndex: zIndex.dropdown,
           }}
         >

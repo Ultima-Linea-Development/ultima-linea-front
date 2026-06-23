@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
 import Input from "@/components/ui/Input";
+import CurrencyInput from "@/components/ui/CurrencyInput";
 import FormField from "@/components/ui/FormField";
 import Textarea from "@/components/ui/Textarea";
 import Typography from "@/components/ui/Typography";
@@ -42,6 +43,13 @@ import {
   validateSupplierOrderMilestoneDates,
   type SupplierOrderMilestoneDates,
 } from "@/lib/supplier-order-dates";
+import {
+  allocateSupplierOrderPrices,
+  getSupplierOrderFixedPriceSubtotal,
+  normalizeSupplierOrderPriceValue,
+  parseSupplierOrderTotalPaid,
+} from "@/lib/supplier-order-price-allocation";
+import { parseSupplierOrderOptionalCost } from "@/lib/supplier-order-costs";
 import { getTodaySaleDateDisplayValue, saleDateInputToApiValue } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
 
@@ -114,6 +122,9 @@ export default function AdminSupplierOrderForm({
   const [notes, setNotes] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingLink, setTrackingLink] = useState("");
+  const [totalPaid, setTotalPaid] = useState("");
+  const [taxCost, setTaxCost] = useState("");
+  const [shippingCost, setShippingCost] = useState("");
   const [milestoneDates, setMilestoneDates] = useState<SupplierOrderMilestoneDates>(
     EMPTY_SUPPLIER_ORDER_MILESTONE_DATES
   );
@@ -144,18 +155,37 @@ export default function AdminSupplierOrderForm({
     () => lineItems.reduce((sum, item) => sum + getSupplierOrderLineItemDraftTotal(item), 0),
     [lineItems]
   );
+  const parsedTotalPaid = parseSupplierOrderTotalPaid(totalPaid);
+  const parsedTaxCost = parseSupplierOrderOptionalCost(taxCost);
+  const parsedShippingCost = parseSupplierOrderOptionalCost(shippingCost);
+  const isPriceAllocationEnabled = parsedTotalPaid !== null;
 
   const updateLineItem = (
     key: string,
     updates: Partial<Omit<SupplierOrderLineItemDraft, "key">>
   ) => {
     setLineItems((prev) =>
-      prev.map((item) => (item.key === key ? { ...item, ...updates } : item))
+      allocateSupplierOrderPrices(
+        prev.map((item) => (item.key === key ? { ...item, ...updates } : item)),
+        totalPaid
+      )
     );
   };
 
   const removeLineItem = (key: string) => {
-    setLineItems((prev) => prev.filter((item) => item.key !== key));
+    setLineItems((prev) => allocateSupplierOrderPrices(prev.filter((item) => item.key !== key), totalPaid));
+  };
+
+  const addLineItem = () => {
+    setLineItems((prev) =>
+      allocateSupplierOrderPrices([createEmptySupplierOrderLineItemDraft(), ...prev], totalPaid)
+    );
+  };
+
+  const handleTotalPaidChange = (value: string) => {
+    const nextTotalPaid = normalizeSupplierOrderPriceValue(value);
+    setTotalPaid(nextTotalPaid);
+    setLineItems((prev) => allocateSupplierOrderPrices(prev, nextTotalPaid));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -173,7 +203,31 @@ export default function AdminSupplierOrderForm({
       return;
     }
 
-    const itemsError = validateLineItems(lineItems);
+    if (totalPaid.trim() && parsedTotalPaid === null) {
+      onError("Total pagado inválido.");
+      return;
+    }
+
+    if (taxCost.trim() && parsedTaxCost === null) {
+      onError("Costo de impuesto inválido.");
+      return;
+    }
+
+    if (shippingCost.trim() && parsedShippingCost === null) {
+      onError("Costo de envío inválido.");
+      return;
+    }
+
+    if (
+      parsedTotalPaid !== null &&
+      getSupplierOrderFixedPriceSubtotal(lineItems) > parsedTotalPaid
+    ) {
+      onError("El total pagado no alcanza para los precios diferenciados.");
+      return;
+    }
+
+    const finalLineItems = allocateSupplierOrderPrices(lineItems, totalPaid);
+    const itemsError = validateLineItems(finalLineItems);
     if (itemsError) {
       onError(itemsError);
       return;
@@ -207,9 +261,11 @@ export default function AdminSupplierOrderForm({
       notes: notes.trim(),
       ...(trimmedTrackingNumber ? { tracking_number: trimmedTrackingNumber } : {}),
       ...(normalizedTrackingLink ? { tracking_link: normalizedTrackingLink } : {}),
+      ...(parsedTaxCost !== null ? { tax_cost: parsedTaxCost } : {}),
+      ...(parsedShippingCost !== null ? { shipping_cost: parsedShippingCost } : {}),
       ...supplierValueToPayload(supplierValue),
       ...supplierOrderMilestoneDatesToCreatePayload(milestoneDates),
-      items: lineItems.map(draftToRequestItem),
+      items: finalLineItems.map(draftToRequestItem),
     });
 
     if (success) {
@@ -219,6 +275,9 @@ export default function AdminSupplierOrderForm({
       setNotes("");
       setTrackingNumber("");
       setTrackingLink("");
+      setTotalPaid("");
+      setTaxCost("");
+      setShippingCost("");
       setMilestoneDates(EMPTY_SUPPLIER_ORDER_MILESTONE_DATES);
       setSupplierValue(createDefaultSupplierValue());
       setLineItems([createEmptySupplierOrderLineItemDraft()]);
@@ -309,9 +368,7 @@ export default function AdminSupplierOrderForm({
             <Button
               type="button"
               variant="outline"
-              onClick={() =>
-                setLineItems((prev) => [...prev, createEmptySupplierOrderLineItemDraft()])
-              }
+              onClick={addLineItem}
               disabled={isSubmitting}
             >
               Agregar ítem
@@ -325,6 +382,7 @@ export default function AdminSupplierOrderForm({
               products={products}
               sizeOptions={sizeOptions}
               isSubmitting={isSubmitting}
+              isPriceAllocationEnabled={isPriceAllocationEnabled}
               onChange={updateLineItem}
               onRemove={removeLineItem}
             />
@@ -334,6 +392,41 @@ export default function AdminSupplierOrderForm({
         <Typography variant="body" className="text-right">
           Total estimado: {formatPrice(orderTotal)}
         </Typography>
+
+        <Box display="flex" direction="col" gap="3" align="stretch" className="w-full min-w-0">
+          <FormField htmlFor="order-total-paid" label="Total pagado" className={fieldLabelClassName}>
+            <CurrencyInput
+              id="order-total-paid"
+              value={totalPaid}
+              onChange={handleTotalPaidChange}
+              disabled={isSubmitting}
+            />
+          </FormField>
+
+          <div className="grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            <div className="min-w-0 w-full">
+              <FormField htmlFor="order-tax-cost" label="Costo de impuesto" className={fieldLabelClassName}>
+                <CurrencyInput
+                  id="order-tax-cost"
+                  value={taxCost}
+                  onChange={setTaxCost}
+                  disabled={isSubmitting}
+                />
+              </FormField>
+            </div>
+
+            <div className="min-w-0 w-full">
+              <FormField htmlFor="order-shipping-cost" label="Costo de envío" className={fieldLabelClassName}>
+                <CurrencyInput
+                  id="order-shipping-cost"
+                  value={shippingCost}
+                  onChange={setShippingCost}
+                  disabled={isSubmitting}
+                />
+              </FormField>
+            </div>
+          </div>
+        </Box>
 
         <Box display="flex" gap="3" className="justify-end flex-wrap">
           {onCancel && (

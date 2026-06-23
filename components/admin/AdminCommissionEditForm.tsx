@@ -72,6 +72,7 @@ function commissionItemToDraft(
     description: item.description ?? "",
     link: item.link ?? "",
     price: String(item.price),
+    isCustomPrice: true,
   };
 }
 
@@ -310,7 +311,7 @@ export default function AdminCommissionEditForm({
                 type="button"
                 variant="outline"
                 onClick={() =>
-                  setLineItems((prev) => [...prev, createEmptySupplierOrderLineItemDraft()])
+                  setLineItems((prev) => [createEmptySupplierOrderLineItemDraft(), ...prev])
                 }
                 disabled={isSubmitting}
               >

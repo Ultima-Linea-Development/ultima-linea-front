@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Box from "@/components/layout/Box";
 import Input from "@/components/ui/Input";
+import CurrencyInput from "@/components/ui/CurrencyInput";
 import FormField from "@/components/ui/FormField";
 import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
@@ -74,7 +75,7 @@ export default function AdminSaleLineItemRow({
   const lineTotal = getSaleLineItemDraftTotal(item);
 
   return (
-    <Box display="flex" direction="col" gap="3" className="relative border border-border p-3 pr-10">
+    <Box display="flex" direction="col" gap="3" className="relative w-full min-w-0 border border-border p-3 pr-10">
       <button
         type="button"
         onClick={() => onRemove(item.key)}
@@ -180,13 +181,11 @@ export default function AdminSaleLineItemRow({
 
         <div className="sm:col-span-2 lg:col-span-1">
           <FormField htmlFor={`sale-unit-price-${item.key}`} label="Precio unitario" required>
-            <Input
+            <CurrencyInput
               id={`sale-unit-price-${item.key}`}
-              type="number"
-              min={0}
               value={item.unitPrice}
-              onChange={(event) =>
-                onChange(item.key, { unitPrice: normalizeUnitPriceValue(event.target.value) })
+              onChange={(unitPrice) =>
+                onChange(item.key, { unitPrice: normalizeUnitPriceValue(unitPrice) })
               }
               onBlur={() => {
                 if (item.unitPrice === "") {

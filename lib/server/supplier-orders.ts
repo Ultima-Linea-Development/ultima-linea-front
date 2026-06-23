@@ -89,6 +89,17 @@ export function parseSupplierOrderStatus(value?: string): SupplierOrderStatus | 
   return null;
 }
 
+export function parseSupplierOrderOptionalCost(
+  value: number | string | undefined | null
+): number | null | "invalid" {
+  if (value == null || value === "") return null;
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return "invalid";
+
+  return parsed;
+}
+
 export function parseSupplierOrderOptionalDate(
   value?: string | null
 ): Date | null | "invalid" {
@@ -146,9 +157,9 @@ export function parseSupplierOrderLineItems(
       ? getSupplierOrderLineItemQuantity(quantityBySizes)
       : null;
 
-    let quantity = quantityFromSizes ?? Number(item.quantity);
+    const quantity = quantityFromSizes ?? Number(item.quantity);
     let normalizedSizes = sizes;
-    let normalizedQuantityBySizes = quantityBySizes ?? undefined;
+    const normalizedQuantityBySizes = quantityBySizes ?? undefined;
 
     if (quantityFromSizes !== null) {
       normalizedSizes = formatSupplierOrderSizesDisplay(quantityBySizes ?? undefined, sizes);
@@ -195,6 +206,8 @@ export function normalizeSupplierOrderForResponse(
   return {
     ...order,
     items: Array.isArray(order.items) ? order.items : [],
+    tax_cost: order.tax_cost ?? undefined,
+    shipping_cost: order.shipping_cost ?? undefined,
   };
 }
 

@@ -12,7 +12,7 @@ const NAME_EXAMPLES = [
   "Camiseta Suplente Argentina 2006 Versión Retro",
   "Camiseta Barcelona 2024/2025 Versión Fan",
   "Camiseta Titular Roma 2025/2026 Versión Jugador",
-  "Camiseta Tercera Equipación Arsenal 2025/2026 Versión Fan",
+  "Camiseta Alternativa Arsenal 2025/2026 Versión Fan",
 ] as const;
 
 type AdminProductNameGuideModalProps = {
@@ -46,7 +46,7 @@ export function AdminProductNameGuideModal({ open, onClose }: AdminProductNameGu
             <li>
               <Typography variant="body2" as="span">
                 <strong>Tipo de camiseta</strong> (si aplica): Titular, Suplente, Alternativa,
-                Tercera Equipación, Edición Especial, Tricolor, etc.
+                Edición Especial, Tricolor, etc.
               </Typography>
             </li>
             <li>

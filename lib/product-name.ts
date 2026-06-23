@@ -3,6 +3,7 @@ import { generateSlug } from "@/lib/utils";
 export type ProductVersion = "fan" | "player" | "retro";
 
 export type ProductNameInput = {
+  productType?: string | null;
   team: string;
   season: string;
   type?: string | null;
@@ -11,8 +12,20 @@ export type ProductNameInput = {
   kitType?: string | null;
 };
 
+export const DEFAULT_PRODUCT_TYPE = "Camiseta";
+
+export const DEFAULT_PRODUCT_TYPE_OPTIONS = [DEFAULT_PRODUCT_TYPE] as const;
+
+export const DEFAULT_KIT_TYPE_OPTIONS = [
+  "Titular",
+  "Suplente",
+  "Alternativa",
+  "Edición Especial",
+  "Tricolor",
+] as const;
+
 const KIT_TYPE_PATTERNS: Array<{ pattern: RegExp; label: string | ((match: RegExpMatchArray) => string) }> = [
-  { pattern: /\btercera\s+equipaci[oó]n\b/i, label: "Tercera Equipación" },
+  { pattern: /\btercera\s+equipaci[oó]n\b/i, label: "Alternativa" },
   { pattern: /\bedici[oó]n\s+especial\b/i, label: "Edición Especial" },
   {
     pattern: /\b(\d+)\s+aniversario\b/i,
@@ -68,6 +81,13 @@ export function extractKitTypeFromName(name: string): string | undefined {
   return undefined;
 }
 
+export function extractProductTypeFromName(name: string): string | undefined {
+  const firstWord = name.trim().split(/\s+/)[0];
+  if (!firstWord) return undefined;
+
+  return firstWord.charAt(0).toLocaleUpperCase() + firstWord.slice(1);
+}
+
 function getSeasonEndYear(season: string): number | null {
   const normalized = normalizeSeason(season);
   const range = normalized.match(/^(\d{4})\/(\d{4})$/);
@@ -115,6 +135,7 @@ export function labelProductVersion(version: ProductVersion): string {
 }
 
 export function buildProductName(input: ProductNameInput): string {
+  const productType = (input.productType ?? DEFAULT_PRODUCT_TYPE).trim() || DEFAULT_PRODUCT_TYPE;
   const team = input.team.trim();
   const normalizedSeason = normalizeSeason(input.season);
   const kitType = (input.kitType ?? extractKitTypeFromName(input.name ?? ""))?.trim();
@@ -122,7 +143,7 @@ export function buildProductName(input: ProductNameInput): string {
     resolveProductVersion(input.type, input.name, input.season)
   );
 
-  const parts = ["Camiseta"];
+  const parts = [productType];
   if (kitType) parts.push(kitType);
   if (team) parts.push(team);
   if (normalizedSeason) parts.push(normalizedSeason);

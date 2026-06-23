@@ -23,6 +23,7 @@ import AdminSupplierOrderStatusBadge from "@/components/admin/AdminSupplierOrder
 import AdminSupplierOrderTrackingCell from "@/components/admin/AdminSupplierOrderTrackingCell";
 import { getProductPrimaryImageUrl } from "@/lib/admin-product-image";
 import { getSupplierOrderItemTypeLabel } from "@/lib/supplier-order-display";
+import { getSupplierOrderTotal } from "@/lib/supplier-order-costs";
 import { formatSaleDateDisplay } from "@/lib/sale-date";
 import { cn, formatPrice, generateSlug } from "@/lib/utils";
 
@@ -37,10 +38,7 @@ export default function AdminSupplierOrderDetail({
 }: AdminSupplierOrderDetailProps) {
   const thClass = ADMIN_TABLE_TH_CLASS;
   const cellClass = ADMIN_TABLE_CELL_CLASS;
-  const totalPrice = order.items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const totalPrice = getSupplierOrderTotal(order);
   const productById = useMemo(
     () => Object.fromEntries(products.map((product) => [product.id, product] as const)),
     [products]
@@ -87,6 +85,16 @@ export default function AdminSupplierOrderDetail({
       key: "tracking",
       label: "Nro. Seguimiento",
       value: <AdminSupplierOrderTrackingCell order={order} />,
+    },
+    {
+      key: "tax_cost",
+      label: "Costo de impuesto",
+      value: order.tax_cost ? formatPrice(order.tax_cost) : "—",
+    },
+    {
+      key: "shipping_cost",
+      label: "Costo de envío",
+      value: order.shipping_cost ? formatPrice(order.shipping_cost) : "—",
     },
     ...(order.notes
       ? [{ key: "notes", label: "Notas", value: order.notes, preWrap: true as const }]
@@ -270,6 +278,7 @@ export default function AdminSupplierOrderDetail({
           </tbody>
         </table>
       </div>
+
     </Box>
   );
 }

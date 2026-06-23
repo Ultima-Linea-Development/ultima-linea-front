@@ -21,6 +21,7 @@ import { resolveSupplier } from "@/lib/server/suppliers";
 import {
   normalizeSupplierOrderForResponse,
   parseSupplierOrderLineItems,
+  parseSupplierOrderOptionalCost,
   parseSupplierOrderOptionalDate,
   parseSupplierOrderStatus,
   type SupplierOrderLineItemInput,
@@ -46,6 +47,8 @@ type CreateSupplierOrderBody = {
   order_date?: string;
   tracking_number?: string;
   tracking_link?: string;
+  tax_cost?: number | string | null;
+  shipping_cost?: number | string | null;
   paid_at?: string;
   sent_at?: string;
   received_at?: string;
@@ -123,6 +126,11 @@ export async function POST(request: NextRequest) {
     const trackingLinkError = validateSupplierOrderTrackingLink(body.tracking_link ?? "");
     if (trackingLinkError) return jsonError(trackingLinkError, 400);
 
+    const taxCost = parseSupplierOrderOptionalCost(body.tax_cost);
+    if (taxCost === "invalid") return jsonError("Costo de impuesto inválido", 400);
+    const shippingCost = parseSupplierOrderOptionalCost(body.shipping_cost);
+    if (shippingCost === "invalid") return jsonError("Costo de envío inválido", 400);
+
     const suppliers = await getSuppliersCollection<SupplierDocument>();
     const supplier = await resolveSupplier(suppliers, {
       id: body.supplier_id,
@@ -160,6 +168,8 @@ export async function POST(request: NextRequest) {
       ...(normalizeSupplierOrderTrackingLink(body.tracking_link ?? "")
         ? { tracking_link: normalizeSupplierOrderTrackingLink(body.tracking_link ?? "") }
         : {}),
+      ...(taxCost !== null ? { tax_cost: taxCost } : {}),
+      ...(shippingCost !== null ? { shipping_cost: shippingCost } : {}),
       ...(paidAt ? { paid_at: paidAt } : {}),
       ...(sentAt ? { sent_at: sentAt } : {}),
       ...(receivedAt ? { received_at: receivedAt } : {}),

@@ -17,6 +17,7 @@ import {
   normalizeSupplierOrderForResponse,
   parseSupplierOrderLineItems,
   applySupplierOrderDateField,
+  parseSupplierOrderOptionalCost,
   parseSupplierOrderStatus,
   type SupplierOrderLineItemInput,
 } from "@/lib/server/supplier-orders";
@@ -42,6 +43,8 @@ type UpdateSupplierOrderBody = {
   order_date?: string;
   tracking_number?: string;
   tracking_link?: string;
+  tax_cost?: number | string | null;
+  shipping_cost?: number | string | null;
   paid_at?: string;
   sent_at?: string;
   received_at?: string;
@@ -139,6 +142,26 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         updateFields.tracking_link = trackingLink;
       } else {
         unsetFields.tracking_link = "";
+      }
+    }
+
+    if ("tax_cost" in body) {
+      const taxCost = parseSupplierOrderOptionalCost(body.tax_cost);
+      if (taxCost === "invalid") return jsonError("Costo de impuesto inválido", 400);
+      if (taxCost !== null) {
+        updateFields.tax_cost = taxCost;
+      } else {
+        unsetFields.tax_cost = "";
+      }
+    }
+
+    if ("shipping_cost" in body) {
+      const shippingCost = parseSupplierOrderOptionalCost(body.shipping_cost);
+      if (shippingCost === "invalid") return jsonError("Costo de envío inválido", 400);
+      if (shippingCost !== null) {
+        updateFields.shipping_cost = shippingCost;
+      } else {
+        unsetFields.shipping_cost = "";
       }
     }
 

@@ -25,7 +25,7 @@ import AdminTableColumnFilter from "@/components/admin/AdminTableColumnFilter";
 import AdminTableMobileActionsMenu, {
   type AdminTableMobileAction,
 } from "@/components/admin/AdminTableMobileActionsMenu";
-import { compareSizeLabels } from "@/lib/product-inventory";
+import { sortSizeLabels } from "@/lib/product-inventory";
 
 const PER_PAGE = 10;
 
@@ -104,7 +104,7 @@ export default function AdminProductsTable({
 
   const colSpan = onSelectionChange ? 6 : 5;
 
-  const sortedSizeOptions = [...sizeOptions].sort(compareSizeLabels);
+  const sortedSizeOptions = sortSizeLabels(sizeOptions);
 
   const renderSizeHeader = () =>
     onSizeFilterChange ? (

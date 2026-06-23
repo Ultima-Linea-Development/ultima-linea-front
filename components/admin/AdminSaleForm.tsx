@@ -4,7 +4,9 @@ import { FormEvent, useMemo, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
 import Input from "@/components/ui/Input";
+import CurrencyInput from "@/components/ui/CurrencyInput";
 import FormField from "@/components/ui/FormField";
+import Label from "@/components/ui/Label";
 import Textarea from "@/components/ui/Textarea";
 import Typography from "@/components/ui/Typography";
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,12 @@ import {
 import { formatPrice } from "@/lib/utils";
 import { getTodaySaleDateDisplayValue, saleDateInputToApiValue } from "@/lib/sale-date";
 import { orderedSizeEntries } from "@/lib/product-inventory";
+import {
+  applySaleUnitDiscount,
+  DEFAULT_SALE_UNIT_DISCOUNT,
+  getSaleDraftTotalQuantity,
+  restoreSaleCatalogPrices,
+} from "@/lib/sale-unit-discount";
 
 type AdminSaleFormProps = {
   products: Product[];
@@ -69,6 +77,8 @@ export default function AdminSaleForm({
   );
   const [transferAlias, setTransferAlias] = useState("");
   const [description, setDescription] = useState("");
+  const [applyUnitDiscount, setApplyUnitDiscount] = useState(false);
+  const [unitDiscount, setUnitDiscount] = useState(DEFAULT_SALE_UNIT_DISCOUNT);
 
   const productSuggestions = useMemo(
     () => filterProductsByQuery(products, productSearch),
@@ -79,10 +89,30 @@ export default function AdminSaleForm({
     () => lineItems.reduce((sum, item) => sum + getSaleLineItemDraftTotal(item), 0),
     [lineItems]
   );
+  const saleTotalQuantity = useMemo(() => getSaleDraftTotalQuantity(lineItems), [lineItems]);
 
   const addProduct = (product: Product) => {
-    setLineItems((prev) => [...prev, createLineItemDraft(product)]);
+    const nextItem = createLineItemDraft(product);
+    const [pricedItem] = applyUnitDiscount
+      ? applySaleUnitDiscount([nextItem], unitDiscount)
+      : [nextItem];
+
+    setLineItems((prev) => [pricedItem, ...prev]);
     setProductSearch("");
+  };
+
+  const handleApplyUnitDiscountChange = (checked: boolean) => {
+    setApplyUnitDiscount(checked);
+    setLineItems((prev) =>
+      checked ? applySaleUnitDiscount(prev, unitDiscount) : restoreSaleCatalogPrices(prev)
+    );
+  };
+
+  const handleUnitDiscountChange = (value: string) => {
+    setUnitDiscount(value);
+    if (applyUnitDiscount) {
+      setLineItems((prev) => applySaleUnitDiscount(prev, value));
+    }
   };
 
   const updateLineItem = (
@@ -130,6 +160,8 @@ export default function AdminSaleForm({
     setSellerValue(createDefaultSaleSellerValue(currentUserId));
     setTransferAlias("");
     setDescription("");
+    setApplyUnitDiscount(false);
+    setUnitDiscount(DEFAULT_SALE_UNIT_DISCOUNT);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -200,7 +232,7 @@ export default function AdminSaleForm({
       />
 
       {lineItems.length > 0 && (
-        <Box display="flex" direction="col" gap="3">
+        <Box display="flex" direction="col" align="stretch" gap="3" className="w-full min-w-0">
           <Typography variant="body2">Productos en la venta</Typography>
           {lineItems.map((item) => (
             <AdminSaleLineItemRow
@@ -211,6 +243,44 @@ export default function AdminSaleForm({
               onRemove={removeLineItem}
             />
           ))}
+        </Box>
+      )}
+
+      {lineItems.length > 0 && (
+        <Box display="flex" direction="col" gap="3" className="border border-border p-3">
+          <Label
+            htmlFor="sale-apply-unit-discount"
+            display="inline"
+            spacing="none"
+            className="flex w-fit max-w-full items-center gap-2"
+          >
+            <input
+              id="sale-apply-unit-discount"
+              type="checkbox"
+              checked={applyUnitDiscount}
+              onChange={(event) => handleApplyUnitDiscountChange(event.target.checked)}
+              disabled={isSubmitting}
+              className="size-4 shrink-0 cursor-pointer disabled:cursor-not-allowed"
+            />
+            <Typography variant="body2" as="span">
+              Aplicar descuento unitario
+            </Typography>
+          </Label>
+
+          {applyUnitDiscount && (
+            <FormField htmlFor="sale-unit-discount" label="Descuento por unidad">
+              <CurrencyInput
+                id="sale-unit-discount"
+                value={unitDiscount}
+                onChange={handleUnitDiscountChange}
+                disabled={isSubmitting}
+              />
+            </FormField>
+          )}
+
+          <Typography variant="body2" color="muted">
+            Sugerido para ventas de 2 o más unidades. Unidades actuales: {saleTotalQuantity}.
+          </Typography>
         </Box>
       )}
 

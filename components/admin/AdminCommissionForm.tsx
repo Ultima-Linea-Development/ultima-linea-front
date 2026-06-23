@@ -256,7 +256,7 @@ export default function AdminCommissionForm({
               type="button"
               variant="outline"
               onClick={() =>
-                setLineItems((prev) => [...prev, createEmptySupplierOrderLineItemDraft()])
+                setLineItems((prev) => [createEmptySupplierOrderLineItemDraft(), ...prev])
               }
               disabled={isSubmitting}
             >

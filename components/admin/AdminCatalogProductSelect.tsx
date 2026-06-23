@@ -119,7 +119,7 @@ export default function AdminCatalogProductSelect({
           }}
         >
           <Icon name="add" className="size-4 shrink-0" />
-          Producto nuevo
+          Agregar producto externo
         </AdminTextLink>
       </Div>
     </FormField>

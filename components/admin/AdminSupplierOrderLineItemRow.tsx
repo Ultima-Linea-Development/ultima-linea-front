@@ -3,7 +3,9 @@
 import { useMemo } from "react";
 import Box from "@/components/layout/Box";
 import Input from "@/components/ui/Input";
+import CurrencyInput from "@/components/ui/CurrencyInput";
 import FormField from "@/components/ui/FormField";
+import Label from "@/components/ui/Label";
 import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
 import Select from "@/components/ui/Select";
@@ -21,6 +23,7 @@ import {
   sizeRowsToPayload,
   type SupplierOrderSizeQuantityRow,
 } from "@/lib/supplier-order-sizes";
+import { normalizeSupplierOrderPriceValue } from "@/lib/supplier-order-price-allocation";
 import { cn, formatPrice } from "@/lib/utils";
 
 export type SupplierOrderLineItemDraft = {
@@ -34,6 +37,7 @@ export type SupplierOrderLineItemDraft = {
   description: string;
   link: string;
   price: string;
+  isCustomPrice: boolean;
 };
 
 type AdminSupplierOrderLineItemRowProps = {
@@ -41,6 +45,7 @@ type AdminSupplierOrderLineItemRowProps = {
   products: Product[];
   sizeOptions: string[];
   isSubmitting: boolean;
+  isPriceAllocationEnabled?: boolean;
   onChange: (
     key: string,
     updates: Partial<Omit<SupplierOrderLineItemDraft, "key">>
@@ -49,13 +54,6 @@ type AdminSupplierOrderLineItemRowProps = {
 };
 
 const fieldLabelClassName = "w-full min-w-0";
-
-function normalizePriceValue(value: string): string {
-  if (value === "") return "";
-  const parsed = Number(value);
-  if (Number.isNaN(parsed)) return "0";
-  return String(Math.max(0, parsed));
-}
 
 function parseProductType(type?: string): SupplierOrderItemType | null {
   const normalized = type?.trim().toUpperCase();
@@ -85,6 +83,7 @@ export function createEmptySupplierOrderLineItemDraft(): SupplierOrderLineItemDr
     description: "",
     link: "",
     price: "0",
+    isCustomPrice: false,
   };
 }
 
@@ -93,6 +92,7 @@ export default function AdminSupplierOrderLineItemRow({
   products,
   sizeOptions,
   isSubmitting,
+  isPriceAllocationEnabled = false,
   onChange,
   onRemove,
 }: AdminSupplierOrderLineItemRowProps) {
@@ -102,6 +102,7 @@ export default function AdminSupplierOrderLineItemRow({
       productId: product.id,
       isCustomProduct: false,
       price: String(product.price),
+      isCustomPrice: false,
       type: parseProductType(product.type) ?? item.type,
     });
   };
@@ -203,11 +204,6 @@ export default function AdminSupplierOrderLineItemRow({
         idPrefix={`order-size-${item.key}`}
         sizeOptions={sizeOptions}
         required
-        priceField={{
-          id: `order-price-${item.key}`,
-          value: item.price,
-          onChange: (price) => onChange(item.key, { price: normalizePriceValue(price) }),
-        }}
       />
 
       <Box display="grid" cols={2} gap={4} className="w-full min-w-0">
@@ -241,6 +237,50 @@ export default function AdminSupplierOrderLineItemRow({
           rows={2}
         />
       </FormField>
+
+      <div className="min-w-[200px]">
+        <FormField htmlFor={`order-price-${item.key}`} label="Precio unitario" required>
+          <CurrencyInput
+            id={`order-price-${item.key}`}
+            value={item.price}
+            onChange={(price) =>
+              onChange(item.key, {
+                price: normalizeSupplierOrderPriceValue(price),
+                ...(isPriceAllocationEnabled ? { isCustomPrice: true } : {}),
+              })
+            }
+            onBlur={() => {
+              if (item.price === "") {
+                onChange(item.key, { price: "0" });
+              }
+            }}
+            disabled={isSubmitting || (isPriceAllocationEnabled && !item.isCustomPrice)}
+            required
+          />
+        </FormField>
+        {isPriceAllocationEnabled ? (
+          <div className="mt-2">
+            <Label
+              htmlFor={`order-custom-price-${item.key}`}
+              display="inline"
+              spacing="none"
+              className="flex w-fit max-w-full items-center gap-2"
+            >
+              <input
+                id={`order-custom-price-${item.key}`}
+                type="checkbox"
+                checked={item.isCustomPrice}
+                onChange={(event) => onChange(item.key, { isCustomPrice: event.target.checked })}
+                disabled={isSubmitting}
+                className="size-4 shrink-0 cursor-pointer disabled:cursor-not-allowed"
+              />
+              <Typography variant="body2" as="span">
+                Precio diferenciado
+              </Typography>
+            </Label>
+          </div>
+        ) : null}
+      </div>
 
       <Typography variant="body2" className="text-right">
         Cantidad total: {totalQuantity} · Subtotal: {formatPrice(lineTotal)}

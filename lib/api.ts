@@ -197,10 +197,16 @@ export type ProductOptionsResponse = {
   teams: string[];
   leagues: string[];
   sizes: string[];
+  seasons: string[];
+  productTypes: string[];
+  kitTypes: string[];
 };
 
 export type CreateProductRequest = {
   name: string;
+  product_type?: string;
+  kit_type?: string;
+  preserve_name?: boolean;
   description?: string;
   team?: string;
   league?: string;
@@ -285,6 +291,8 @@ export type SupplierOrder = {
   notes?: string;
   tracking_number?: string;
   tracking_link?: string;
+  tax_cost?: number | null;
+  shipping_cost?: number | null;
   paid_at?: string;
   sent_at?: string;
   received_at?: string;
@@ -325,6 +333,8 @@ export type CreateSupplierOrderRequest = {
   order_date?: string;
   tracking_number?: string;
   tracking_link?: string;
+  tax_cost?: number | null;
+  shipping_cost?: number | null;
   paid_at?: string;
   sent_at?: string;
   received_at?: string;

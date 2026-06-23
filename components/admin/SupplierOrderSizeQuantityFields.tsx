@@ -13,13 +13,8 @@ import {
   emptySupplierOrderSizeRow,
   type SupplierOrderSizeQuantityRow,
 } from "@/lib/supplier-order-sizes";
+import { sortSizeLabels } from "@/lib/product-inventory";
 import { cn } from "@/lib/utils";
-
-type SupplierOrderSizeQuantityPriceField = {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-};
 
 type SupplierOrderSizeQuantityFieldsProps = {
   rows: SupplierOrderSizeQuantityRow[];
@@ -29,7 +24,6 @@ type SupplierOrderSizeQuantityFieldsProps = {
   sizeOptions?: string[];
   required?: boolean;
   minRows?: number;
-  priceField?: SupplierOrderSizeQuantityPriceField;
 };
 
 function normalizeQuantityValue(value: string): string {
@@ -47,23 +41,24 @@ export default function SupplierOrderSizeQuantityFields({
   sizeOptions = [],
   required = false,
   minRows = 1,
-  priceField,
 }: SupplierOrderSizeQuantityFieldsProps) {
   const [customSizeRowIds, setCustomSizeRowIds] = useState<Set<string>>(() => new Set());
 
   const normalizedSizeOptions = useMemo(() => {
     const seen = new Set<string>();
 
-    return sizeOptions
-      .map((option) => option.trim())
-      .filter(Boolean)
-      .filter((option) => {
-        const key = option.toLocaleLowerCase();
-        if (seen.has(key)) return false;
+    return sortSizeLabels(
+      sizeOptions
+        .map((option) => option.trim())
+        .filter(Boolean)
+        .filter((option) => {
+          const key = option.toLocaleLowerCase();
+          if (seen.has(key)) return false;
 
-        seen.add(key);
-        return true;
-      });
+          seen.add(key);
+          return true;
+        })
+    );
   }, [sizeOptions]);
 
   const addRow = () => onRowsChange([...rows, emptySupplierOrderSizeRow()]);
@@ -109,103 +104,80 @@ export default function SupplierOrderSizeQuantityFields({
     );
   };
 
-  return (
-    <FormField label="Talles" required={required}>
-      <div
-        className={cn(
-          "grid w-full grid-cols-1 gap-4",
-          priceField && "md:grid-cols-2 md:items-start"
-        )}
-      >
-        <Box display="flex" direction="col" gap="4" className="min-w-0">
-          {rows.length === 0 && (
-            <Typography variant="body2" color="muted">
-              Sin talles cargados.
-            </Typography>
-          )}
-          {rows.map((row, index) => (
-            <div key={row.id} className="flex w-full min-w-0 items-end gap-2">
-              <div className="min-w-0 flex-1">
-                <ProductOptionSelect
-                  id={`${idPrefix}-size-${index}`}
-                  label="Talle"
-                  value={row.size}
-                  options={normalizedSizeOptions}
-                  isCustom={isCustomSizeRow(row)}
-                  onChange={(value) => updateRow(index, "size", value)}
-                  onCustomChange={(isCustom) => updateCustomSizeRow(row.id, isCustom)}
-                  customPlaceholder="Ingresá el talle"
-                  disabled={disabled}
-                  required={required}
-                />
-              </div>
-              <div className="w-[100px] shrink-0">
-                <FormField htmlFor={`${idPrefix}-quantity-${index}`} label="Cantidad" required={required}>
-                  <Input
-                    id={`${idPrefix}-quantity-${index}`}
-                    type="number"
-                    min={1}
-                    value={row.quantity}
-                    onChange={(event) =>
-                      updateRow(index, "quantity", normalizeQuantityValue(event.target.value))
-                    }
-                    onBlur={() => {
-                      if (row.quantity === "") {
-                        updateRow(index, "quantity", "1");
-                      }
-                    }}
-                    disabled={disabled}
-                    placeholder="1"
-                    required={required}
-                  />
-                </FormField>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeRow(index)}
-                disabled={disabled || rows.length <= minRows}
-                aria-label={`Quitar talle ${index + 1}`}
-                className={cn(
-                  adminIconTriggerClassName,
-                  "mb-0.5 shrink-0 text-muted-foreground hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
-                )}
-              >
-                <Icon name="delete" className="size-5" />
-              </button>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-fit"
-            disabled={disabled}
-            onClick={addRow}
-          >
-            Agregar talle
-          </Button>
-        </Box>
-        {priceField ? (
-          <div className="min-w-[200px]">
-            <FormField htmlFor={priceField.id} label="Precio unitario" required={required}>
+  const sizeFields = (
+    <Box display="flex" direction="col" gap="4" className="min-w-0">
+      {rows.length === 0 && (
+        <Typography variant="body2" color="muted">
+          Sin talles cargados.
+        </Typography>
+      )}
+      {rows.map((row, index) => (
+        <div key={row.id} className="flex w-full min-w-0 items-end gap-2">
+          <div className="min-w-0 flex-1">
+            <ProductOptionSelect
+              id={`${idPrefix}-size-${index}`}
+              label="Talle"
+              value={row.size}
+              options={normalizedSizeOptions}
+              isCustom={isCustomSizeRow(row)}
+              onChange={(value) => updateRow(index, "size", value)}
+              onCustomChange={(isCustom) => updateCustomSizeRow(row.id, isCustom)}
+              customPlaceholder="Ingresá el talle"
+              disabled={disabled}
+              required={required}
+            />
+          </div>
+          <div className="w-[100px] shrink-0">
+            <FormField htmlFor={`${idPrefix}-quantity-${index}`} label="Cantidad" required={required}>
               <Input
-                id={priceField.id}
+                id={`${idPrefix}-quantity-${index}`}
                 type="number"
-                min={0}
-                value={priceField.value}
-                onChange={(event) => priceField.onChange(event.target.value)}
+                min={1}
+                value={row.quantity}
+                onChange={(event) =>
+                  updateRow(index, "quantity", normalizeQuantityValue(event.target.value))
+                }
                 onBlur={() => {
-                  if (priceField.value === "") {
-                    priceField.onChange("0");
+                  if (row.quantity === "") {
+                    updateRow(index, "quantity", "1");
                   }
                 }}
                 disabled={disabled}
+                placeholder="1"
                 required={required}
               />
             </FormField>
           </div>
-        ) : null}
-      </div>
+          <button
+            type="button"
+            onClick={() => removeRow(index)}
+            disabled={disabled || rows.length <= minRows}
+            aria-label={`Quitar talle ${index + 1}`}
+            className={cn(
+              adminIconTriggerClassName,
+              "mb-0.5 shrink-0 text-muted-foreground hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+            )}
+          >
+            <Icon name="delete" className="size-5" />
+          </button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="w-fit"
+        disabled={disabled}
+        onClick={addRow}
+      >
+        Agregar talle
+      </Button>
+    </Box>
+  );
+
+  return (
+    <FormField label="Talles" required={required}>
+      {sizeFields}
     </FormField>
   );
 }

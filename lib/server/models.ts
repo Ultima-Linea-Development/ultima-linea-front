@@ -1,4 +1,8 @@
-import { applyProductNameNormalization } from "@/lib/product-name";
+import {
+  applyProductNameNormalization,
+  inferProductType,
+  normalizeSeason,
+} from "@/lib/product-name";
 import { monotonicFactory } from "ulid";
 
 const ulid = monotonicFactory();
@@ -101,6 +105,8 @@ export type SupplierOrder = {
   notes?: string;
   tracking_number?: string;
   tracking_link?: string;
+  tax_cost?: number;
+  shipping_cost?: number;
   paid_at?: Date;
   sent_at?: Date;
   received_at?: Date;
@@ -213,7 +219,13 @@ export function extractTypeFromName(name: string): string {
   return "FAN";
 }
 
-export function beforeCreateProduct(product: Partial<Product>): Product {
+type ProductNameNormalizationControls = {
+  product_type?: string | null;
+  kit_type?: string | null;
+  preserve_name?: boolean | null;
+};
+
+export function beforeCreateProduct(product: Partial<Product> & ProductNameNormalizationControls): Product {
   const now = new Date();
   const result: Product = {
     id: product.id || generateULID(),
@@ -241,17 +253,24 @@ export function beforeCreateProduct(product: Partial<Product>): Product {
     result.type = extractTypeFromName(result.name);
   }
 
-  if (result.team && result.season) {
+  if (result.team && result.season && !product.preserve_name) {
     const normalized = applyProductNameNormalization({
+      productType: product.product_type,
       team: result.team,
       season: result.season,
       type: result.type,
       name: result.name,
+      kitType: product.kit_type,
     });
     result.name = normalized.name;
     result.slug = normalized.slug;
     result.season = normalized.season;
     result.type = normalized.type;
+  } else if (result.team && result.season) {
+    result.name = result.name.trim();
+    result.slug = generateSlug(result.name);
+    result.season = normalizeSeason(result.season);
+    result.type = inferProductType({ type: result.type, name: result.name, season: result.season });
   } else if (!result.slug && result.name) {
     result.slug = generateSlug(result.name);
   }
@@ -265,7 +284,7 @@ export function beforeCreateProduct(product: Partial<Product>): Product {
 
 export function normalizeProductUpdates(
   current: Pick<Product, "name" | "team" | "season" | "type">,
-  updates: Partial<Pick<Product, "name" | "team" | "season" | "type">>
+  updates: Partial<Pick<Product, "name" | "team" | "season" | "type">> & ProductNameNormalizationControls
 ): Partial<Pick<Product, "name" | "slug" | "season" | "type">> {
   const merged = {
     name: updates.name ?? current.name,
@@ -278,7 +297,22 @@ export function normalizeProductUpdates(
     return {};
   }
 
-  const normalized = applyProductNameNormalization(merged);
+  if (updates.preserve_name) {
+    const name = merged.name.trim();
+    const season = normalizeSeason(merged.season);
+    return {
+      name,
+      slug: generateSlug(name),
+      season,
+      type: inferProductType({ type: merged.type, name, season }),
+    };
+  }
+
+  const normalized = applyProductNameNormalization({
+    ...merged,
+    productType: updates.product_type,
+    kitType: updates.kit_type,
+  });
   return {
     name: normalized.name,
     slug: normalized.slug,

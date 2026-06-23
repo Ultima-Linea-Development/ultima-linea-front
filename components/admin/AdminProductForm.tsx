@@ -1,16 +1,15 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
-import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
 import Div from "@/components/ui/Div";
 import { InlineAlert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
 import ImageUploadDropzone from "@/components/ui/ImageUploadDropzone";
 import ProductSizeStockFields from "@/components/admin/ProductSizeStockFields";
-import ProductOptionSelect from "@/components/admin/ProductOptionSelect";
+import AdminProductIdentityFields from "@/components/admin/AdminProductIdentityFields";
 import Typography from "@/components/ui/Typography";
 import { getToken } from "@/lib/auth";
 import {
@@ -20,18 +19,11 @@ import {
   type CreateProductRequest,
   type ProductOptionsResponse,
 } from "@/lib/api";
-import { generateSlug, normalizeShirtType, type ShirtType } from "@/lib/utils";
+import { generateSlug, type ShirtType } from "@/lib/utils";
 import FormField from "@/components/ui/FormField";
-import Select from "@/components/ui/Select";
 import { validateRequiredProductFields } from "@/lib/product-form-validation";
 import { emptySizeStockRow, rowsToPayload, type SizeStockRow } from "@/lib/product-inventory";
-import { AdminProductNameFieldLabel } from "@/components/admin/AdminProductNameGuide";
-
-const SHIRT_TYPE_OPTIONS: Array<{ value: ShirtType; label: string }> = [
-  { value: "fan", label: "Fan" },
-  { value: "player", label: "Jugador" },
-  { value: "retro", label: "Retro" },
-];
+import { buildProductName, DEFAULT_PRODUCT_TYPE } from "@/lib/product-name";
 
 type AdminProductFormProps = {
   onSuccess: () => void;
@@ -41,11 +33,16 @@ type AdminProductFormProps = {
 function getInitialFormState() {
   return {
     name: "",
+    productType: DEFAULT_PRODUCT_TYPE,
+    kitType: "",
     description: "",
     team: "",
     league: "",
     isCustomTeam: false,
     isCustomLeague: false,
+    isCustomProductType: false,
+    isCustomKitType: false,
+    isCustomSeason: false,
     season: "",
     price: "",
     sizeRows: [emptySizeStockRow()] as SizeStockRow[],
@@ -58,11 +55,17 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
+  const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(false);
+  const [productType, setProductType] = useState(DEFAULT_PRODUCT_TYPE);
+  const [kitType, setKitType] = useState("");
   const [description, setDescription] = useState("");
   const [team, setTeam] = useState("");
   const [league, setLeague] = useState("");
   const [isCustomTeam, setIsCustomTeam] = useState(false);
   const [isCustomLeague, setIsCustomLeague] = useState(false);
+  const [isCustomProductType, setIsCustomProductType] = useState(false);
+  const [isCustomKitType, setIsCustomKitType] = useState(false);
+  const [isCustomSeason, setIsCustomSeason] = useState(false);
   const [season, setSeason] = useState("");
   const [price, setPrice] = useState("");
   const [sizeRows, setSizeRows] = useState<SizeStockRow[]>(() => [emptySizeStockRow()]);
@@ -72,7 +75,15 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
     teams: [],
     leagues: [],
     sizes: [],
+    seasons: [],
+    productTypes: [],
+    kitTypes: [],
   });
+
+  const generatedName = useMemo(
+    () => buildProductName({ productType, kitType, team, season, type: shirtType }),
+    [productType, kitType, team, season, shirtType]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -95,16 +106,77 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
   const resetForm = () => {
     const initial = getInitialFormState();
     setName(initial.name);
+    setIsNameManuallyEdited(false);
+    setProductType(initial.productType);
+    setKitType(initial.kitType);
     setDescription(initial.description);
     setTeam(initial.team);
     setLeague(initial.league);
     setIsCustomTeam(initial.isCustomTeam);
     setIsCustomLeague(initial.isCustomLeague);
+    setIsCustomProductType(initial.isCustomProductType);
+    setIsCustomKitType(initial.isCustomKitType);
+    setIsCustomSeason(initial.isCustomSeason);
     setSeason(initial.season);
     setPrice(initial.price);
     setSizeRows(initial.sizeRows);
     setImageFiles(initial.imageFiles);
     setShirtType(initial.shirtType);
+  };
+
+  const handleNameChange = (value: string) => {
+    setName(value);
+    setIsNameManuallyEdited(value.trim() !== generatedName.trim());
+  };
+
+  const syncNameFromFields = (next: {
+    productType?: string;
+    kitType?: string;
+    team?: string;
+    season?: string;
+    shirtType?: ShirtType;
+  }) => {
+    if (isNameManuallyEdited) return;
+
+    setName(
+      buildProductName({
+        productType: next.productType ?? productType,
+        kitType: next.kitType ?? kitType,
+        team: next.team ?? team,
+        season: next.season ?? season,
+        type: next.shirtType ?? shirtType,
+      })
+    );
+  };
+
+  const handleProductTypeChange = (value: string) => {
+    setProductType(value);
+    syncNameFromFields({ productType: value });
+  };
+
+  const handleKitTypeChange = (value: string) => {
+    setKitType(value);
+    syncNameFromFields({ kitType: value });
+  };
+
+  const handleTeamChange = (value: string) => {
+    setTeam(value);
+    syncNameFromFields({ team: value });
+  };
+
+  const handleSeasonChange = (value: string) => {
+    setSeason(value);
+    syncNameFromFields({ season: value });
+  };
+
+  const handleShirtTypeChange = (value: ShirtType) => {
+    setShirtType(value);
+    syncNameFromFields({ shirtType: value });
+  };
+
+  const regenerateName = () => {
+    setName(generatedName);
+    setIsNameManuallyEdited(false);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -169,6 +241,9 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
 
       const payload: CreateProductRequest = {
         name: name.trim(),
+        product_type: productType.trim(),
+        kit_type: kitType.trim() || undefined,
+        preserve_name: isNameManuallyEdited,
         description: description.trim() || undefined,
         team: team.trim(),
         league: league.trim(),
@@ -199,19 +274,41 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
 
   return (
     <Form onSubmit={handleSubmit} spacing="md">
-      <Div spacing="md">
-        <FormField htmlFor="name" label={<AdminProductNameFieldLabel />}>
-          <Input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            placeholder="Camiseta Titular Inter Milan 2010 Versión Retro"
-            disabled={isSubmitting}
-          />
-        </FormField>
-      </Div>
+      <AdminProductIdentityFields
+        idPrefix="add"
+        disabled={isSubmitting}
+        name={name}
+        onNameChange={handleNameChange}
+        onRegenerateName={regenerateName}
+        isNameManuallyEdited={isNameManuallyEdited}
+        productType={productType}
+        productTypeOptions={productOptions.productTypes}
+        isCustomProductType={isCustomProductType}
+        onProductTypeChange={handleProductTypeChange}
+        onCustomProductTypeChange={setIsCustomProductType}
+        kitType={kitType}
+        kitTypeOptions={productOptions.kitTypes}
+        isCustomKitType={isCustomKitType}
+        onKitTypeChange={handleKitTypeChange}
+        onCustomKitTypeChange={setIsCustomKitType}
+        team={team}
+        teamOptions={productOptions.teams}
+        isCustomTeam={isCustomTeam}
+        onTeamChange={handleTeamChange}
+        onCustomTeamChange={setIsCustomTeam}
+        league={league}
+        leagueOptions={productOptions.leagues}
+        isCustomLeague={isCustomLeague}
+        onLeagueChange={setLeague}
+        onCustomLeagueChange={setIsCustomLeague}
+        season={season}
+        seasonOptions={productOptions.seasons}
+        isCustomSeason={isCustomSeason}
+        onSeasonChange={handleSeasonChange}
+        onCustomSeasonChange={setIsCustomSeason}
+        shirtType={shirtType}
+        onShirtTypeChange={handleShirtTypeChange}
+      />
 
       <Div spacing="md">
         <FormField htmlFor="description" label="Descripción">
@@ -223,68 +320,6 @@ export default function AdminProductForm({ onSuccess, onCancel }: AdminProductFo
           />
         </FormField>
       </Div>
-
-      <Box display="flex" gap="4" className="flex-wrap">
-        <Div spacing="md" className="flex-1 min-w-[200px]">
-          <ProductOptionSelect
-            id="team"
-            label="Equipo"
-            value={team}
-            options={productOptions.teams}
-            isCustom={isCustomTeam}
-            onChange={setTeam}
-            onCustomChange={setIsCustomTeam}
-            customPlaceholder="Ingresá el equipo"
-            required
-          />
-        </Div>
-        <Div spacing="md" className="flex-1 min-w-[200px]">
-          <ProductOptionSelect
-            id="league"
-            label="Liga"
-            value={league}
-            options={productOptions.leagues}
-            isCustom={isCustomLeague}
-            onChange={setLeague}
-            onCustomChange={setIsCustomLeague}
-            customPlaceholder="Ingresá la liga"
-            required
-          />
-        </Div>
-      </Box>
-
-      <Box display="flex" gap="4" className="flex-wrap">
-        <Div spacing="md" className="flex-1 min-w-[120px]">
-          <FormField htmlFor="season" label="Temporada" required>
-            <Input
-              id="season"
-              type="text"
-              value={season}
-              onChange={(e) => setSeason(e.target.value)}
-              placeholder="24/25"
-              required
-              disabled={isSubmitting}
-            />
-          </FormField>
-        </Div>
-        <Div spacing="md" className="flex-1 min-w-[120px]">
-          <FormField htmlFor="shirt-type" label="Versión" required>
-            <Select
-              id="shirt-type"
-              value={shirtType}
-              onChange={(e) => setShirtType(e.target.value as ShirtType)}
-              required
-              disabled={isSubmitting}
-            >
-              {SHIRT_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        </Div>
-      </Box>
 
       <Div spacing="md">
         <ProductSizeStockFields

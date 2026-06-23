@@ -23,6 +23,7 @@ import AdminTextLink from "@/components/admin/AdminTextLink";
 import AdminSupplierOrderStatusBadge from "@/components/admin/AdminSupplierOrderStatusBadge";
 import AdminSupplierOrderTrackingCell from "@/components/admin/AdminSupplierOrderTrackingCell";
 import type { SupplierOrder } from "@/lib/api";
+import { getSupplierOrderTotal } from "@/lib/supplier-order-costs";
 import { formatSaleDateDisplay } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
 
@@ -78,10 +79,6 @@ function getOrderItemsLabel(order: SupplierOrder): string {
   const itemCount = order.items.length;
   const quantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
   return `${itemCount} ${itemCount === 1 ? "ítem" : "ítems"} · ${quantity} uds.`;
-}
-
-function getOrderTotal(order: SupplierOrder): number {
-  return order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 }
 
 export default function AdminSupplierOrdersTable({
@@ -177,7 +174,7 @@ export default function AdminSupplierOrdersTable({
                       <AdminSupplierOrderStatusBadge status={order.status} size="sm" />
                     </span>
                   }
-                  right={formatPrice(getOrderTotal(order))}
+                  right={formatPrice(getSupplierOrderTotal(order))}
                 />
                 <AdminTableMobileSubtext>
                   {formatSaleDateDisplay(order.created_at)} · {getOrderItemsLabel(order)}
@@ -233,7 +230,7 @@ export default function AdminSupplierOrdersTable({
                   </td>
                   <td className={cellClass}>
                     <Typography variant="body2" className="whitespace-nowrap tabular-nums">
-                      {formatPrice(getOrderTotal(order))}
+                      {formatPrice(getSupplierOrderTotal(order))}
                     </Typography>
                   </td>
                   {hasActions && (

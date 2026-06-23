@@ -1,5 +1,5 @@
 import type { SupplierOrderLineItem } from "@/lib/api";
-import { compareSizeLabels } from "@/lib/product-inventory";
+import { sortSizeEntries, sortSizeLabels, sortSizeLabelText } from "@/lib/product-inventory";
 
 function newRowId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -23,13 +23,12 @@ export function formatSupplierOrderSizesDisplay(
   sizesFallback?: string
 ): string {
   if (quantityBySizes && Object.keys(quantityBySizes).length > 0) {
-    return Object.entries(quantityBySizes)
-      .sort(([a], [b]) => compareSizeLabels(a, b))
+    return sortSizeEntries(Object.entries(quantityBySizes))
       .map(([size, quantity]) => (quantity === 1 ? size : `${size} (${quantity})`))
       .join(", ");
   }
 
-  return sizesFallback?.trim() || "—";
+  return sizesFallback?.trim() ? sortSizeLabelText(sizesFallback) : "—";
 }
 
 export function getSupplierOrderLineItemQuantity(
@@ -47,13 +46,12 @@ export function getSupplierOrderSizeQuantityEntries(
   item: Pick<SupplierOrderLineItem, "quantity" | "sizes" | "quantity_by_sizes">
 ): [string, number][] {
   if (item.quantity_by_sizes && Object.keys(item.quantity_by_sizes).length > 0) {
-    return Object.entries(item.quantity_by_sizes)
-      .sort(([a], [b]) => compareSizeLabels(a, b))
+    return sortSizeEntries(Object.entries(item.quantity_by_sizes))
       .map(([size, quantity]) => [size, quantity] as [string, number]);
   }
 
   if (item.sizes?.trim()) {
-    return [[item.sizes.trim(), item.quantity]];
+    return [[sortSizeLabelText(item.sizes), item.quantity]];
   }
 
   return [];
@@ -63,8 +61,7 @@ export function sizeRowsFromLineItem(
   item: Pick<SupplierOrderLineItem, "quantity" | "sizes" | "quantity_by_sizes">
 ): SupplierOrderSizeQuantityRow[] {
   if (item.quantity_by_sizes && Object.keys(item.quantity_by_sizes).length > 0) {
-    return Object.entries(item.quantity_by_sizes)
-      .sort(([a], [b]) => compareSizeLabels(a, b))
+    return sortSizeEntries(Object.entries(item.quantity_by_sizes))
       .map(([size, quantity]) => ({
         id: newRowId(),
         size,
@@ -76,7 +73,7 @@ export function sizeRowsFromLineItem(
     return [
       {
         id: newRowId(),
-        size: item.sizes.trim(),
+        size: sortSizeLabelText(item.sizes),
         quantity: String(item.quantity),
       },
     ];
@@ -111,11 +108,18 @@ export function sizeRowsToPayload(
 
   if (Object.keys(quantityBySizes).length === 0) return null;
 
-  const quantity = Object.values(quantityBySizes).reduce((sum, value) => sum + value, 0);
+  const sortedSizes = sortSizeLabels(Object.keys(quantityBySizes));
+  const sortedQuantityBySizes: Record<string, number> = {};
+
+  for (const size of sortedSizes) {
+    sortedQuantityBySizes[size] = quantityBySizes[size];
+  }
+
+  const quantity = Object.values(sortedQuantityBySizes).reduce((sum, value) => sum + value, 0);
 
   return {
-    quantity_by_sizes: quantityBySizes,
+    quantity_by_sizes: sortedQuantityBySizes,
     quantity,
-    sizes: formatSupplierOrderSizesDisplay(quantityBySizes),
+    sizes: formatSupplierOrderSizesDisplay(sortedQuantityBySizes),
   };
 }

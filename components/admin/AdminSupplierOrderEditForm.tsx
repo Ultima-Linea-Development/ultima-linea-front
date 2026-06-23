@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Box from "@/components/layout/Box";
 import Form from "@/components/ui/Form";
 import Input from "@/components/ui/Input";
+import CurrencyInput from "@/components/ui/CurrencyInput";
 import FormField from "@/components/ui/FormField";
 import Textarea from "@/components/ui/Textarea";
 import Typography from "@/components/ui/Typography";
@@ -43,6 +44,13 @@ import {
   validateSupplierOrderMilestoneDates,
   type SupplierOrderMilestoneDates,
 } from "@/lib/supplier-order-dates";
+import {
+  allocateSupplierOrderPrices,
+  getSupplierOrderFixedPriceSubtotal,
+  normalizeSupplierOrderPriceValue,
+  parseSupplierOrderTotalPaid,
+} from "@/lib/supplier-order-price-allocation";
+import { parseSupplierOrderOptionalCost } from "@/lib/supplier-order-costs";
 import { saleDateInputToApiValue, saleDateIsoToDisplayValue } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
 
@@ -79,6 +87,7 @@ function orderItemToDraft(
     description: item.description ?? "",
     link: item.link ?? "",
     price: String(item.price),
+    isCustomPrice: true,
   };
 }
 
@@ -156,6 +165,11 @@ export default function AdminSupplierOrderEditForm({
   const [notes, setNotes] = useState(order.notes ?? "");
   const [trackingNumber, setTrackingNumber] = useState(order.tracking_number ?? "");
   const [trackingLink, setTrackingLink] = useState(order.tracking_link ?? "");
+  const [totalPaid, setTotalPaid] = useState(() =>
+    String(order.items.reduce((sum, item) => sum + item.price * item.quantity, 0))
+  );
+  const [taxCost, setTaxCost] = useState(() => String(order.tax_cost ?? ""));
+  const [shippingCost, setShippingCost] = useState(() => String(order.shipping_cost ?? ""));
   const [milestoneDates, setMilestoneDates] = useState<SupplierOrderMilestoneDates>(() =>
     orderMilestoneDatesFromOrder(order)
   );
@@ -186,18 +200,37 @@ export default function AdminSupplierOrderEditForm({
     () => lineItems.reduce((sum, item) => sum + getSupplierOrderLineItemDraftTotal(item), 0),
     [lineItems]
   );
+  const parsedTotalPaid = parseSupplierOrderTotalPaid(totalPaid);
+  const parsedTaxCost = parseSupplierOrderOptionalCost(taxCost);
+  const parsedShippingCost = parseSupplierOrderOptionalCost(shippingCost);
+  const isPriceAllocationEnabled = parsedTotalPaid !== null;
 
   const updateLineItem = (
     key: string,
     updates: Partial<Omit<SupplierOrderLineItemDraft, "key">>
   ) => {
     setLineItems((prev) =>
-      prev.map((item) => (item.key === key ? { ...item, ...updates } : item))
+      allocateSupplierOrderPrices(
+        prev.map((item) => (item.key === key ? { ...item, ...updates } : item)),
+        totalPaid
+      )
     );
   };
 
   const removeLineItem = (key: string) => {
-    setLineItems((prev) => prev.filter((item) => item.key !== key));
+    setLineItems((prev) => allocateSupplierOrderPrices(prev.filter((item) => item.key !== key), totalPaid));
+  };
+
+  const addLineItem = () => {
+    setLineItems((prev) =>
+      allocateSupplierOrderPrices([createEmptySupplierOrderLineItemDraft(), ...prev], totalPaid)
+    );
+  };
+
+  const handleTotalPaidChange = (value: string) => {
+    const nextTotalPaid = normalizeSupplierOrderPriceValue(value);
+    setTotalPaid(nextTotalPaid);
+    setLineItems((prev) => allocateSupplierOrderPrices(prev, nextTotalPaid));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -215,7 +248,31 @@ export default function AdminSupplierOrderEditForm({
       return;
     }
 
-    const itemsError = validateLineItems(lineItems);
+    if (totalPaid.trim() && parsedTotalPaid === null) {
+      onError("Total pagado inválido.");
+      return;
+    }
+
+    if (taxCost.trim() && parsedTaxCost === null) {
+      onError("Costo de impuesto inválido.");
+      return;
+    }
+
+    if (shippingCost.trim() && parsedShippingCost === null) {
+      onError("Costo de envío inválido.");
+      return;
+    }
+
+    if (
+      parsedTotalPaid !== null &&
+      getSupplierOrderFixedPriceSubtotal(lineItems) > parsedTotalPaid
+    ) {
+      onError("El total pagado no alcanza para los precios diferenciados.");
+      return;
+    }
+
+    const finalLineItems = allocateSupplierOrderPrices(lineItems, totalPaid);
+    const itemsError = validateLineItems(finalLineItems);
     if (itemsError) {
       onError(itemsError);
       return;
@@ -248,9 +305,11 @@ export default function AdminSupplierOrderEditForm({
       notes: notes.trim(),
       tracking_number: trackingNumber.trim(),
       tracking_link: normalizedTrackingLink ?? "",
+      tax_cost: parsedTaxCost,
+      shipping_cost: parsedShippingCost,
       ...supplierValueToPayload(supplierValue),
       ...supplierOrderMilestoneDatesToUpdatePayload(milestoneDates),
-      items: lineItems.map(draftToRequestItem),
+      items: finalLineItems.map(draftToRequestItem),
     });
   };
 
@@ -338,9 +397,7 @@ export default function AdminSupplierOrderEditForm({
             <Button
               type="button"
               variant="outline"
-              onClick={() =>
-                setLineItems((prev) => [...prev, createEmptySupplierOrderLineItemDraft()])
-              }
+              onClick={addLineItem}
               disabled={isSubmitting}
             >
               Agregar ítem
@@ -354,6 +411,7 @@ export default function AdminSupplierOrderEditForm({
               products={products}
               sizeOptions={sizeOptions}
               isSubmitting={isSubmitting}
+              isPriceAllocationEnabled={isPriceAllocationEnabled}
               onChange={updateLineItem}
               onRemove={removeLineItem}
             />
@@ -363,6 +421,41 @@ export default function AdminSupplierOrderEditForm({
         <Typography variant="body" className="text-right">
           Total estimado: {formatPrice(orderTotal)}
         </Typography>
+
+        <Box display="flex" direction="col" gap="3" align="stretch" className="w-full min-w-0">
+          <FormField htmlFor="edit-order-total-paid" label="Total pagado" className={fieldLabelClassName}>
+            <CurrencyInput
+              id="edit-order-total-paid"
+              value={totalPaid}
+              onChange={handleTotalPaidChange}
+              disabled={isSubmitting}
+            />
+          </FormField>
+
+          <div className="grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            <div className="min-w-0 w-full">
+              <FormField htmlFor="edit-order-tax-cost" label="Costo de impuesto" className={fieldLabelClassName}>
+                <CurrencyInput
+                  id="edit-order-tax-cost"
+                  value={taxCost}
+                  onChange={setTaxCost}
+                  disabled={isSubmitting}
+                />
+              </FormField>
+            </div>
+
+            <div className="min-w-0 w-full">
+              <FormField htmlFor="edit-order-shipping-cost" label="Costo de envío" className={fieldLabelClassName}>
+                <CurrencyInput
+                  id="edit-order-shipping-cost"
+                  value={shippingCost}
+                  onChange={setShippingCost}
+                  disabled={isSubmitting}
+                />
+              </FormField>
+            </div>
+          </div>
+        </Box>
 
         <Box display="flex" gap="3" className="justify-end flex-wrap">
           {onCancel && (

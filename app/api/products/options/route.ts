@@ -2,8 +2,19 @@ import { NextResponse } from "next/server";
 import { ensureIndexes, getProductsCollection } from "@/lib/server/db";
 import type { ProductDocument } from "@/lib/server/models";
 import { jsonError } from "@/lib/server/auth-middleware";
+import { compareSizeLabels } from "@/lib/product-inventory";
+import {
+  DEFAULT_KIT_TYPE_OPTIONS,
+  DEFAULT_PRODUCT_TYPE_OPTIONS,
+  extractKitTypeFromName,
+  extractProductTypeFromName,
+} from "@/lib/product-name";
 
-function normalizeOptions(values: unknown[]): string[] {
+function normalizeOptions(
+  values: unknown[],
+  compare: (a: string, b: string) => number = (a, b) =>
+    a.localeCompare(b, "es", { sensitivity: "base" })
+): string[] {
   const seen = new Set<string>();
 
   return values
@@ -17,7 +28,7 @@ function normalizeOptions(values: unknown[]): string[] {
       seen.add(key);
       return true;
     })
-    .sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+    .sort(compare);
 }
 
 export async function GET() {
@@ -25,16 +36,31 @@ export async function GET() {
     await ensureIndexes();
 
     const collection = await getProductsCollection<ProductDocument>();
-    const [teams, leagues, sizes] = await Promise.all([
+    const [teams, leagues, sizes, products] = await Promise.all([
       collection.distinct("team", { is_active: true }),
       collection.distinct("league", { is_active: true }),
       collection.distinct("sizes", { is_active: true }),
+      collection
+        .find(
+          { is_active: true },
+          { projection: { name: 1, season: 1 } }
+        )
+        .toArray(),
     ]);
 
     return NextResponse.json({
       teams: normalizeOptions(teams),
       leagues: normalizeOptions(leagues),
-      sizes: normalizeOptions(sizes),
+      sizes: normalizeOptions(sizes, compareSizeLabels),
+      seasons: normalizeOptions(products.map((product) => product.season)),
+      productTypes: normalizeOptions([
+        ...DEFAULT_PRODUCT_TYPE_OPTIONS,
+        ...products.map((product) => extractProductTypeFromName(product.name)),
+      ]),
+      kitTypes: normalizeOptions([
+        ...DEFAULT_KIT_TYPE_OPTIONS,
+        ...products.map((product) => extractKitTypeFromName(product.name)),
+      ]),
     });
   } catch {
     return jsonError("Failed to fetch product options", 500);

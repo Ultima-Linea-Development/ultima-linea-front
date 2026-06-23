@@ -1,5 +1,5 @@
 import type { Sale, SaleLineItem } from "@/lib/api";
-import { compareSizeLabels } from "@/lib/product-inventory";
+import { sortSizeEntries, sortSizeLabels } from "@/lib/product-inventory";
 
 type LegacySaleFields = {
   product_id?: string;
@@ -75,7 +75,7 @@ export function formatSaleSizesLabel(sale: LegacySaleFields): string {
   const items = getSaleLineItems(sale);
   if (items.length === 0) return "—";
 
-  const sizes = [...new Set(items.map((item) => item.size).filter(Boolean))];
+  const sizes = sortSizeLabels([...new Set(items.map((item) => item.size).filter(Boolean))]);
   if (sizes.length === 0) return "—";
   if (sizes.length === 1) return sizes[0];
 
@@ -95,7 +95,7 @@ export function getSaleSizeQuantityEntries(sale: LegacySaleFields): [string, num
     bySize.set(size, (bySize.get(size) ?? 0) + item.quantity);
   }
 
-  return [...bySize.entries()].sort(([a], [b]) => compareSizeLabels(a, b));
+  return sortSizeEntries([...bySize.entries()]);
 }
 
 export function saleMatchesQuery(sale: Sale, query: string): boolean {

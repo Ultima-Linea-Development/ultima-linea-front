@@ -5,9 +5,10 @@ import Box from "@/components/layout/Box";
 import Typography from "@/components/ui/Typography";
 import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
+import CurrencyInput from "@/components/ui/CurrencyInput";
 import { Button } from "@/components/ui/button";
 import Icon from "@/components/ui/Icons";
-import { emptySizeStockRow, type SizeStockRow } from "@/lib/product-inventory";
+import { emptySizeStockRow, sortSizeLabels, type SizeStockRow } from "@/lib/product-inventory";
 import ProductOptionSelect from "@/components/admin/ProductOptionSelect";
 import { adminIconTriggerClassName } from "@/lib/admin-interactive-styles";
 import { cn } from "@/lib/utils";
@@ -44,16 +45,18 @@ export default function ProductSizeStockFields({
   const normalizedSizeOptions = useMemo(() => {
     const seen = new Set<string>();
 
-    return sizeOptions
-      .map((option) => option.trim())
-      .filter(Boolean)
-      .filter((option) => {
-        const key = option.toLocaleLowerCase();
-        if (seen.has(key)) return false;
+    return sortSizeLabels(
+      sizeOptions
+        .map((option) => option.trim())
+        .filter(Boolean)
+        .filter((option) => {
+          const key = option.toLocaleLowerCase();
+          if (seen.has(key)) return false;
 
-        seen.add(key);
-        return true;
-      });
+          seen.add(key);
+          return true;
+        })
+    );
   }, [sizeOptions]);
 
   const addRow = () => onRowsChange([...rows, emptySizeStockRow()]);
@@ -171,14 +174,11 @@ export default function ProductSizeStockFields({
         {priceField ? (
           <div className="min-w-[200px]">
             <FormField htmlFor={priceField.id} label="Precio" required={required}>
-              <Input
+              <CurrencyInput
                 id={priceField.id}
-                type="number"
-                min={0}
                 value={priceField.value}
-                onChange={(e) => priceField.onChange(e.target.value)}
+                onChange={priceField.onChange}
                 disabled={disabled}
-                placeholder="50000"
                 required={required}
               />
             </FormField>

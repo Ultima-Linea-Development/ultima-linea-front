@@ -2,8 +2,12 @@ import { cn } from "@/lib/utils";
 import { formControlFocusClassName, formControlSizeClassName } from "@/lib/form-field-classes";
 import {
   forwardRef,
+  useEffect,
+  useRef,
   type ButtonHTMLAttributes,
+  type ForwardedRef,
   type InputHTMLAttributes,
+  type MutableRefObject,
   type ReactNode,
 } from "react";
 
@@ -77,6 +81,20 @@ export function InputAdornment({
   );
 }
 
+function assignInputRef(
+  ref: ForwardedRef<HTMLInputElement>,
+  node: HTMLInputElement | null
+) {
+  if (typeof ref === "function") {
+    ref(node);
+    return;
+  }
+
+  if (ref) {
+    (ref as MutableRefObject<HTMLInputElement | null>).current = node;
+  }
+}
+
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
@@ -87,12 +105,26 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       size = "sm",
       startIcon,
       endIcon,
+      type,
       ...props
     },
     ref
   ) => {
+    const inputRef = useRef<HTMLInputElement | null>(null);
     const hasStartIcon = Boolean(startIcon);
     const hasEndIcon = Boolean(endIcon);
+
+    useEffect(() => {
+      const input = inputRef.current;
+      if (!input || type !== "number") return;
+
+      const preventNumberWheel = (event: WheelEvent) => {
+        event.preventDefault();
+      };
+
+      input.addEventListener("wheel", preventNumberWheel, { passive: false });
+      return () => input.removeEventListener("wheel", preventNumberWheel);
+    }, [type]);
 
     return (
       <div className={cn("relative", widthStyles[width])}>
@@ -100,7 +132,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <span className={cn(adornmentClassName, "left-2")}>{startIcon}</span>
         ) : null}
         <input
-          ref={ref}
+          ref={(node) => {
+            inputRef.current = node;
+            assignInputRef(ref, node);
+          }}
+          type={type}
           className={cn(
             formControlSizeClassName,
             widthStyles[width],
@@ -110,7 +146,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             hasEndIcon && "pr-10",
             backgroundStyles[background],
             size && sizeStyles[size as InputSize],
-            formControlFocusClassName
+            formControlFocusClassName,
+            type === "number" &&
+              "[appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
           )}
           {...props}
         />

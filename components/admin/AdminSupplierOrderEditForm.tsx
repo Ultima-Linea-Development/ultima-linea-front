@@ -120,7 +120,7 @@ function orderItemToDraft(
     description: item.description ?? "",
     link: item.link ?? "",
     price: String(item.price),
-    isCustomPrice: true,
+    isCustomPrice: false,
   };
 }
 

@@ -9,6 +9,9 @@ concurrency:
   group: deploy-main
   cancel-in-progress: true
 
+env:
+  DOCKER_IMAGE: ultima-linea-front:latest
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -29,32 +32,54 @@ jobs:
           COMPOSE_DOCKER_CLI_BUILD: 1
         run: docker compose build
 
-      - name: Setup SSH key
+      - name: Setup SSH
         shell: bash
         run: |
           printf '%s\n' "$VPS_SSH_KEY" > "$SSH_KEY_PATH"
           chmod 600 "$SSH_KEY_PATH"
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          : > "$KNOWN_HOSTS"
+          if ! ssh-keyscan -T 20 -p "$VPS_PORT" -t rsa,ecdsa,ed25519 "$VPS_HOST" >> "$KNOWN_HOSTS"; then
+            echo "ssh-keyscan failed for $VPS_HOST:$VPS_PORT"
+            exit 1
+          fi
+          if [[ ! -s "$KNOWN_HOSTS" ]]; then
+            echo "No host keys received from $VPS_HOST:$VPS_PORT"
+            exit 1
+          fi
+          chmod 644 "$KNOWN_HOSTS"
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           SSH_KEY_PATH: ${{ runner.temp }}/deploy_key
+          KNOWN_HOSTS: ${{ runner.temp }}/known_hosts
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
 
       - name: Transfer image to VPS
+        id: transfer
+        continue-on-error: true
         shell: bash
         run: |
-          ssh -i "$SSH_KEY_PATH" -p "$VPS_PORT" -o StrictHostKeyChecking=yes \
-            "$VPS_USER@$VPS_HOST" 'docker image prune -f --filter "until=24h" || true'
-          docker save ultima-linea-front:latest | gzip -1 | \
-            ssh -i "$SSH_KEY_PATH" -p "$VPS_PORT" -o StrictHostKeyChecking=yes \
-            "$VPS_USER@$VPS_HOST" 'gunzip | docker load'
+          SSH_OPTS=(
+            -i "$SSH_KEY_PATH"
+            -p "$VPS_PORT"
+            -o "UserKnownHostsFile=$KNOWN_HOSTS"
+            -o StrictHostKeyChecking=yes
+            -o ConnectTimeout=30
+          )
+
+          ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_HOST" \
+            'docker image prune -f --filter "until=24h" || true'
+
+          docker save "$DOCKER_IMAGE" | gzip -1 | \
+            ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_HOST" 'gunzip | docker load'
         env:
           SSH_KEY_PATH: ${{ runner.temp }}/deploy_key
+          KNOWN_HOSTS: ${{ runner.temp }}/known_hosts
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
+          DOCKER_IMAGE: ultima-linea-front:latest
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.2.0
@@ -67,7 +92,7 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          SKIP_DOCKER_BUILD: "1"
+          SKIP_DOCKER_BUILD: ${{ steps.transfer.outcome == 'success' && '1' || '0' }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -75,7 +100,7 @@ jobs:
           key_path: ${{ runner.temp }}/deploy_key
           timeout: 120s
           script_stop: true
-          command_timeout: 15m
+          command_timeout: 20m
           envs: MONGODB_URI,MONGODB_DATABASE,JWT_SECRET,NEXT_PUBLIC_SITE_URL,NODE_ENV,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,SKIP_DOCKER_BUILD
           script: |
             cd /srv/ultima-linea-front
@@ -84,7 +109,14 @@ jobs:
             git pull origin main
             bash scripts/deploy.sh
 
-      - name: Remove SSH key
+      - name: Fail if transfer and deploy failed
+        if: steps.transfer.outcome == 'failure'
+        shell: bash
+        run: |
+          echo "::warning::Image transfer failed; deploy continued with on-server build fallback."
+
+      - name: Remove SSH artifacts
         if: always()
         shell: bash
-        run: rm -f "${{ runner.temp }}/deploy_key"
+        run: |
+          rm -f "${{ runner.temp }}/deploy_key" "${{ runner.temp }}/known_hosts"

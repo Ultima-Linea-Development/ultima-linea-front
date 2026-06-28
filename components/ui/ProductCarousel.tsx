@@ -25,34 +25,52 @@ export default function ProductCarousel({
   seeAllHref,
   className,
 }: ProductCarouselProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const [canScrollPrev, setCanScrollPrev] = React.useState(false);
   const [canScrollNext, setCanScrollNext] = React.useState(false);
+  const [navTopPx, setNavTopPx] = React.useState<number | null>(null);
 
-  const updateScrollState = React.useCallback(() => {
+  const updateCarouselMetrics = React.useCallback(() => {
+    const container = containerRef.current;
     const element = scrollRef.current;
     if (!element) return;
 
     const maxScrollLeft = element.scrollWidth - element.clientWidth;
     setCanScrollPrev(element.scrollLeft > 1);
     setCanScrollNext(element.scrollLeft < maxScrollLeft - 1);
+
+    if (!container) return;
+
+    const firstItem = element.querySelector(":scope > div");
+    const imageArea = firstItem?.querySelector(".aspect-square");
+    if (!(imageArea instanceof HTMLElement)) {
+      setNavTopPx(null);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const imageRect = imageArea.getBoundingClientRect();
+    setNavTopPx(imageRect.top - containerRect.top + imageRect.height / 2);
   }, []);
 
   React.useEffect(() => {
     const element = scrollRef.current;
+    const container = containerRef.current;
     if (!element) return;
 
-    updateScrollState();
+    updateCarouselMetrics();
 
-    element.addEventListener("scroll", updateScrollState, { passive: true });
-    const resizeObserver = new ResizeObserver(updateScrollState);
+    element.addEventListener("scroll", updateCarouselMetrics, { passive: true });
+    const resizeObserver = new ResizeObserver(updateCarouselMetrics);
     resizeObserver.observe(element);
+    if (container) resizeObserver.observe(container);
 
     return () => {
-      element.removeEventListener("scroll", updateScrollState);
+      element.removeEventListener("scroll", updateCarouselMetrics);
       resizeObserver.disconnect();
     };
-  }, [products, updateScrollState]);
+  }, [products, updateCarouselMetrics]);
 
   const scrollByViewport = (direction: -1 | 1) => {
     const element = scrollRef.current;
@@ -87,7 +105,7 @@ export default function ProductCarousel({
         ) : null}
       </Box>
 
-      <div className="relative w-full min-w-0">
+      <div ref={containerRef} className="relative w-full min-w-0 px-5">
         {showNavigation ? (
           <>
             <Button
@@ -97,8 +115,11 @@ export default function ProductCarousel({
               disabled={!canScrollPrev}
               onClick={() => scrollByViewport(-1)}
               aria-label="Ver productos anteriores"
-              className="absolute left-0 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 bg-background shadow-sm sm:inline-flex"
-              style={{ zIndex: zIndex.dropdown }}
+              className="absolute left-5 inline-flex -translate-x-1/2 -translate-y-1/2 bg-background shadow-sm"
+              style={{
+                top: navTopPx ?? undefined,
+                zIndex: zIndex.dropdown,
+              }}
             >
               <Icon name="chevronLeft" aria-hidden />
             </Button>
@@ -109,8 +130,11 @@ export default function ProductCarousel({
               disabled={!canScrollNext}
               onClick={() => scrollByViewport(1)}
               aria-label="Ver más productos"
-              className="absolute right-0 top-1/2 hidden translate-x-1/2 -translate-y-1/2 bg-background shadow-sm sm:inline-flex"
-              style={{ zIndex: zIndex.dropdown }}
+              className="absolute right-5 inline-flex translate-x-1/2 -translate-y-1/2 bg-background shadow-sm"
+              style={{
+                top: navTopPx ?? undefined,
+                zIndex: zIndex.dropdown,
+              }}
             >
               <Icon name="chevronRight" aria-hidden />
             </Button>
@@ -138,37 +162,6 @@ export default function ProductCarousel({
             </div>
           ))}
         </div>
-
-        {showNavigation ? (
-          <Box
-            display="flex"
-            gap="2"
-            className="mt-3 items-center justify-center sm:hidden"
-          >
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!canScrollPrev}
-              onClick={() => scrollByViewport(-1)}
-              aria-label="Ver productos anteriores"
-            >
-              <Icon name="chevronLeft" aria-hidden />
-              Anterior
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!canScrollNext}
-              onClick={() => scrollByViewport(1)}
-              aria-label="Ver más productos"
-            >
-              Siguiente
-              <Icon name="chevronRight" aria-hidden />
-            </Button>
-          </Box>
-        ) : null}
       </div>
     </Box>
   );

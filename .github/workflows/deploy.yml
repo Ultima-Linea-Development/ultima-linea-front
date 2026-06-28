@@ -42,8 +42,6 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Setup SSH key
         shell: bash

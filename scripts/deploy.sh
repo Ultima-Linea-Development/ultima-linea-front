@@ -3,6 +3,7 @@ set -euo pipefail
 
 DEPLOY_DIR="${DEPLOY_DIR:-/srv/ultima-linea-front}"
 BRANCH="${DEPLOY_BRANCH:-main}"
+FRONT_IMAGE="${FRONT_IMAGE:-ghcr.io/ultima-linea-development/ultima-linea-web:latest}"
 
 cd "$DEPLOY_DIR"
 
@@ -16,16 +17,20 @@ if [[ -f scripts/sync-env.sh ]]; then
   bash scripts/sync-env.sh
 fi
 
-echo ">> Building containers..."
-echo ">> Disk: $(df -h / | awk 'NR==2 {print $4 " free of " $2}')"
-echo ">> Memory: $(free -m | awk '/^Mem:/{print $3 " MB used / " $2 " MB total"}')"
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
-export COMPOSE_BAKE=false
-docker compose build --progress=plain
+if [[ -z "${GHCR_PULL_TOKEN:-}" ]]; then
+  echo ">> ERROR: GHCR_PULL_TOKEN is required to pull the prebuilt image."
+  exit 1
+fi
+
+echo ">> Logging in to GHCR..."
+echo "$GHCR_PULL_TOKEN" | docker login ghcr.io -u "${GHCR_USERNAME:?}" --password-stdin
+
+echo ">> Pulling image ${FRONT_IMAGE}..."
+docker pull "$FRONT_IMAGE"
 
 echo ">> Restarting containers..."
-docker compose up -d
+export FRONT_IMAGE
+docker compose up -d --no-build --pull never
 
 echo ">> Deploy complete."
 docker compose ps

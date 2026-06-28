@@ -1,5 +1,6 @@
 services:
   ultima_linea_front:
+    image: ${FRONT_IMAGE:-ghcr.io/ultima-linea-development/ultima-linea-web:latest}
     build:
       context: .
       dockerfile: Dockerfile

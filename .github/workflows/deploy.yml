@@ -12,6 +12,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Setup SSH key
         shell: bash
@@ -38,9 +39,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key_path: ${{ runner.temp }}/deploy_key
-          timeout: 120s
+          timeout: 60s
           script_stop: true
-          command_timeout: 30m
+          command_timeout: 90m
           envs: MONGODB_URI,MONGODB_DATABASE,JWT_SECRET,NEXT_PUBLIC_SITE_URL,NODE_ENV,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET
           script: |
             cd /srv/ultima-linea-front

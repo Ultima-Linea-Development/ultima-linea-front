@@ -17,9 +17,12 @@ if [[ -f scripts/sync-env.sh ]]; then
 fi
 
 echo ">> Building containers..."
+echo ">> Disk: $(df -h / | awk 'NR==2 {print $4 " free of " $2}')"
+echo ">> Memory: $(free -m | awk '/^Mem:/{print $3 " MB used / " $2 " MB total"}')"
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
-docker compose build
+export COMPOSE_BAKE=false
+docker compose build --progress=plain
 
 echo ">> Restarting containers..."
 docker compose up -d

@@ -6,6 +6,8 @@ import HomeProducts from "./components/HomeProducts";
 import { Suspense } from "react";
 import Spinner from "@/components/ui/Spinner";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Última Línea - Camisetas de Fútbol Retro y Actuales en Argentina",
   description:

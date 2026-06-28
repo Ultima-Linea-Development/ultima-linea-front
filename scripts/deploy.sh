@@ -10,7 +10,7 @@ cd "$DEPLOY_DIR"
 echo ">> Pulling latest from origin/${BRANCH}..."
 git fetch origin "$BRANCH"
 git checkout "$BRANCH"
-git pull origin "$BRANCH"
+git reset --hard "origin/$BRANCH"
 
 if [[ -f scripts/sync-env.sh ]]; then
   echo ">> Syncing environment variables..."

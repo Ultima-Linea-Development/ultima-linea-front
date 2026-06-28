@@ -78,6 +78,9 @@ jobs:
           envs: MONGODB_URI,MONGODB_DATABASE,JWT_SECRET,NEXT_PUBLIC_SITE_URL,NODE_ENV,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,GHCR_USERNAME,GHCR_PULL_TOKEN,FRONT_IMAGE
           script: |
             cd /srv/ultima-linea-front
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
             bash scripts/deploy.sh
 
       - name: Remove SSH key

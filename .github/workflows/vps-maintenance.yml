@@ -41,6 +41,13 @@ jobs:
           timeout: 60s
           command_timeout: 18m
           script: |
+            echo ">> Emergencia: detener builds colgados antes de git pull"
+            pkill -TERM -f "docker compose build" 2>/dev/null || true
+            pkill -TERM -f "docker-buildx bake" 2>/dev/null || true
+            sleep 2
+            pkill -KILL -f "docker compose build" 2>/dev/null || true
+            pkill -KILL -f "docker-buildx bake" 2>/dev/null || true
+            docker builder prune -af 2>/dev/null || true
             cd /srv/ultima-linea-front
             git fetch origin main
             git checkout main

@@ -17,6 +17,7 @@ import AdminSupplierOrderLineItemRow, {
   getSupplierOrderLineItemIdentityRequestFields,
   getSupplierOrderLineItemDraftTotal,
   getSupplierOrderLineItemReservationRequestFields,
+  lineItemDraftHasReservationEnabled,
   validateSupplierOrderLineItemIdentity,
   type SupplierOrderLineItemDraft,
 } from "@/components/admin/AdminSupplierOrderLineItemRow";
@@ -45,7 +46,7 @@ import {
   validateCommissionSellerValue,
 } from "@/lib/commission-seller";
 import { type SaleSellerFormValue } from "@/lib/sale-seller";
-import { sizeRowsFromLineItem, sizeRowsToPayload } from "@/lib/supplier-order-sizes";
+import { sizeRowsFromLineItem, sizeRowsToPayload, reservationRowsFromLineItem } from "@/lib/supplier-order-sizes";
 import { saleDateInputToApiValue, saleDateIsoToDisplayValue } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
 import { getSaleSellerLabel } from "@/lib/sale-seller";
@@ -106,12 +107,13 @@ function commissionItemToDraft(
     isCustomProduct: !item.product_id && !matchedProduct,
     type: item.type,
     sizeRows: sizeRowsFromLineItem(item),
+    reservationRows: reservationRowsFromLineItem(item),
     dorsal: item.dorsal ?? "",
     description: item.description ?? "",
     link: item.link ?? "",
     price: String(item.price),
     isCustomPrice: true,
-    reserved: Boolean(item.reserved),
+    reserveProduct: Boolean(item.reserved),
     reservationSellerValue: createLineItemReservationSellerValue(
       {
         reservationSellerValue: createDefaultCommissionSellerValue(currentUserId),

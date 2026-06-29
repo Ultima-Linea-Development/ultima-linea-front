@@ -45,6 +45,8 @@ export type SupplierOrderLineItemInput = {
   price?: number;
   ordered?: boolean;
   reserved?: boolean;
+  reserved_sizes?: string[];
+  reserved_quantity_by_sizes?: Record<string, number>;
   reserved_seller_type?: SaleSellerType;
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;
@@ -143,6 +145,35 @@ export function applySupplierOrderDateField(
   }
 }
 
+function parseReservedQuantityBySizes(
+  value: Record<string, number> | undefined
+): Record<string, number> | null {
+  if (!value || typeof value !== "object") return null;
+
+  const parsed: Record<string, number> = {};
+
+  for (const [size, quantity] of Object.entries(value)) {
+    const trimmedSize = size.trim();
+    const numericQuantity = Number(quantity);
+
+    if (!trimmedSize) continue;
+    if (!Number.isInteger(numericQuantity) || numericQuantity <= 0) return null;
+
+    const key = trimmedSize.toLocaleLowerCase();
+    const existing = Object.entries(parsed).find(
+      ([existingSize]) => existingSize.toLocaleLowerCase() === key
+    );
+
+    if (existing) {
+      parsed[existing[0]] += numericQuantity;
+    } else {
+      parsed[trimmedSize] = numericQuantity;
+    }
+  }
+
+  return Object.keys(parsed).length > 0 ? parsed : null;
+}
+
 export function parseSupplierOrderLineItems(
   items: SupplierOrderLineItemInput[] | undefined
 ): { items: Array<SupplierOrderLineItem & LineItemReservationInput> } | { error: string } {
@@ -211,6 +242,11 @@ export function parseSupplierOrderLineItems(
       price,
       ordered: Boolean(item.ordered),
       reserved: Boolean(item.reserved),
+      reserved_sizes: Array.isArray(item.reserved_sizes)
+        ? item.reserved_sizes.map((size) => size.trim()).filter(Boolean)
+        : undefined,
+      reserved_quantity_by_sizes:
+        parseReservedQuantityBySizes(item.reserved_quantity_by_sizes) ?? undefined,
       reserved_seller_type: item.reserved_seller_type,
       reserved_for_user_id: trimOptional(item.reserved_for_user_id),
       reserved_for_external_seller_id: trimOptional(item.reserved_for_external_seller_id),

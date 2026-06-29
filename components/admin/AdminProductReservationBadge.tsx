@@ -1,16 +1,21 @@
 "use client";
 
 import Typography from "@/components/ui/Typography";
-import type { ExternalSeller, SaleAssignableUser } from "@/lib/api";
-import { getProductReservationLabel, isProductReserved } from "@/lib/product-reservation";
+import type { ExternalSeller, Product, SaleAssignableUser } from "@/lib/api";
+import {
+  getProductReservationSummary,
+  isProductReserved,
+} from "@/lib/product-reservation";
 import { cn } from "@/lib/utils";
 
 type AdminProductReservationBadgeProps = {
-  product: {
-    reserved_for_user_id?: string;
-    reserved_for_external_seller_id?: string;
-    reserved_for_external_seller_name?: string;
-  };
+  product: Pick<
+    Product,
+    | "reserved_by_sizes"
+    | "reserved_for_user_id"
+    | "reserved_for_external_seller_id"
+    | "reserved_for_external_seller_name"
+  >;
   assignableUsers?: SaleAssignableUser[];
   externalSellers?: ExternalSeller[];
   size?: "sm" | "md";
@@ -31,7 +36,7 @@ export default function AdminProductReservationBadge({
 }: AdminProductReservationBadgeProps) {
   if (!isProductReserved(product)) return null;
 
-  const sellerLabel = getProductReservationLabel(product, assignableUsers, externalSellers);
+  const summary = getProductReservationSummary(product, assignableUsers, externalSellers);
 
   return (
     <span
@@ -40,10 +45,10 @@ export default function AdminProductReservationBadge({
         SIZE_CLASSES[size],
         className
       )}
-      title={`Reservado para ${sellerLabel}`}
+      title={summary ? `Reservado · ${summary}` : "Reservado"}
     >
       <Typography variant="caption" as="span" className="truncate">
-        Reservado · {sellerLabel}
+        Reservado{summary ? ` · ${summary}` : ""}
       </Typography>
     </span>
   );

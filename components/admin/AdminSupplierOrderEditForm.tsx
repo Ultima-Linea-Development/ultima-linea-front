@@ -20,6 +20,7 @@ import AdminSupplierOrderLineItemRow, {
   getSupplierOrderLineItemIdentityRequestFields,
   getSupplierOrderLineItemDraftTotal,
   getSupplierOrderLineItemReservationRequestFields,
+  lineItemDraftHasReservationEnabled,
   validateSupplierOrderLineItemIdentity,
   type SupplierOrderLineItemDraft,
 } from "@/components/admin/AdminSupplierOrderLineItemRow";
@@ -46,7 +47,7 @@ import {
   supplierValueToPayload,
   validateSupplierValue,
 } from "@/lib/supplier-field";
-import { sizeRowsFromLineItem, sizeRowsToPayload } from "@/lib/supplier-order-sizes";
+import { sizeRowsFromLineItem, sizeRowsToPayload, reservationRowsFromLineItem } from "@/lib/supplier-order-sizes";
 import {
   SUPPLIER_ORDER_STATUS_OPTIONS,
   normalizeSupplierOrderTrackingLink,
@@ -127,12 +128,13 @@ function orderItemToDraft(
     isCustomProduct: !item.product_id && !matchedProduct,
     type: item.type,
     sizeRows: sizeRowsFromLineItem(item),
+    reservationRows: reservationRowsFromLineItem(item),
     dorsal: item.dorsal ?? "",
     description: item.description ?? "",
     link: item.link ?? "",
     price: String(item.price),
     isCustomPrice: false,
-    reserved: Boolean(item.reserved),
+    reserveProduct: Boolean(item.reserved),
     reservationSellerValue: createLineItemReservationSellerValue(
       {
         reservationSellerValue: createDefaultSaleSellerValue(currentUserId),
@@ -197,7 +199,11 @@ function validateLineItems(
       return `Precio inválido para ${item.productName}.`;
     }
 
-    if (item.reserved && item.productId) {
+    if (item.reserveProduct && item.productId) {
+      if (!lineItemDraftHasReservationEnabled(item)) {
+        return `Indicá cuántas unidades reservar por talle en ${item.productName}.`;
+      }
+
       const sellerError = validateSaleSellerValue(item.reservationSellerValue, canAssignUser);
       if (sellerError) {
         return `Reserva de ${item.productName}: ${sellerError}`;

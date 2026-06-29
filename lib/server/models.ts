@@ -42,6 +42,14 @@ export type Product = {
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;
   reserved_for_external_seller_name?: string;
+  reserved_by_sizes?: Record<
+    string,
+    {
+      reserved_for_user_id?: string;
+      reserved_for_external_seller_id?: string;
+      reserved_for_external_seller_name?: string;
+    }
+  >;
   created_by?: string;
   created_at: Date;
   updated_at: Date;
@@ -91,6 +99,8 @@ export type SupplierOrderLineItem = {
   price: number;
   ordered: boolean;
   reserved?: boolean;
+  reserved_sizes?: string[];
+  reserved_quantity_by_sizes?: Record<string, number>;
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;
   reserved_for_external_seller_name?: string;

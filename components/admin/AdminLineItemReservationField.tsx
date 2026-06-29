@@ -52,8 +52,8 @@ export default function AdminLineItemReservationField({
         <Label htmlFor={checkboxId} className="cursor-pointer">
           <Typography variant="body2">
             {inheritSellerLabel
-              ? `Reservar para ${inheritSellerLabel}`
-              : "Reservar producto del catálogo"}
+              ? `Reservar del catálogo para ${inheritSellerLabel}`
+              : "Reservar del catálogo"}
           </Typography>
         </Label>
       </div>

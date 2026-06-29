@@ -1,5 +1,6 @@
 import type { ExternalSeller, Product, SaleAssignableUser } from "@/lib/api";
 import { getAssignableUserLabel } from "@/lib/user-display";
+import { sortSizeEntries } from "@/lib/product-inventory";
 
 export type ProductReservationFields = {
   reserved_for_user_id?: string;
@@ -7,46 +8,117 @@ export type ProductReservationFields = {
   reserved_for_external_seller_name?: string;
 };
 
+export type SizeReservationMap = Record<string, ProductReservationFields>;
+
 export type LineItemReservationFields = ProductReservationFields & {
   reserved?: boolean;
 };
 
-export function isProductReserved(product: ProductReservationFields): boolean {
+function trimOptional(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed || undefined;
+}
+
+function reservationFieldsAreActive(reservation: ProductReservationFields): boolean {
   return Boolean(
-    product.reserved_for_user_id?.trim() ||
-      product.reserved_for_external_seller_id?.trim() ||
-      product.reserved_for_external_seller_name?.trim()
+    trimOptional(reservation.reserved_for_user_id) ||
+      trimOptional(reservation.reserved_for_external_seller_id) ||
+      trimOptional(reservation.reserved_for_external_seller_name)
   );
 }
 
-export function isLineItemReserved(
-  item: LineItemReservationFields & { product_id?: string; productId?: string }
+function hasLegacyProductReservation(product: ProductReservationFields): boolean {
+  return reservationFieldsAreActive(product);
+}
+
+export function getProductReservedSizeEntries(
+  product: Pick<Product, "reserved_by_sizes" | "reserved_for_user_id" | "reserved_for_external_seller_id" | "reserved_for_external_seller_name">
+): Array<{ size: string; reservation: ProductReservationFields }> {
+  if (product.reserved_by_sizes && Object.keys(product.reserved_by_sizes).length > 0) {
+    return sortSizeEntries(Object.entries(product.reserved_by_sizes))
+      .filter(([, reservation]) => reservationFieldsAreActive(reservation))
+      .map(([size, reservation]) => ({ size, reservation }));
+  }
+
+  return [];
+}
+
+export function isProductReserved(
+  product: ProductReservationFields & { reserved_by_sizes?: SizeReservationMap }
 ): boolean {
-  const productId = item.product_id ?? item.productId;
-  return Boolean(item.reserved && productId);
+  if (getProductReservedSizeEntries(product).length > 0) return true;
+  return hasLegacyProductReservation(product);
+}
+
+export function isSizeReserved(
+  product: Pick<Product, "reserved_by_sizes" | "reserved_for_user_id" | "reserved_for_external_seller_id" | "reserved_for_external_seller_name">,
+  size: string
+): boolean {
+  const trimmedSize = size.trim();
+  if (!trimmedSize) return false;
+
+  const entries = getProductReservedSizeEntries(product);
+  if (entries.length > 0) {
+    return entries.some(
+      ({ size: reservedSize }) =>
+        reservedSize.trim().toLocaleLowerCase() === trimmedSize.toLocaleLowerCase()
+    );
+  }
+
+  return hasLegacyProductReservation(product);
 }
 
 export function getProductReservationLabel(
-  product: ProductReservationFields,
+  reservation: ProductReservationFields,
   assignableUsers: SaleAssignableUser[] = [],
   externalSellers: ExternalSeller[] = []
 ): string {
-  if (product.reserved_for_external_seller_name?.trim()) {
-    return product.reserved_for_external_seller_name.trim();
+  if (reservation.reserved_for_external_seller_name?.trim()) {
+    return reservation.reserved_for_external_seller_name.trim();
   }
 
-  if (product.reserved_for_external_seller_id) {
+  if (reservation.reserved_for_external_seller_id) {
     const external = externalSellers.find(
-      (seller) => seller.id === product.reserved_for_external_seller_id
+      (seller) => seller.id === reservation.reserved_for_external_seller_id
     );
     if (external?.name) return external.name;
   }
 
-  if (product.reserved_for_user_id) {
-    return getAssignableUserLabel(assignableUsers, product.reserved_for_user_id);
+  if (reservation.reserved_for_user_id) {
+    return getAssignableUserLabel(assignableUsers, reservation.reserved_for_user_id);
   }
 
   return "Vendedor desconocido";
+}
+
+export function getProductReservationSummary(
+  product: Pick<Product, "reserved_by_sizes" | "reserved_for_user_id" | "reserved_for_external_seller_id" | "reserved_for_external_seller_name">,
+  assignableUsers: SaleAssignableUser[] = [],
+  externalSellers: ExternalSeller[] = []
+): string | null {
+  const entries = getProductReservedSizeEntries(product);
+
+  if (entries.length > 0) {
+    const labels = new Set(
+      entries.map(({ reservation }) =>
+        getProductReservationLabel(reservation, assignableUsers, externalSellers)
+      )
+    );
+
+    const sizesLabel = entries.map(({ size }) => size).join(", ");
+    const sellerLabel =
+      labels.size === 1 ? [...labels][0] : entries
+        .map(({ size, reservation }) =>
+          `${size}: ${getProductReservationLabel(reservation, assignableUsers, externalSellers)}`
+        )
+        .join(" · ");
+
+    return `${sizesLabel} · ${sellerLabel}`;
+  }
+
+  if (!hasLegacyProductReservation(product)) return null;
+
+  return getProductReservationLabel(product, assignableUsers, externalSellers);
 }
 
 export function getLineItemReservationLabel(

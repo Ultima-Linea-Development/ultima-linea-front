@@ -150,6 +150,14 @@ export type Product = {
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;
   reserved_for_external_seller_name?: string;
+  reserved_by_sizes?: Record<
+    string,
+    {
+      reserved_for_user_id?: string;
+      reserved_for_external_seller_id?: string;
+      reserved_for_external_seller_name?: string;
+    }
+  >;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
@@ -307,6 +315,8 @@ export type SupplierOrderLineItem = {
   price: number;
   ordered: boolean;
   reserved?: boolean;
+  reserved_sizes?: string[];
+  reserved_quantity_by_sizes?: Record<string, number>;
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;
   reserved_for_external_seller_name?: string;
@@ -370,6 +380,8 @@ export type CreateSupplierOrderItemRequest = {
   price: number;
   ordered?: boolean;
   reserved?: boolean;
+  reserved_sizes?: string[];
+  reserved_quantity_by_sizes?: Record<string, number>;
   reserved_seller_type?: SaleSellerType;
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;

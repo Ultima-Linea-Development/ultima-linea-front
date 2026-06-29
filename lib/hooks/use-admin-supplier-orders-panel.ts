@@ -18,7 +18,7 @@ import {
   type UpdateSupplierOrderRequest,
 } from "@/lib/api";
 import { filterSupplierOrdersByQuery } from "@/lib/admin-supplier-orders-search";
-import { getSupplierOrderLabel } from "@/lib/supplier-order-display";
+import { getSupplierOrderLabel, getSupplierOrderSearchQuery } from "@/lib/supplier-order-display";
 import { useAdminSearch } from "@/lib/hooks/use-admin-search";
 import { useAdminTableSelection } from "@/lib/hooks/use-admin-table-selection";
 import { usePendingDelete } from "@/lib/use-pending-delete";
@@ -488,5 +488,6 @@ export function useAdminSupplierOrdersPanel() {
     isBulkSubmitting,
     clearSelection,
     getSupplierOrderLabel,
+    getSupplierOrderSearchQuery,
   };
 }

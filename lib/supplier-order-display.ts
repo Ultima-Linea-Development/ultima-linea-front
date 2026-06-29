@@ -82,9 +82,35 @@ export function getSupplierOrderLabel(order: SupplierOrder): string {
   return order.supplier_name ? `${order.name} (${order.supplier_name})` : order.name;
 }
 
+export function getSupplierOrderSearchQuery(order: SupplierOrder): string {
+  return order.name;
+}
+
+export function parseSupplierOrderDisplayLabel(
+  query: string
+): { name: string; supplier: string } | null {
+  const trimmed = query.trim();
+  const openIndex = trimmed.lastIndexOf(" (");
+  if (openIndex <= 0 || !trimmed.endsWith(")")) return null;
+
+  const name = trimmed.slice(0, openIndex).trim();
+  const supplier = trimmed.slice(openIndex + 2, -1).trim();
+  if (!name || !supplier) return null;
+
+  return { name, supplier };
+}
+
 export function supplierOrderMatchesQuery(order: SupplierOrder, query: string): boolean {
   const trimmed = query.trim();
   if (!trimmed) return true;
+
+  const parsedLabel = parseSupplierOrderDisplayLabel(trimmed);
+  if (parsedLabel) {
+    return (
+      matchesNormalizedSearch([order.name], parsedLabel.name) &&
+      matchesNormalizedSearch([order.supplier_name], parsedLabel.supplier)
+    );
+  }
 
   return matchesNormalizedSearch(
     [

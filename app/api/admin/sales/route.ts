@@ -157,7 +157,8 @@ export async function POST(request: NextRequest) {
 
       const reservationError = validateProductReservationForSale(
         productFromDoc(productDoc),
-        sellerResult
+        sellerResult,
+        input.size?.trim()
       );
 
       if (reservationError) {

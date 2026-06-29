@@ -19,6 +19,7 @@ import AdminSupplierOrderLineItemRow, {
   getSupplierOrderLineItemIdentityRequestFields,
   getSupplierOrderLineItemDraftTotal,
   getSupplierOrderLineItemReservationRequestFields,
+  lineItemDraftHasReservationEnabled,
   validateSupplierOrderLineItemIdentity,
   type SupplierOrderLineItemDraft,
 } from "@/components/admin/AdminSupplierOrderLineItemRow";
@@ -128,7 +129,11 @@ function validateLineItems(
       return `Precio inválido para ${item.productName}.`;
     }
 
-    if (item.reserved && item.productId) {
+    if (item.reserveProduct && item.productId) {
+      if (!lineItemDraftHasReservationEnabled(item)) {
+        return `Indicá cuántas unidades reservar por talle en ${item.productName}.`;
+      }
+
       const sellerError = validateSaleSellerValue(item.reservationSellerValue, canAssignUser);
       if (sellerError) {
         return `Reserva de ${item.productName}: ${sellerError}`;

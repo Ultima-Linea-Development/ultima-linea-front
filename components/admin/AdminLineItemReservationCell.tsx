@@ -1,12 +1,19 @@
 "use client";
 
 import Typography from "@/components/ui/Typography";
-import AdminProductReservationBadge from "@/components/admin/AdminProductReservationBadge";
 import type { ExternalSeller, SaleAssignableUser } from "@/lib/api";
-import type { LineItemReservationFields } from "@/lib/product-reservation";
+import {
+  getLineItemReservationLabel,
+  type LineItemReservationFields,
+} from "@/lib/product-reservation";
+import { formatSupplierOrderSizesDisplay } from "@/lib/supplier-order-sizes";
 
 type AdminLineItemReservationCellProps = {
-  item: LineItemReservationFields;
+  item: LineItemReservationFields & {
+    reserved_sizes?: string[];
+    reserved_quantity_by_sizes?: Record<string, number>;
+    sizes?: string;
+  };
   assignableUsers?: SaleAssignableUser[];
   externalSellers?: ExternalSeller[];
 };
@@ -24,12 +31,21 @@ export default function AdminLineItemReservationCell({
     );
   }
 
+  const sellerLabel = getLineItemReservationLabel(item, assignableUsers, externalSellers);
+  const sizesLabel =
+    item.reserved_quantity_by_sizes &&
+    Object.keys(item.reserved_quantity_by_sizes).length > 0
+      ? formatSupplierOrderSizesDisplay(item.reserved_quantity_by_sizes)
+      : item.reserved_sizes && item.reserved_sizes.length > 0
+        ? formatSupplierOrderSizesDisplay(
+            Object.fromEntries(item.reserved_sizes.map((size) => [size, 1]))
+          )
+        : item.sizes?.trim() || "—";
+
   return (
-    <AdminProductReservationBadge
-      product={item}
-      assignableUsers={assignableUsers}
-      externalSellers={externalSellers}
-      size="sm"
-    />
+    <Typography variant="body2" className="text-amber-900">
+      {sizesLabel}
+      {sellerLabel ? ` · ${sellerLabel}` : ""}
+    </Typography>
   );
 }

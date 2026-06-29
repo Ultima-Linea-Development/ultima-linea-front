@@ -36,8 +36,8 @@ import { parseSaleDateInput } from "@/lib/sale-date";
 import { trackAdminAction } from "@/lib/server/admin-history";
 import {
   applyLineItemReservations,
-  clearProductReservations,
-  getReservedProductIds,
+  clearProductSizeReservations,
+  getReservedProductSizeKeys,
   reconcileProductReservations,
 } from "@/lib/server/product-reservation";
 
@@ -274,7 +274,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     const products = await getProductsCollection<ProductDocument>();
     if (nextStatus === "cancelled") {
-      await clearProductReservations(products, getReservedProductIds(previousItems));
+      await clearProductSizeReservations(products, getReservedProductSizeKeys(previousItems));
     } else {
       await reconcileProductReservations(products, previousItems, nextItems);
     }

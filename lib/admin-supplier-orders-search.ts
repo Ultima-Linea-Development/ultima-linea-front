@@ -1,8 +1,23 @@
 import type { SupplierOrder } from "@/lib/api";
-import { supplierOrderMatchesQuery } from "@/lib/supplier-order-display";
+import { parseSupplierOrderDisplayLabel, supplierOrderMatchesQuery } from "@/lib/supplier-order-display";
 import { buildFlexibleSearchRegexPattern } from "@/lib/search-normalization";
 
 export function buildAdminSupplierOrdersSearchTextMatch(query: string): Record<string, unknown> {
+  const parsedLabel = parseSupplierOrderDisplayLabel(query);
+  if (parsedLabel) {
+    return {
+      $and: [
+        { name: { $regex: buildFlexibleSearchRegexPattern(parsedLabel.name), $options: "i" } },
+        {
+          supplier_name: {
+            $regex: buildFlexibleSearchRegexPattern(parsedLabel.supplier),
+            $options: "i",
+          },
+        },
+      ],
+    };
+  }
+
   const pattern = buildFlexibleSearchRegexPattern(query);
   return {
     $or: [

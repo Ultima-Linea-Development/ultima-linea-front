@@ -37,7 +37,7 @@ export default function AdminSupplierOrdersPage() {
           onClear={panel.clearSearch}
           onSubmit={panel.applySearchFromQuery}
           onSuggestionSelect={(order) =>
-            panel.applySearchFromQuery(panel.getSupplierOrderLabel(order))
+            panel.applySearchFromQuery(panel.getSupplierOrderSearchQuery(order))
           }
           suggestions={panel.searchInput.trim() ? panel.searchSuggestions : []}
           getSuggestionKey={(order) => order.id}

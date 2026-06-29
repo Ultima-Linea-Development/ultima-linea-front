@@ -16,8 +16,9 @@ import {
   ADMIN_TABLE_TH_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
-import type { Commission, SaleAssignableUser } from "@/lib/api";
+import type { Commission, ExternalSeller, SaleAssignableUser } from "@/lib/api";
 import AdminCommissionStatusBadge from "@/components/admin/AdminCommissionStatusBadge";
+import AdminLineItemReservationCell from "@/components/admin/AdminLineItemReservationCell";
 import AdminSupplierOrderSizeQuantity from "@/components/admin/AdminSupplierOrderSizeQuantity";
 import {
   getCommissionSellerLabel,
@@ -27,6 +28,7 @@ import { cn, formatPrice } from "@/lib/utils";
 type AdminCommissionDetailProps = {
   commission: Commission;
   assignableUsers?: SaleAssignableUser[];
+  externalSellers?: ExternalSeller[];
   onEdit?: (commission: Commission) => void;
   onExport?: (commission: Commission) => void;
 };
@@ -34,6 +36,7 @@ type AdminCommissionDetailProps = {
 export default function AdminCommissionDetail({
   commission,
   assignableUsers = [],
+  externalSellers = [],
   onEdit,
   onExport,
 }: AdminCommissionDetailProps) {
@@ -116,6 +119,13 @@ export default function AdminCommissionDetail({
                 <AdminTableMobileField label="Precio">
                   <Typography variant="body2">{formatPrice(item.price)}</Typography>
                 </AdminTableMobileField>
+                <AdminTableMobileField label="Reserva" fullWidth>
+                  <AdminLineItemReservationCell
+                    item={item}
+                    assignableUsers={assignableUsers}
+                    externalSellers={externalSellers}
+                  />
+                </AdminTableMobileField>
               </AdminTableMobileGrid>
             </Box>
           </AdminTableMobileCard>
@@ -149,6 +159,9 @@ export default function AdminCommissionDetail({
               <th className={thClass}>
                 <Typography variant="body2">Precio</Typography>
               </th>
+              <th className={thClass}>
+                <Typography variant="body2">Reserva</Typography>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -170,6 +183,13 @@ export default function AdminCommissionDetail({
                   <Typography variant="body2" className="whitespace-nowrap tabular-nums">
                     {formatPrice(item.price)}
                   </Typography>
+                </td>
+                <td className={cellClass}>
+                  <AdminLineItemReservationCell
+                    item={item}
+                    assignableUsers={assignableUsers}
+                    externalSellers={externalSellers}
+                  />
                 </td>
               </tr>
             ))}

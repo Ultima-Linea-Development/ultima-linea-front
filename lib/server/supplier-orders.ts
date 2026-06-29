@@ -12,6 +12,8 @@ import {
   getSupplierOrderLineItemQuantity,
 } from "@/lib/supplier-order-sizes";
 import { parseSaleDateInput } from "@/lib/sale-date";
+import type { SaleSellerType } from "@/lib/server/sale-seller";
+import type { LineItemReservationInput } from "@/lib/server/product-reservation";
 
 const VALID_TYPES: SupplierOrderItemType[] = ["FAN", "PLAYER", "RETRO"];
 const VALID_STATUSES: SupplierOrderStatus[] = [
@@ -42,6 +44,11 @@ export type SupplierOrderLineItemInput = {
   cleaned?: boolean;
   price?: number;
   ordered?: boolean;
+  reserved?: boolean;
+  reserved_seller_type?: SaleSellerType;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
 };
 
 function trimOptional(value?: string): string | undefined {
@@ -138,12 +145,12 @@ export function applySupplierOrderDateField(
 
 export function parseSupplierOrderLineItems(
   items: SupplierOrderLineItemInput[] | undefined
-): { items: SupplierOrderLineItem[] } | { error: string } {
+): { items: Array<SupplierOrderLineItem & LineItemReservationInput> } | { error: string } {
   if (!Array.isArray(items) || items.length === 0) {
     return { error: "Agregá al menos un ítem" };
   }
 
-  const parsed: SupplierOrderLineItem[] = [];
+  const parsed: Array<SupplierOrderLineItem & LineItemReservationInput> = [];
 
   for (const item of items) {
     const shirtName = item.shirt_name?.trim();
@@ -203,6 +210,11 @@ export function parseSupplierOrderLineItems(
       cleaned: Boolean(item.cleaned),
       price,
       ordered: Boolean(item.ordered),
+      reserved: Boolean(item.reserved),
+      reserved_seller_type: item.reserved_seller_type,
+      reserved_for_user_id: trimOptional(item.reserved_for_user_id),
+      reserved_for_external_seller_id: trimOptional(item.reserved_for_external_seller_id),
+      reserved_for_external_seller_name: trimOptional(item.reserved_for_external_seller_name),
     });
   }
 

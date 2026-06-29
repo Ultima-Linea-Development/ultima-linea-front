@@ -18,13 +18,16 @@ import AdminSupplierOrderLineItemRow, {
   createEmptySupplierOrderLineItemDraft,
   getSupplierOrderLineItemIdentityRequestFields,
   getSupplierOrderLineItemDraftTotal,
+  getSupplierOrderLineItemReservationRequestFields,
   validateSupplierOrderLineItemIdentity,
   type SupplierOrderLineItemDraft,
 } from "@/components/admin/AdminSupplierOrderLineItemRow";
 import type {
   CreateSupplierOrderRequest,
+  ExternalSeller,
   Product,
   ProductOptionsResponse,
+  SaleAssignableUser,
   Supplier,
   SupplierOrderStatus,
 } from "@/lib/api";
@@ -56,19 +59,25 @@ import {
 import { parseSupplierOrderOptionalCost } from "@/lib/supplier-order-costs";
 import { getTodaySaleDateDisplayValue, saleDateInputToApiValue } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
+import { commissionSellerValueToPayload } from "@/lib/commission-seller";
+import { createDefaultSaleSellerValue, validateSaleSellerValue } from "@/lib/sale-seller";
 
 const fieldLabelClassName = "w-full min-w-0";
 
 type AdminSupplierOrderFormProps = {
   products: Product[];
   suppliers: Supplier[];
+  assignableUsers: SaleAssignableUser[];
+  externalSellers: ExternalSeller[];
+  currentUserId: string | null;
+  canAssignUser: boolean;
   isSubmitting: boolean;
   onCreate: (payload: CreateSupplierOrderRequest) => Promise<boolean>;
   onError: (message: string) => void;
   onCancel?: () => void;
 };
 
-function draftToRequestItem(item: SupplierOrderLineItemDraft) {
+function draftToRequestItem(item: SupplierOrderLineItemDraft, canAssignUser: boolean) {
   const sizesPayload = sizeRowsToPayload(item.sizeRows);
   if (!sizesPayload) {
     throw new Error("invalid sizes");
@@ -78,6 +87,10 @@ function draftToRequestItem(item: SupplierOrderLineItemDraft) {
     product_id: item.productId,
     shirt_name: item.productName.trim(),
     ...getSupplierOrderLineItemIdentityRequestFields(item),
+    ...getSupplierOrderLineItemReservationRequestFields(
+      item,
+      commissionSellerValueToPayload(item.reservationSellerValue, canAssignUser)
+    ),
     quantity: sizesPayload.quantity,
     type: item.type,
     sizes: sizesPayload.sizes,
@@ -89,7 +102,10 @@ function draftToRequestItem(item: SupplierOrderLineItemDraft) {
   };
 }
 
-function validateLineItems(lineItems: SupplierOrderLineItemDraft[]): string | null {
+function validateLineItems(
+  lineItems: SupplierOrderLineItemDraft[],
+  canAssignUser: boolean
+): string | null {
   if (lineItems.length === 0) {
     return "Agregá al menos un ítem.";
   }
@@ -111,6 +127,13 @@ function validateLineItems(lineItems: SupplierOrderLineItemDraft[]): string | nu
     if (!Number.isFinite(price) || price < 0) {
       return `Precio inválido para ${item.productName}.`;
     }
+
+    if (item.reserved && item.productId) {
+      const sellerError = validateSaleSellerValue(item.reservationSellerValue, canAssignUser);
+      if (sellerError) {
+        return `Reserva de ${item.productName}: ${sellerError}`;
+      }
+    }
   }
 
   return null;
@@ -119,6 +142,10 @@ function validateLineItems(lineItems: SupplierOrderLineItemDraft[]): string | nu
 export default function AdminSupplierOrderForm({
   products,
   suppliers,
+  assignableUsers,
+  externalSellers,
+  currentUserId,
+  canAssignUser,
   isSubmitting,
   onCreate,
   onError,
@@ -137,8 +164,11 @@ export default function AdminSupplierOrderForm({
     EMPTY_SUPPLIER_ORDER_MILESTONE_DATES
   );
   const [supplierValue, setSupplierValue] = useState(createDefaultSupplierValue);
-  const [lineItems, setLineItems] = useState<SupplierOrderLineItemDraft[]>([
-    createEmptySupplierOrderLineItemDraft(),
+  const [lineItems, setLineItems] = useState<SupplierOrderLineItemDraft[]>(() => [
+    {
+      ...createEmptySupplierOrderLineItemDraft(),
+      reservationSellerValue: createDefaultSaleSellerValue(currentUserId),
+    },
   ]);
   const [productOptions, setProductOptions] = useState<ProductOptionsResponse>(
     EMPTY_PRODUCT_OPTIONS
@@ -188,7 +218,16 @@ export default function AdminSupplierOrderForm({
 
   const addLineItem = () => {
     setLineItems((prev) =>
-      allocateSupplierOrderPrices([createEmptySupplierOrderLineItemDraft(), ...prev], totalPaid)
+      allocateSupplierOrderPrices(
+        [
+          {
+            ...createEmptySupplierOrderLineItemDraft(),
+            reservationSellerValue: createDefaultSaleSellerValue(currentUserId),
+          },
+          ...prev,
+        ],
+        totalPaid
+      )
     );
   };
 
@@ -237,7 +276,7 @@ export default function AdminSupplierOrderForm({
     }
 
     const finalLineItems = allocateSupplierOrderPrices(lineItems, totalPaid);
-    const itemsError = validateLineItems(finalLineItems);
+    const itemsError = validateLineItems(finalLineItems, canAssignUser);
     if (itemsError) {
       onError(itemsError);
       return;
@@ -275,7 +314,7 @@ export default function AdminSupplierOrderForm({
       ...(parsedShippingCost !== null ? { shipping_cost: parsedShippingCost } : {}),
       ...supplierValueToPayload(supplierValue),
       ...supplierOrderMilestoneDatesToCreatePayload(milestoneDates),
-      items: finalLineItems.map(draftToRequestItem),
+      items: finalLineItems.map((item) => draftToRequestItem(item, canAssignUser)),
     });
 
     if (success) {
@@ -290,7 +329,12 @@ export default function AdminSupplierOrderForm({
       setShippingCost("");
       setMilestoneDates(EMPTY_SUPPLIER_ORDER_MILESTONE_DATES);
       setSupplierValue(createDefaultSupplierValue());
-      setLineItems([createEmptySupplierOrderLineItemDraft()]);
+      setLineItems([
+        {
+          ...createEmptySupplierOrderLineItemDraft(),
+          reservationSellerValue: createDefaultSaleSellerValue(currentUserId),
+        },
+      ]);
     }
   };
 
@@ -393,6 +437,13 @@ export default function AdminSupplierOrderForm({
               productOptions={productOptions}
               isSubmitting={isSubmitting}
               isPriceAllocationEnabled={isPriceAllocationEnabled}
+              reservationConfig={{
+                mode: "line",
+                assignableUsers,
+                externalSellers,
+                canAssignUser,
+                currentUserId,
+              }}
               onChange={updateLineItem}
               onRemove={removeLineItem}
             />

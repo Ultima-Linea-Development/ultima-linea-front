@@ -1,9 +1,9 @@
 import type { AdminUser } from "@/lib/api";
 import { formatUserRole } from "@/lib/roles";
-import { escapeRegex } from "@/lib/utils";
+import { buildFlexibleSearchRegexPattern, matchesNormalizedSearch } from "@/lib/search-normalization";
 
 export function buildAdminUsersSearchTextMatch(query: string): Record<string, unknown> {
-  const pattern = escapeRegex(query);
+  const pattern = buildFlexibleSearchRegexPattern(query);
   return {
     $or: [
       { email: { $regex: pattern, $options: "i" } },
@@ -16,20 +16,22 @@ export function buildAdminUsersSearchTextMatch(query: string): Record<string, un
 }
 
 export function filterUsersByQuery(users: AdminUser[], query: string, limit = 8): AdminUser[] {
-  const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return [];
+  const trimmed = query.trim();
+  if (!trimmed) return [];
 
-  const matches = users.filter((user) => {
-    const values = [
-      user.email,
-      user.first_name,
-      user.last_name,
-      user.phone,
-      formatUserRole(user.role),
-      user.role,
-    ];
-    return values.some((value) => value?.toLocaleLowerCase().includes(normalized));
-  });
+  const matches = users.filter((user) =>
+    matchesNormalizedSearch(
+      [
+        user.email,
+        user.first_name,
+        user.last_name,
+        user.phone,
+        formatUserRole(user.role),
+        user.role,
+      ],
+      trimmed
+    )
+  );
 
   return matches.slice(0, limit);
 }

@@ -1,9 +1,9 @@
 import type { SupplierOrder } from "@/lib/api";
 import { supplierOrderMatchesQuery } from "@/lib/supplier-order-display";
-import { escapeRegex } from "@/lib/utils";
+import { buildFlexibleSearchRegexPattern } from "@/lib/search-normalization";
 
 export function buildAdminSupplierOrdersSearchTextMatch(query: string): Record<string, unknown> {
-  const pattern = escapeRegex(query.trim());
+  const pattern = buildFlexibleSearchRegexPattern(query);
   return {
     $or: [
       { name: { $regex: pattern, $options: "i" } },
@@ -23,8 +23,10 @@ export function filterSupplierOrdersByQuery(
   query: string,
   limit = 8
 ): SupplierOrder[] {
-  const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return [];
+  const trimmed = query.trim();
+  if (!trimmed) return [];
 
-  return orders.filter((order) => supplierOrderMatchesQuery(order, normalized)).slice(0, limit);
+  return orders
+    .filter((order) => supplierOrderMatchesQuery(order, trimmed))
+    .slice(0, limit);
 }

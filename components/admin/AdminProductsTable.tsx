@@ -20,6 +20,7 @@ import {
 import type { Product } from "@/lib/api";
 import { formatPrice, generateSlug, cn } from "@/lib/utils";
 import AdminTableProductName from "@/components/admin/AdminTableProductName";
+import AdminProductReservationBadge from "@/components/admin/AdminProductReservationBadge";
 import AdminProductSizeStock from "@/components/admin/AdminProductSizeStock";
 import AdminTableColumnFilter from "@/components/admin/AdminTableColumnFilter";
 import AdminTableMobileActionsMenu, {
@@ -273,6 +274,7 @@ export default function AdminProductsTable({
                       className="min-w-0 items-start gap-2"
                       inactive={!p.is_active}
                     />
+                    <AdminProductReservationBadge product={p} size="sm" />
                   </Box>
                   <AdminTableMobileActionsMenu actions={getRowActions(p)} />
                 </Box>
@@ -313,12 +315,15 @@ export default function AdminProductsTable({
                     </td>
                   )}
                   <td className={cellClass}>
-                    <AdminTableProductName
-                      name={p.name}
-                      imageUrl={p.image_urls?.[0]}
-                      href={`/product/${(p.slug || generateSlug(p.name))}-${p.id}`}
-                      inactive={!p.is_active}
-                    />
+                    <Box display="flex" direction="col" gap="1" className="min-w-0">
+                      <AdminTableProductName
+                        name={p.name}
+                        imageUrl={p.image_urls?.[0]}
+                        href={`/product/${(p.slug || generateSlug(p.name))}-${p.id}`}
+                        inactive={!p.is_active}
+                      />
+                      <AdminProductReservationBadge product={p} size="sm" />
+                    </Box>
                   </td>
                   <td className={cellClass}>
                     <Typography variant="body2">{p.team ?? "—"}</Typography>

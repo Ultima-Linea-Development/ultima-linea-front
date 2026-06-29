@@ -147,6 +147,9 @@ export type Product = {
   /** FAN / PLAYER (API puede enviar mayúsculas) */
   type?: string;
   is_active: boolean;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
@@ -303,6 +306,10 @@ export type SupplierOrderLineItem = {
   cleaned: boolean;
   price: number;
   ordered: boolean;
+  reserved?: boolean;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
 };
 
 export type Supplier = {
@@ -362,6 +369,11 @@ export type CreateSupplierOrderItemRequest = {
   cleaned?: boolean;
   price: number;
   ordered?: boolean;
+  reserved?: boolean;
+  reserved_seller_type?: SaleSellerType;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
 };
 
 export type CreateSupplierOrderRequest = {

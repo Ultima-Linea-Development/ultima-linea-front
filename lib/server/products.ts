@@ -26,6 +26,9 @@ export type ProductResponse = {
   stock_by_sizes: Record<string, number>;
   image_urls: string[];
   is_active: boolean;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
   created_by?: string;
   deleted_at?: Date;
 };
@@ -53,6 +56,9 @@ export function toProductResponse(product: Product, maxImages: number): ProductR
     stock_by_sizes: product.stock_by_sizes,
     image_urls: images,
     is_active: product.is_active,
+    reserved_for_user_id: product.reserved_for_user_id,
+    reserved_for_external_seller_id: product.reserved_for_external_seller_id,
+    reserved_for_external_seller_name: product.reserved_for_external_seller_name,
     created_by: product.created_by,
     deleted_at: product.deleted_at,
   };

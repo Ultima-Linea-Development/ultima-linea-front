@@ -14,6 +14,7 @@ import AdminSupplierOrderLineItemRow, {
   createEmptySupplierOrderLineItemDraft,
   getSupplierOrderLineItemIdentityRequestFields,
   getSupplierOrderLineItemDraftTotal,
+  getSupplierOrderLineItemReservationRequestFields,
   validateSupplierOrderLineItemIdentity,
   type SupplierOrderLineItemDraft,
 } from "@/components/admin/AdminSupplierOrderLineItemRow";
@@ -35,6 +36,7 @@ import { type SaleSellerFormValue } from "@/lib/sale-seller";
 import { sizeRowsToPayload } from "@/lib/supplier-order-sizes";
 import { getTodaySaleDateDisplayValue, saleDateInputToApiValue } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
+import { getSaleSellerLabel } from "@/lib/sale-seller";
 
 const fieldLabelClassName = "w-full min-w-0";
 
@@ -50,7 +52,10 @@ type AdminCommissionFormProps = {
   onCancel?: () => void;
 };
 
-function draftToRequestItem(item: SupplierOrderLineItemDraft) {
+function draftToRequestItem(
+  item: SupplierOrderLineItemDraft,
+  sellerPayload: ReturnType<typeof commissionSellerValueToPayload>
+) {
   const sizesPayload = sizeRowsToPayload(item.sizeRows);
   if (!sizesPayload) {
     throw new Error("invalid sizes");
@@ -60,6 +65,7 @@ function draftToRequestItem(item: SupplierOrderLineItemDraft) {
     product_id: item.productId,
     shirt_name: item.productName.trim(),
     ...getSupplierOrderLineItemIdentityRequestFields(item),
+    ...getSupplierOrderLineItemReservationRequestFields(item, sellerPayload),
     quantity: sizesPayload.quantity,
     type: item.type,
     sizes: sizesPayload.sizes,
@@ -145,6 +151,22 @@ export default function AdminCommissionForm({
     [lineItems]
   );
 
+  const inheritSellerLabel = useMemo(
+    () =>
+      getSaleSellerLabel(
+        {
+          created_by: sellerValue.internalUserId,
+          external_seller_name:
+            sellerValue.sellerType === "external"
+              ? sellerValue.externalSellerName ||
+                externalSellers.find((seller) => seller.id === sellerValue.externalSellerId)?.name
+              : undefined,
+        },
+        assignableUsers
+      ),
+    [sellerValue, assignableUsers, externalSellers]
+  );
+
   const updateLineItem = (
     key: string,
     updates: Partial<Omit<SupplierOrderLineItemDraft, "key">>
@@ -185,13 +207,15 @@ export default function AdminCommissionForm({
       return;
     }
 
+    const sellerPayload = commissionSellerValueToPayload(sellerValue, canAssignUser);
+
     const success = await onCreate({
       customer_name: trimmedCustomerName,
       customer_contact: customerContact.trim() || undefined,
       commission_date: commissionDateApiValue,
       notes: notes.trim(),
-      ...commissionSellerValueToPayload(sellerValue, canAssignUser),
-      items: lineItems.map(draftToRequestItem),
+      ...sellerPayload,
+      items: lineItems.map((item) => draftToRequestItem(item, sellerPayload)),
     });
 
     if (success) {
@@ -281,6 +305,14 @@ export default function AdminCommissionForm({
               products={products}
               productOptions={productOptions}
               isSubmitting={isSubmitting}
+              reservationConfig={{
+                mode: "inherit",
+                inheritSellerLabel,
+                assignableUsers,
+                externalSellers,
+                canAssignUser,
+                currentUserId,
+              }}
               onChange={updateLineItem}
               onRemove={removeLineItem}
             />

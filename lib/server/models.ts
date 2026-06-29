@@ -39,6 +39,9 @@ export type Product = {
   image_urls: string[];
   is_active: boolean;
   yupoo_album_id?: string;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
   created_by?: string;
   created_at: Date;
   updated_at: Date;
@@ -87,6 +90,10 @@ export type SupplierOrderLineItem = {
   cleaned: boolean;
   price: number;
   ordered: boolean;
+  reserved?: boolean;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
 };
 
 export type Supplier = {

@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   ensureIndexes,
   getCommissionsCollection,
+  getProductsCollection,
   getSupplierOrdersCollection,
 } from "@/lib/server/db";
 import {
   CommissionDocument,
+  ProductDocument,
   SupplierOrderDocument,
   supplierOrderFromDoc,
 } from "@/lib/server/models";
@@ -20,6 +22,7 @@ import {
   normalizeCommissionForResponse,
 } from "@/lib/server/commissions";
 import { normalizeSupplierOrderForResponse } from "@/lib/server/supplier-orders";
+import { syncProductReservationsFromItems } from "@/lib/server/product-reservation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -78,6 +81,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
         },
       }
     );
+
+    const products = await getProductsCollection<ProductDocument>();
+    await syncProductReservationsFromItems(products, updatedOrder.items);
 
     const now = new Date();
     const updatedCommissionDoc = await commissions.findOneAndUpdate(

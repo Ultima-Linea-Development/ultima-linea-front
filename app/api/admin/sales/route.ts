@@ -11,6 +11,7 @@ import {
   Sale,
   SaleDocument,
   generateULID,
+  productFromDoc,
   saleToDoc,
 } from "@/lib/server/models";
 import {
@@ -19,7 +20,7 @@ import {
   requireStaff,
   requireAuth,
 } from "@/lib/server/auth-middleware";
-import { toProductResponse } from "@/lib/server/products";
+import { toProductResponse, nonDeletedProductFilter } from "@/lib/server/products";
 import {
   parseOptionalSaleText,
   resolveSaleSellerForCreate,
@@ -29,6 +30,7 @@ import { parseSaleDateInput } from "@/lib/sale-date";
 import { CreateSaleItemInput, processSaleItem } from "@/lib/server/create-sale";
 import { normalizeSaleForResponse } from "@/lib/server/sale-items";
 import { trackAdminAction } from "@/lib/server/admin-history";
+import { validateProductReservationForSale } from "@/lib/server/product-reservation";
 
 type CreateSaleItemBody = {
   product_id?: string;
@@ -129,7 +131,40 @@ export async function POST(request: NextRequest) {
       return jsonError("Agregá al menos un producto", 400);
     }
 
+    const externalSellers = await getExternalSellersCollection<ExternalSellerDocument>();
+    const sellerResult = await resolveSaleSellerForCreate(auth, externalSellers, {
+      seller_type: body.seller_type,
+      created_by: body.created_by,
+      external_seller_id: body.external_seller_id,
+      external_seller_name: body.external_seller_name,
+    });
+
+    if ("error" in sellerResult) {
+      return jsonError(sellerResult.error, sellerResult.status);
+    }
+
     const products = await getProductsCollection<ProductDocument>();
+
+    for (const input of itemInputs) {
+      const productDoc = await products.findOne({
+        _id: input.product_id.trim(),
+        ...nonDeletedProductFilter,
+      });
+
+      if (!productDoc) {
+        return jsonError("Producto no encontrado", 404);
+      }
+
+      const reservationError = validateProductReservationForSale(
+        productFromDoc(productDoc),
+        sellerResult
+      );
+
+      if (reservationError) {
+        return jsonError(reservationError, 403);
+      }
+    }
+
     const lineItems = [];
     const updatedProductIds = new Set<string>();
     const updatedProducts = [];
@@ -165,18 +200,6 @@ export async function POST(request: NextRequest) {
       const parsedSaleDate = parseSaleDateInput(saleDateInput);
       if (!parsedSaleDate) return jsonError("Fecha inválida", 400);
       createdAt = parsedSaleDate;
-    }
-
-    const externalSellers = await getExternalSellersCollection<ExternalSellerDocument>();
-    const sellerResult = await resolveSaleSellerForCreate(auth, externalSellers, {
-      seller_type: body.seller_type,
-      created_by: body.created_by,
-      external_seller_id: body.external_seller_id,
-      external_seller_name: body.external_seller_name,
-    });
-
-    if ("error" in sellerResult) {
-      return jsonError(sellerResult.error, sellerResult.status);
     }
 
     const total = lineItems.reduce((sum, item) => sum + item.total, 0);

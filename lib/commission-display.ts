@@ -1,6 +1,7 @@
 import type { Commission, CommissionStatus, SaleAssignableUser } from "@/lib/api";
 import type { IconName } from "@/components/ui/Icons";
 import { getAssignableUserLabel } from "@/lib/user-display";
+import { matchesNormalizedSearch } from "@/lib/search-normalization";
 
 export type CommissionStatusVisual = {
   label: string;
@@ -63,26 +64,24 @@ export function getCommissionLabel(commission: Commission): string {
 }
 
 export function commissionMatchesQuery(commission: Commission, query: string): boolean {
-  const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return true;
+  const trimmed = query.trim();
+  if (!trimmed) return true;
 
-  const haystack = [
-    commission.name,
-    commission.customer_name,
-    commission.customer_contact,
-    commission.external_seller_name,
-    commission.supplier_order_name,
-    commission.notes,
-    ...commission.items.flatMap((item) => [
-      item.shirt_name,
-      item.sizes,
-      item.dorsal,
-      item.description,
-    ]),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLocaleLowerCase();
-
-  return haystack.includes(normalized);
+  return matchesNormalizedSearch(
+    [
+      commission.name,
+      commission.customer_name,
+      commission.customer_contact,
+      commission.external_seller_name,
+      commission.supplier_order_name,
+      commission.notes,
+      ...commission.items.flatMap((item) => [
+        item.shirt_name,
+        item.sizes,
+        item.dorsal,
+        item.description,
+      ]),
+    ],
+    trimmed
+  );
 }

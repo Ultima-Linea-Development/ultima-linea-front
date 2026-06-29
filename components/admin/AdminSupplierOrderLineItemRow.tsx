@@ -34,6 +34,15 @@ import {
 } from "@/lib/product-name";
 import { validateRequiredProductFields } from "@/lib/product-form-validation";
 import { cn, formatPrice, type ShirtType } from "@/lib/utils";
+import AdminLineItemReservationField from "@/components/admin/AdminLineItemReservationField";
+import AdminProductReservationBadge from "@/components/admin/AdminProductReservationBadge";
+import type { ExternalSeller, SaleAssignableUser } from "@/lib/api";
+import {
+  createDefaultSaleSellerValue,
+  saleToSellerFormValue,
+  type SaleSellerFormValue,
+} from "@/lib/sale-seller";
+import { lineItemReservationToPayload } from "@/lib/product-reservation";
 
 export type SupplierOrderLineItemDraft = {
   key: string;
@@ -58,6 +67,17 @@ export type SupplierOrderLineItemDraft = {
   link: string;
   price: string;
   isCustomPrice: boolean;
+  reserved: boolean;
+  reservationSellerValue: SaleSellerFormValue;
+};
+
+export type SupplierOrderLineItemReservationConfig = {
+  mode: "inherit" | "line";
+  inheritSellerLabel?: string;
+  assignableUsers: SaleAssignableUser[];
+  externalSellers: ExternalSeller[];
+  canAssignUser: boolean;
+  currentUserId?: string | null;
 };
 
 type AdminSupplierOrderLineItemRowProps = {
@@ -66,6 +86,7 @@ type AdminSupplierOrderLineItemRowProps = {
   productOptions: ProductOptionsResponse;
   isSubmitting: boolean;
   isPriceAllocationEnabled?: boolean;
+  reservationConfig?: SupplierOrderLineItemReservationConfig;
   onChange: (
     key: string,
     updates: Partial<Omit<SupplierOrderLineItemDraft, "key">>
@@ -107,6 +128,64 @@ export function getSupplierOrderLineItemDraftTotal(item: SupplierOrderLineItemDr
   const price = Number(item.price);
   if (!Number.isFinite(quantity) || !Number.isFinite(price)) return 0;
   return Math.max(0, quantity) * Math.max(0, price);
+}
+
+export function getSupplierOrderLineItemReservationRequestFields(
+  item: SupplierOrderLineItemDraft,
+  sellerPayload?: {
+    seller_type?: "internal" | "external";
+    seller_user_id?: string;
+    external_seller_id?: string;
+    external_seller_name?: string;
+  }
+) {
+  const reservation = lineItemReservationToPayload(
+    { reserved: item.reserved, productId: item.productId },
+    sellerPayload
+  );
+
+  if (!reservation.reserved) {
+    return { reserved: false };
+  }
+
+  return {
+    reserved: true,
+    reserved_seller_type: sellerPayload?.seller_type,
+    reserved_for_user_id: reservation.reserved_for_user_id,
+    reserved_for_external_seller_id: reservation.reserved_for_external_seller_id,
+    reserved_for_external_seller_name: reservation.reserved_for_external_seller_name,
+  };
+}
+
+export function createLineItemReservationSellerValue(
+  item: Pick<
+    SupplierOrderLineItemDraft,
+    "reservationSellerValue"
+  > & {
+    reserved_for_user_id?: string;
+    reserved_for_external_seller_id?: string;
+    reserved_for_external_seller_name?: string;
+  },
+  currentUserId: string | null
+): SaleSellerFormValue {
+  if (
+    item.reserved_for_external_seller_id ||
+    item.reserved_for_external_seller_name
+  ) {
+    return saleToSellerFormValue(
+      {
+        external_seller_id: item.reserved_for_external_seller_id,
+        external_seller_name: item.reserved_for_external_seller_name,
+      },
+      currentUserId
+    );
+  }
+
+  if (item.reserved_for_user_id) {
+    return saleToSellerFormValue({ created_by: item.reserved_for_user_id }, currentUserId);
+  }
+
+  return item.reservationSellerValue;
 }
 
 export function getSupplierOrderLineItemIdentityRequestFields(
@@ -161,6 +240,8 @@ export function createEmptySupplierOrderLineItemDraft(): SupplierOrderLineItemDr
     link: "",
     price: "0",
     isCustomPrice: false,
+    reserved: false,
+    reservationSellerValue: createDefaultSaleSellerValue(null),
   };
 }
 
@@ -170,6 +251,7 @@ export default function AdminSupplierOrderLineItemRow({
   productOptions,
   isSubmitting,
   isPriceAllocationEnabled = false,
+  reservationConfig,
   onChange,
   onRemove,
 }: AdminSupplierOrderLineItemRowProps) {
@@ -203,6 +285,7 @@ export default function AdminSupplierOrderLineItemRow({
       productId: undefined,
       isCustomProduct: false,
       isNameManuallyEdited: false,
+      reserved: false,
     });
   };
 
@@ -241,8 +324,14 @@ export default function AdminSupplierOrderLineItemRow({
       productId: isCustom ? undefined : item.productId,
       productName: isCustom ? generatedProductName : item.productName,
       isNameManuallyEdited: isCustom ? false : item.isNameManuallyEdited,
+      ...(isCustom ? { reserved: false } : {}),
     });
   };
+
+  const showReservationField =
+    Boolean(reservationConfig) &&
+    Boolean(item.productId) &&
+    !item.isCustomProduct;
 
   return (
     <Box display="flex" direction="col" gap="3" align="stretch" className="relative w-full min-w-0 border border-border p-3 pr-10">
@@ -348,14 +437,45 @@ export default function AdminSupplierOrderLineItemRow({
             size="lg"
           />
           <Box display="flex" direction="col" gap="1" className="min-w-0">
-            <Typography variant="body2" className="line-clamp-2">
-              {matchedProduct.name}
-            </Typography>
+            <Box display="flex" align="center" gap="2" className="min-w-0 flex-wrap">
+              <Typography variant="body2" className="line-clamp-2">
+                {matchedProduct.name}
+              </Typography>
+              <AdminProductReservationBadge
+                product={matchedProduct}
+                assignableUsers={reservationConfig?.assignableUsers}
+                externalSellers={reservationConfig?.externalSellers}
+                size="sm"
+              />
+            </Box>
             <Typography variant="body2" color="muted">
               Producto del catálogo · {formatPrice(matchedProduct.price)}
             </Typography>
           </Box>
         </Box>
+      )}
+
+      {showReservationField && reservationConfig && (
+        <AdminLineItemReservationField
+          idPrefix={`order-reservation-${item.key}`}
+          reserved={item.reserved}
+          onReservedChange={(reserved) => onChange(item.key, { reserved })}
+          reservationSellerValue={item.reservationSellerValue}
+          onReservationSellerChange={(reservationSellerValue) =>
+            onChange(item.key, { reservationSellerValue })
+          }
+          assignableUsers={reservationConfig.assignableUsers}
+          externalSellers={reservationConfig.externalSellers}
+          canAssignUser={reservationConfig.canAssignUser}
+          currentUserId={reservationConfig.currentUserId}
+          disabled={isSubmitting}
+          inheritSellerLabel={
+            reservationConfig.mode === "inherit"
+              ? reservationConfig.inheritSellerLabel
+              : undefined
+          }
+          showSellerField={reservationConfig.mode === "line"}
+        />
       )}
 
       {!item.isCustomProduct && (

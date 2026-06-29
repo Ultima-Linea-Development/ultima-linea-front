@@ -3,10 +3,12 @@ import {
   ensureIndexes,
   getCommissionsCollection,
   getExternalSellersCollection,
+  getProductsCollection,
 } from "@/lib/server/db";
 import {
   CommissionDocument,
   ExternalSellerDocument,
+  ProductDocument,
 } from "@/lib/server/models";
 import {
   isNextResponse,
@@ -25,6 +27,12 @@ import { resolveSaleSellerForUpdate } from "@/lib/server/sale-seller";
 import { buildDefaultCommissionName } from "@/lib/server/commissions";
 import { parseSaleDateInput } from "@/lib/sale-date";
 import { trackAdminAction } from "@/lib/server/admin-history";
+import {
+  applyLineItemReservations,
+  clearProductReservations,
+  getReservedProductIds,
+  reconcileProductReservations,
+} from "@/lib/server/product-reservation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -170,8 +178,35 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       if ("error" in itemsResult) {
         return jsonError(itemsResult.error, 400);
       }
-      updateFields.items = itemsResult.items;
+
+      const externalSellers = await getExternalSellersCollection<ExternalSellerDocument>();
+      const defaultSeller = {
+        seller_user_id:
+          (updateFields.seller_user_id as string | undefined) ?? existing.seller_user_id,
+        external_seller_id:
+          (updateFields.external_seller_id as string | undefined) ?? existing.external_seller_id,
+        external_seller_name:
+          (updateFields.external_seller_name as string | undefined) ??
+          existing.external_seller_name,
+      };
+      const reservationResult = await applyLineItemReservations(
+        externalSellers,
+        itemsResult.items,
+        defaultSeller
+      );
+
+      if ("error" in reservationResult) {
+        return jsonError(reservationResult.error, 400);
+      }
+
+      updateFields.items = reservationResult.items;
     }
+
+    const nextStatus =
+      (updateFields.status as string | undefined) ?? existing.status;
+    const previousItems = existing.items ?? [];
+    const nextItems =
+      (updateFields.items as typeof previousItems | undefined) ?? previousItems;
 
     const updateDoc: Record<string, unknown> = { $set: updateFields };
     if (Object.keys(unsetFields).length > 0) {
@@ -184,6 +219,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     if (!result) {
       return jsonError("Encargo no encontrado", 404);
+    }
+
+    const products = await getProductsCollection<ProductDocument>();
+    if (nextStatus === "cancelled") {
+      await clearProductReservations(products, getReservedProductIds(previousItems));
+    } else {
+      await reconcileProductReservations(products, previousItems, nextItems);
     }
 
     await trackAdminAction({
@@ -216,6 +258,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     const deleteCheck = assertCanDeleteOwnedResource(auth, existing.created_by);
     if (isNextResponse(deleteCheck)) return deleteCheck;
+
+    const products = await getProductsCollection<ProductDocument>();
+    await clearProductReservations(products, getReservedProductIds(existing.items ?? []));
 
     await collection.deleteOne({ _id: id });
     await trackAdminAction({

@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   ensureIndexes,
+  getExternalSellersCollection,
+  getProductsCollection,
   getSupplierOrdersCollection,
   getSuppliersCollection,
 } from "@/lib/server/db";
-import { SupplierDocument, SupplierOrderDocument } from "@/lib/server/models";
+import {
+  ExternalSellerDocument,
+  ProductDocument,
+  SupplierDocument,
+  SupplierOrderDocument,
+} from "@/lib/server/models";
 import {
   isNextResponse,
   jsonError,
@@ -27,6 +34,12 @@ import {
 } from "@/lib/supplier-order-display";
 import { parseSaleDateInput } from "@/lib/sale-date";
 import { trackAdminAction } from "@/lib/server/admin-history";
+import {
+  applyLineItemReservations,
+  clearProductReservations,
+  getReservedProductIds,
+  reconcileProductReservations,
+} from "@/lib/server/product-reservation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -227,8 +240,24 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       if ("error" in itemsResult) {
         return jsonError(itemsResult.error, 400);
       }
-      updateFields.items = itemsResult.items;
+
+      const externalSellers = await getExternalSellersCollection<ExternalSellerDocument>();
+      const reservationResult = await applyLineItemReservations(
+        externalSellers,
+        itemsResult.items
+      );
+
+      if ("error" in reservationResult) {
+        return jsonError(reservationResult.error, 400);
+      }
+
+      updateFields.items = reservationResult.items;
     }
+
+    const nextStatus = (updateFields.status as string | undefined) ?? existing.status;
+    const previousItems = existing.items ?? [];
+    const nextItems =
+      (updateFields.items as typeof previousItems | undefined) ?? previousItems;
 
     const updateDoc: Record<string, unknown> = { $set: updateFields };
     if (Object.keys(unsetFields).length > 0) {
@@ -241,6 +270,13 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     if (!result) {
       return jsonError("Pedido no encontrado", 404);
+    }
+
+    const products = await getProductsCollection<ProductDocument>();
+    if (nextStatus === "cancelled") {
+      await clearProductReservations(products, getReservedProductIds(previousItems));
+    } else {
+      await reconcileProductReservations(products, previousItems, nextItems);
     }
 
     await trackAdminAction({

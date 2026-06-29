@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   ensureIndexes,
+  getExternalSellersCollection,
+  getProductsCollection,
   getSupplierOrdersCollection,
   getSuppliersCollection,
 } from "@/lib/server/db";
 import {
+  ExternalSellerDocument,
+  ProductDocument,
   SupplierDocument,
   SupplierOrder,
   SupplierOrderDocument,
@@ -31,6 +35,10 @@ import {
   validateSupplierOrderTrackingLink,
 } from "@/lib/supplier-order-display";
 import { trackAdminAction } from "@/lib/server/admin-history";
+import {
+  applyLineItemReservations,
+  syncProductReservationsFromItems,
+} from "@/lib/server/product-reservation";
 
 import { parseSaleDateInput } from "@/lib/sale-date";
 
@@ -116,6 +124,16 @@ export async function POST(request: NextRequest) {
       return jsonError(itemsResult.error, 400);
     }
 
+    const externalSellers = await getExternalSellersCollection<ExternalSellerDocument>();
+    const reservationResult = await applyLineItemReservations(
+      externalSellers,
+      itemsResult.items
+    );
+
+    if ("error" in reservationResult) {
+      return jsonError(reservationResult.error, 400);
+    }
+
     const status = parseSupplierOrderStatus(body.status) ?? "draft";
     const paidAt = parseSupplierOrderOptionalDate(body.paid_at);
     if (paidAt === "invalid") return jsonError("Fecha de pago inválida", 400);
@@ -174,14 +192,16 @@ export async function POST(request: NextRequest) {
       ...(paidAt ? { paid_at: paidAt } : {}),
       ...(sentAt ? { sent_at: sentAt } : {}),
       ...(receivedAt ? { received_at: receivedAt } : {}),
-      items: itemsResult.items,
+      items: reservationResult.items,
       created_by: auth.user_id,
       created_at: createdAt,
       updated_at: now,
     };
 
     const collection = await getSupplierOrdersCollection<SupplierOrderDocument>();
+    const products = await getProductsCollection<ProductDocument>();
     await collection.insertOne(supplierOrderToDoc(order));
+    await syncProductReservationsFromItems(products, reservationResult.items);
     await trackAdminAction({
       auth,
       action: "create",

@@ -17,9 +17,10 @@ import {
   ADMIN_TABLE_TH_CLASS,
   adminTableRowClassName,
 } from "@/components/admin/AdminTable";
-import type { Product, SupplierOrder, SupplierOrderLineItem } from "@/lib/api";
+import type { ExternalSeller, Product, SaleAssignableUser, SupplierOrder, SupplierOrderLineItem } from "@/lib/api";
 import AdminSupplierOrderSizeQuantity from "@/components/admin/AdminSupplierOrderSizeQuantity";
 import AdminSupplierOrderStatusBadge from "@/components/admin/AdminSupplierOrderStatusBadge";
+import AdminLineItemReservationCell from "@/components/admin/AdminLineItemReservationCell";
 import AdminSupplierOrderTrackingCell from "@/components/admin/AdminSupplierOrderTrackingCell";
 import { getProductPrimaryImageUrl } from "@/lib/admin-product-image";
 import { getSupplierOrderItemTypeLabel } from "@/lib/supplier-order-display";
@@ -30,11 +31,15 @@ import { cn, formatPrice, generateSlug } from "@/lib/utils";
 type AdminSupplierOrderDetailProps = {
   order: SupplierOrder;
   products?: Product[];
+  assignableUsers?: SaleAssignableUser[];
+  externalSellers?: ExternalSeller[];
 };
 
 export default function AdminSupplierOrderDetail({
   order,
   products = [],
+  assignableUsers = [],
+  externalSellers = [],
 }: AdminSupplierOrderDetailProps) {
   const thClass = ADMIN_TABLE_TH_CLASS;
   const cellClass = ADMIN_TABLE_CELL_CLASS;
@@ -166,6 +171,13 @@ export default function AdminSupplierOrderDetail({
                 <AdminTableMobileField label="Precio">
                   <Typography variant="body2">{formatPrice(item.price)}</Typography>
                 </AdminTableMobileField>
+                <AdminTableMobileField label="Reserva" fullWidth>
+                  <AdminLineItemReservationCell
+                    item={item}
+                    assignableUsers={assignableUsers}
+                    externalSellers={externalSellers}
+                  />
+                </AdminTableMobileField>
                 {item.description && (
                   <AdminTableMobileField label="Descripción" fullWidth>
                     <Typography variant="body2">{item.description}</Typography>
@@ -217,6 +229,9 @@ export default function AdminSupplierOrderDetail({
                 <Typography variant="body2">Precio</Typography>
               </th>
               <th className={thClass}>
+                <Typography variant="body2">Reserva</Typography>
+              </th>
+              <th className={thClass}>
                 <Typography variant="body2">Dorsal</Typography>
               </th>
               <th className={thClass}>
@@ -252,6 +267,13 @@ export default function AdminSupplierOrderDetail({
                   <Typography variant="body2" className="whitespace-nowrap tabular-nums">
                     {formatPrice(item.price)}
                   </Typography>
+                </td>
+                <td className={cellClass}>
+                  <AdminLineItemReservationCell
+                    item={item}
+                    assignableUsers={assignableUsers}
+                    externalSellers={externalSellers}
+                  />
                 </td>
                 <td className={cellClass}>
                   <Typography variant="body2">{item.dorsal ?? "—"}</Typography>

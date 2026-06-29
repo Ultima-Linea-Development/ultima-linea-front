@@ -3,11 +3,13 @@ import {
   ensureIndexes,
   getCommissionsCollection,
   getExternalSellersCollection,
+  getProductsCollection,
 } from "@/lib/server/db";
 import {
   Commission,
   CommissionDocument,
   ExternalSellerDocument,
+  ProductDocument,
   generateULID,
   commissionToDoc,
 } from "@/lib/server/models";
@@ -27,6 +29,10 @@ import {
 import { resolveSaleSellerForCreate } from "@/lib/server/sale-seller";
 import { parseSaleDateInput } from "@/lib/sale-date";
 import { trackAdminAction } from "@/lib/server/admin-history";
+import {
+  applyLineItemReservations,
+  syncProductReservationsFromItems,
+} from "@/lib/server/product-reservation";
 
 type CreateCommissionBody = {
   customer_name?: string;
@@ -113,6 +119,20 @@ export async function POST(request: NextRequest) {
     }
 
     const sellerFields = mapSaleSellerToCommissionFields(sellerResult);
+    const reservationResult = await applyLineItemReservations(
+      externalSellers,
+      itemsResult.items,
+      {
+        seller_user_id: sellerFields.seller_user_id,
+        external_seller_id: sellerFields.external_seller_id,
+        external_seller_name: sellerFields.external_seller_name,
+      }
+    );
+
+    if ("error" in reservationResult) {
+      return jsonError(reservationResult.error, 400);
+    }
+
     const now = new Date();
     const commissionDateInput = body.commission_date?.trim();
     let createdAt = now;
@@ -130,14 +150,16 @@ export async function POST(request: NextRequest) {
       ...sellerFields,
       status: "pending",
       notes: trimOptional(body.notes),
-      items: itemsResult.items,
+      items: reservationResult.items,
       created_by: auth.user_id,
       created_at: createdAt,
       updated_at: now,
     };
 
     const collection = await getCommissionsCollection<CommissionDocument>();
+    const products = await getProductsCollection<ProductDocument>();
     await collection.insertOne(commissionToDoc(commission));
+    await syncProductReservationsFromItems(products, reservationResult.items);
     await trackAdminAction({
       auth,
       action: "create",

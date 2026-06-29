@@ -1,7 +1,8 @@
 import type { Commission } from "@/lib/api";
+import { buildFlexibleSearchRegexPattern, matchesNormalizedSearch } from "@/lib/search-normalization";
 
 export function buildAdminCommissionsSearchTextMatch(query: string): Record<string, unknown> {
-  const pattern = query.trim();
+  const pattern = buildFlexibleSearchRegexPattern(query);
   if (!pattern) return {};
 
   return {
@@ -24,30 +25,28 @@ export function filterCommissionsByQuery(
   query: string,
   limit = 8
 ): Commission[] {
-  const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return [];
+  const trimmed = query.trim();
+  if (!trimmed) return [];
 
-  const matches = commissions.filter((commission) => {
-    const haystack = [
-      commission.name,
-      commission.customer_name,
-      commission.customer_contact,
-      commission.external_seller_name,
-      commission.supplier_order_name,
-      commission.notes,
-      ...commission.items.flatMap((item) => [
-        item.shirt_name,
-        item.sizes,
-        item.dorsal,
-        item.description,
-      ]),
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLocaleLowerCase();
-
-    return haystack.includes(normalized);
-  });
+  const matches = commissions.filter((commission) =>
+    matchesNormalizedSearch(
+      [
+        commission.name,
+        commission.customer_name,
+        commission.customer_contact,
+        commission.external_seller_name,
+        commission.supplier_order_name,
+        commission.notes,
+        ...commission.items.flatMap((item) => [
+          item.shirt_name,
+          item.sizes,
+          item.dorsal,
+          item.description,
+        ]),
+      ],
+      trimmed
+    )
+  );
 
   return matches.slice(0, limit);
 }

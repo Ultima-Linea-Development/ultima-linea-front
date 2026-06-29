@@ -1,9 +1,9 @@
 import type { Sale } from "@/lib/api";
 import { normalizeSaleSearchQuery, saleMatchesQuery } from "@/lib/sale-items";
-import { escapeRegex } from "@/lib/utils";
+import { buildFlexibleSearchRegexPattern } from "@/lib/search-normalization";
 
 export function buildAdminSalesSearchTextMatch(query: string): Record<string, unknown> {
-  const pattern = escapeRegex(normalizeSaleSearchQuery(query));
+  const pattern = buildFlexibleSearchRegexPattern(normalizeSaleSearchQuery(query));
   return {
     $or: [
       { product_name: { $regex: pattern, $options: "i" } },
@@ -20,8 +20,8 @@ export function buildAdminSalesSearchTextMatch(query: string): Record<string, un
 }
 
 export function filterSalesByQuery(sales: Sale[], query: string, limit = 8): Sale[] {
-  const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return [];
+  const trimmed = query.trim();
+  if (!trimmed) return [];
 
-  return sales.filter((sale) => saleMatchesQuery(sale, normalized)).slice(0, limit);
+  return sales.filter((sale) => saleMatchesQuery(sale, trimmed)).slice(0, limit);
 }

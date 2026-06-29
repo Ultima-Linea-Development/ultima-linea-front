@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { PER_PAGE } from "@/components/admin/AdminSupplierOrdersTable";
-import { getToken, getUserFromToken, getCurrentUserId } from "@/lib/auth";
+import { getToken, getUserFromToken, getCurrentUserId, isAdmin } from "@/lib/auth";
 import { canDeleteOwnedResource } from "@/lib/roles";
 import {
   adminOrdersApi,
-  adminSuppliersApi,
   adminProductsApi,
+  adminSalesApi,
+  adminSuppliersApi,
   type CreateSupplierOrderRequest,
+  type ExternalSeller,
   type Product,
+  type SaleAssignableUser,
   type Supplier,
   type SupplierOrder,
   type UpdateSupplierOrderRequest,
@@ -33,6 +36,8 @@ export function useAdminSupplierOrdersPanel() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [assignableUsers, setAssignableUsers] = useState<SaleAssignableUser[]>([]);
+  const [externalSellers, setExternalSellers] = useState<ExternalSeller[]>([]);
   const [ordersData, setOrdersData] = useState<SupplierOrdersListData>();
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
@@ -107,6 +112,19 @@ export function useAdminSupplierOrdersPanel() {
     setProducts(response.data?.products ?? []);
   }, []);
 
+  const loadSellerData = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+
+    const [usersResponse, sellersResponse] = await Promise.all([
+      adminSalesApi.getAssignableUsers(token),
+      adminSalesApi.getExternalSellers(token),
+    ]);
+
+    setAssignableUsers(usersResponse.data?.users ?? []);
+    setExternalSellers(sellersResponse.data?.sellers ?? []);
+  }, []);
+
   const loadOrders = useCallback(async () => {
     await flushPendingDelete();
     const token = getToken();
@@ -158,20 +176,20 @@ export function useAdminSupplierOrdersPanel() {
   const refreshOrdersList = useCallback(async () => {
     setIsDataLoading(true);
     try {
-      await Promise.all([loadOrders(), loadSuppliers(), loadProducts()]);
+      await Promise.all([loadOrders(), loadSuppliers(), loadProducts(), loadSellerData()]);
     } finally {
       setIsDataLoading(false);
     }
-  }, [loadOrders, loadSuppliers, loadProducts]);
+  }, [loadOrders, loadSuppliers, loadProducts, loadSellerData]);
 
   const refreshOrdersPanel = useCallback(async () => {
     setIsDataLoading(true);
     try {
-      await Promise.all([loadSuppliers(), loadProducts(), loadOrders()]);
+      await Promise.all([loadSuppliers(), loadProducts(), loadOrders(), loadSellerData()]);
     } finally {
       setIsDataLoading(false);
     }
-  }, [loadSuppliers, loadProducts, loadOrders]);
+  }, [loadSuppliers, loadProducts, loadOrders, loadSellerData]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -183,9 +201,9 @@ export function useAdminSupplierOrdersPanel() {
     if (!showOrderForm && !editingOrder) return;
 
     queueMicrotask(() => {
-      void Promise.all([loadSuppliers(), loadProducts()]);
+      void Promise.all([loadSuppliers(), loadProducts(), loadSellerData()]);
     });
-  }, [showOrderForm, editingOrder, loadSuppliers, loadProducts]);
+  }, [showOrderForm, editingOrder, loadSuppliers, loadProducts, loadSellerData]);
 
   const handleCreateOrder = useCallback(
     async (payload: CreateSupplierOrderRequest) => {
@@ -417,6 +435,10 @@ export function useAdminSupplierOrdersPanel() {
     setPage,
     suppliers,
     products,
+    assignableUsers,
+    externalSellers,
+    isAdmin: isAdmin(),
+    getCurrentUserId,
     error,
     setError,
     success,

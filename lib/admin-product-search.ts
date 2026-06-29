@@ -6,7 +6,7 @@ export function filterProductsByQuery(products: Product[], query: string, limit 
   if (!trimmed) return [];
 
   const matches = products.filter((product) => {
-    const values = [product.name, product.team, product.league, product.season];
+    const values = [product.name, product.description, product.team, product.league, product.season];
     return matchesNormalizedSearch(values, trimmed);
   });
 

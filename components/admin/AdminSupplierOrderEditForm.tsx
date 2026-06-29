@@ -16,14 +16,18 @@ import AdminSaleDateField from "@/components/admin/AdminSaleDateField";
 import AdminSupplierOrderTrackingFields from "@/components/admin/AdminSupplierOrderTrackingFields";
 import AdminSupplierOrderLineItemRow, {
   createEmptySupplierOrderLineItemDraft,
+  createLineItemReservationSellerValue,
   getSupplierOrderLineItemIdentityRequestFields,
   getSupplierOrderLineItemDraftTotal,
+  getSupplierOrderLineItemReservationRequestFields,
   validateSupplierOrderLineItemIdentity,
   type SupplierOrderLineItemDraft,
 } from "@/components/admin/AdminSupplierOrderLineItemRow";
 import type {
+  ExternalSeller,
   Product,
   ProductOptionsResponse,
+  SaleAssignableUser,
   Supplier,
   SupplierOrder,
   SupplierOrderStatus,
@@ -63,11 +67,17 @@ import {
 import { parseSupplierOrderOptionalCost } from "@/lib/supplier-order-costs";
 import { saleDateInputToApiValue, saleDateIsoToDisplayValue } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
+import { commissionSellerValueToPayload } from "@/lib/commission-seller";
+import { createDefaultSaleSellerValue, validateSaleSellerValue } from "@/lib/sale-seller";
 
 type AdminSupplierOrderEditFormProps = {
   order: SupplierOrder;
   products: Product[];
   suppliers: Supplier[];
+  assignableUsers: SaleAssignableUser[];
+  externalSellers: ExternalSeller[];
+  currentUserId: string | null;
+  canAssignUser: boolean;
   isSubmitting: boolean;
   onSave: (payload: UpdateSupplierOrderRequest) => Promise<boolean>;
   onError: (message: string) => void;
@@ -78,7 +88,8 @@ const fieldLabelClassName = "w-full min-w-0";
 
 function orderItemToDraft(
   item: SupplierOrder["items"][number],
-  products: Product[]
+  products: Product[],
+  currentUserId: string | null
 ): SupplierOrderLineItemDraft {
   const matchedProduct = item.product_id
     ? products.find((product) => product.id === item.product_id)
@@ -121,10 +132,20 @@ function orderItemToDraft(
     link: item.link ?? "",
     price: String(item.price),
     isCustomPrice: false,
+    reserved: Boolean(item.reserved),
+    reservationSellerValue: createLineItemReservationSellerValue(
+      {
+        reservationSellerValue: createDefaultSaleSellerValue(currentUserId),
+        reserved_for_user_id: item.reserved_for_user_id,
+        reserved_for_external_seller_id: item.reserved_for_external_seller_id,
+        reserved_for_external_seller_name: item.reserved_for_external_seller_name,
+      },
+      currentUserId
+    ),
   };
 }
 
-function draftToRequestItem(item: SupplierOrderLineItemDraft) {
+function draftToRequestItem(item: SupplierOrderLineItemDraft, canAssignUser: boolean) {
   const sizesPayload = sizeRowsToPayload(item.sizeRows);
   if (!sizesPayload) {
     throw new Error("invalid sizes");
@@ -135,6 +156,10 @@ function draftToRequestItem(item: SupplierOrderLineItemDraft) {
     product_id: item.productId,
     shirt_name: item.productName.trim(),
     ...getSupplierOrderLineItemIdentityRequestFields(item),
+    ...getSupplierOrderLineItemReservationRequestFields(
+      item,
+      commissionSellerValueToPayload(item.reservationSellerValue, canAssignUser)
+    ),
     quantity: sizesPayload.quantity,
     type: item.type,
     sizes: sizesPayload.sizes,
@@ -146,7 +171,10 @@ function draftToRequestItem(item: SupplierOrderLineItemDraft) {
   };
 }
 
-function validateLineItems(lineItems: SupplierOrderLineItemDraft[]): string | null {
+function validateLineItems(
+  lineItems: SupplierOrderLineItemDraft[],
+  canAssignUser: boolean
+): string | null {
   if (lineItems.length === 0) {
     return "Agregá al menos un ítem.";
   }
@@ -168,6 +196,13 @@ function validateLineItems(lineItems: SupplierOrderLineItemDraft[]): string | nu
     if (!Number.isFinite(price) || price < 0) {
       return `Precio inválido para ${item.productName}.`;
     }
+
+    if (item.reserved && item.productId) {
+      const sellerError = validateSaleSellerValue(item.reservationSellerValue, canAssignUser);
+      if (sellerError) {
+        return `Reserva de ${item.productName}: ${sellerError}`;
+      }
+    }
   }
 
   return null;
@@ -177,6 +212,10 @@ export default function AdminSupplierOrderEditForm({
   order,
   products,
   suppliers,
+  assignableUsers,
+  externalSellers,
+  currentUserId,
+  canAssignUser,
   isSubmitting,
   onSave,
   onError,
@@ -212,7 +251,7 @@ export default function AdminSupplierOrderEditForm({
   );
   const [supplierValue, setSupplierValue] = useState(() => supplierToFormValue(initialSupplier));
   const [lineItems, setLineItems] = useState<SupplierOrderLineItemDraft[]>(() =>
-    order.items.map((item) => orderItemToDraft(item, products))
+    order.items.map((item) => orderItemToDraft(item, products, currentUserId))
   );
   const [productOptions, setProductOptions] = useState<ProductOptionsResponse>(
     EMPTY_PRODUCT_OPTIONS
@@ -262,7 +301,16 @@ export default function AdminSupplierOrderEditForm({
 
   const addLineItem = () => {
     setLineItems((prev) =>
-      allocateSupplierOrderPrices([createEmptySupplierOrderLineItemDraft(), ...prev], totalPaid)
+      allocateSupplierOrderPrices(
+        [
+          {
+            ...createEmptySupplierOrderLineItemDraft(),
+            reservationSellerValue: createDefaultSaleSellerValue(currentUserId),
+          },
+          ...prev,
+        ],
+        totalPaid
+      )
     );
   };
 
@@ -311,7 +359,7 @@ export default function AdminSupplierOrderEditForm({
     }
 
     const finalLineItems = allocateSupplierOrderPrices(lineItems, totalPaid);
-    const itemsError = validateLineItems(finalLineItems);
+    const itemsError = validateLineItems(finalLineItems, canAssignUser);
     if (itemsError) {
       onError(itemsError);
       return;
@@ -348,7 +396,7 @@ export default function AdminSupplierOrderEditForm({
       shipping_cost: parsedShippingCost,
       ...supplierValueToPayload(supplierValue),
       ...supplierOrderMilestoneDatesToUpdatePayload(milestoneDates),
-      items: finalLineItems.map(draftToRequestItem),
+      items: finalLineItems.map((item) => draftToRequestItem(item, canAssignUser)),
     });
   };
 
@@ -451,6 +499,13 @@ export default function AdminSupplierOrderEditForm({
               productOptions={productOptions}
               isSubmitting={isSubmitting}
               isPriceAllocationEnabled={isPriceAllocationEnabled}
+              reservationConfig={{
+                mode: "line",
+                assignableUsers,
+                externalSellers,
+                canAssignUser,
+                currentUserId,
+              }}
               onChange={updateLineItem}
               onRemove={removeLineItem}
             />

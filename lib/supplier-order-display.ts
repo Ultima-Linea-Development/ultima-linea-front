@@ -1,5 +1,6 @@
 import type { SupplierOrder, SupplierOrderItemType, SupplierOrderStatus } from "@/lib/api";
 import type { IconName } from "@/components/ui/Icons";
+import { matchesNormalizedSearch } from "@/lib/search-normalization";
 
 export type SupplierOrderStatusVisual = {
   label: string;
@@ -82,29 +83,27 @@ export function getSupplierOrderLabel(order: SupplierOrder): string {
 }
 
 export function supplierOrderMatchesQuery(order: SupplierOrder, query: string): boolean {
-  const normalized = query.trim().toLocaleLowerCase();
-  if (!normalized) return true;
+  const trimmed = query.trim();
+  if (!trimmed) return true;
 
-  const haystack = [
-    order.name,
-    order.supplier_name,
-    order.notes,
-    order.tracking_number,
-    order.tracking_link,
-    ...order.items.flatMap((item) => [
-      item.shirt_name,
-      item.sizes,
-      item.dorsal,
-      item.description,
-      item.link,
-      item.type,
-    ]),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLocaleLowerCase();
-
-  return haystack.includes(normalized);
+  return matchesNormalizedSearch(
+    [
+      order.name,
+      order.supplier_name,
+      order.notes,
+      order.tracking_number,
+      order.tracking_link,
+      ...order.items.flatMap((item) => [
+        item.shirt_name,
+        item.sizes,
+        item.dorsal,
+        item.description,
+        item.link,
+        item.type,
+      ]),
+    ],
+    trimmed
+  );
 }
 
 export function normalizeSupplierOrderTrackingLink(value: string): string | undefined {

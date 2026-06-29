@@ -80,6 +80,10 @@ export default function AdminSupplierOrdersPage() {
           <AdminSupplierOrderForm
             products={panel.products}
             suppliers={panel.suppliers}
+            assignableUsers={panel.assignableUsers}
+            externalSellers={panel.externalSellers}
+            currentUserId={panel.getCurrentUserId()}
+            canAssignUser={panel.isAdmin}
             isSubmitting={panel.isSubmitting}
             onCreate={panel.handleCreateOrder}
             onCancel={() => panel.setShowOrderForm(false)}
@@ -98,7 +102,12 @@ export default function AdminSupplierOrdersPage() {
           title={panel.viewingOrder.name}
           className="max-w-5xl"
         >
-          <AdminSupplierOrderDetail order={panel.viewingOrder} products={panel.products} />
+          <AdminSupplierOrderDetail
+            order={panel.viewingOrder}
+            products={panel.products}
+            assignableUsers={panel.assignableUsers}
+            externalSellers={panel.externalSellers}
+          />
         </Modal>
       )}
 
@@ -117,6 +126,10 @@ export default function AdminSupplierOrdersPage() {
             order={panel.editingOrder}
             products={panel.products}
             suppliers={panel.suppliers}
+            assignableUsers={panel.assignableUsers}
+            externalSellers={panel.externalSellers}
+            currentUserId={panel.getCurrentUserId()}
+            canAssignUser={panel.isAdmin}
             isSubmitting={panel.isEditSubmitting}
             onSave={panel.handleSaveEdit}
             onCancel={() => {

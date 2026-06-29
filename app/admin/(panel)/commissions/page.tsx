@@ -109,6 +109,7 @@ export default function AdminCommissionsPage() {
           <AdminCommissionDetail
             commission={panel.viewingCommission}
             assignableUsers={panel.assignableUsers}
+            externalSellers={panel.externalSellers}
             onEdit={(commission) => {
               panel.setViewingCommission(null);
               panel.setEditError("");

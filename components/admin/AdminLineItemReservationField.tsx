@@ -39,7 +39,7 @@ export default function AdminLineItemReservationField({
   const checkboxId = `${idPrefix}-reserved`;
 
   return (
-    <Box display="flex" direction="col" gap="3" className="w-full min-w-0">
+    <Box display="flex" direction="col" gap="3" align="stretch" className="w-full min-w-0 self-stretch">
       <div className="flex items-start gap-2">
         <input
           id={checkboxId}

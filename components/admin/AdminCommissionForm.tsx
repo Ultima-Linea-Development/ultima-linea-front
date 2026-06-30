@@ -65,7 +65,10 @@ function draftToRequestItem(
     product_id: item.productId,
     shirt_name: item.productName.trim(),
     ...getSupplierOrderLineItemIdentityRequestFields(item),
-    ...getSupplierOrderLineItemReservationRequestFields(item, sellerPayload),
+    ...getSupplierOrderLineItemReservationRequestFields(item, {
+      mode: "inherit",
+      sellerPayload,
+    }),
     quantity: sizesPayload.quantity,
     type: item.type,
     sizes: sizesPayload.sizes,

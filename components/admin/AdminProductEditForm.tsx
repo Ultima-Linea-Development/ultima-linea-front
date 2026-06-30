@@ -15,16 +15,31 @@ import SortableImageGrid, { type SortableImageItem } from "@/components/ui/Sorta
 import AdminProductIdentityFields, {
   type ProductVersionFieldValue,
 } from "@/components/admin/AdminProductIdentityFields";
-import type { Product, ProductOptionsResponse, UpdateProductRequest } from "@/lib/api";
-import { adminUploadApi, productsApi } from "@/lib/api";
+import type {
+  ExternalSeller,
+  Product,
+  ProductOptionsResponse,
+  SaleAssignableUser,
+  UpdateProductRequest,
+} from "@/lib/api";
+import { adminSalesApi, adminUploadApi, productsApi } from "@/lib/api";
 import { generateSlug, normalizeShirtType } from "@/lib/utils";
 import { validateRequiredProductFields } from "@/lib/product-form-validation";
+import {
+  productHasCatalogReservations,
+  reservationRowsFromProduct,
+  reservedBySizesFromCatalogReservationRows,
+  validateProductCatalogReservations,
+} from "@/lib/product-catalog-reservation";
+import { getCurrentUserId, getToken as readAuthToken, isAdmin } from "@/lib/auth";
+import type { SupplierOrderSizeReservationRow } from "@/lib/supplier-order-sizes";
 import {
   productToRows,
   rowsToPayload,
   type SizeStockRow,
 } from "@/lib/product-inventory";
 import ProductSizeStockFields from "@/components/admin/ProductSizeStockFields";
+import AdminProductReservationFields from "@/components/admin/AdminProductReservationFields";
 import {
   buildProductName,
   DEFAULT_PRODUCT_TYPE,
@@ -93,6 +108,13 @@ export default function AdminProductEditForm({
   const [price, setPrice] = useState(String(product.price));
   const [sizeRows, setSizeRows] = useState<SizeStockRow[]>(() => productToRows(product));
   const [inventoryError, setInventoryError] = useState("");
+  const [reservationError, setReservationError] = useState("");
+  const [reserveProduct, setReserveProduct] = useState(() => productHasCatalogReservations(product));
+  const [reservationRows, setReservationRows] = useState<SupplierOrderSizeReservationRow[]>(() =>
+    reservationRowsFromProduct(product, getCurrentUserId())
+  );
+  const [assignableUsers, setAssignableUsers] = useState<SaleAssignableUser[]>([]);
+  const [externalSellers, setExternalSellers] = useState<ExternalSeller[]>([]);
   const [fieldError, setFieldError] = useState("");
   const [shirtType, setShirtType] = useState<ProductVersionFieldValue>(initialShirtType);
   const [isActive, setIsActive] = useState(product.is_active);
@@ -107,6 +129,9 @@ export default function AdminProductEditForm({
     productTypes: [],
     kitTypes: [],
   });
+
+  const currentUserId = getCurrentUserId();
+  const canAssignUser = isAdmin();
 
   const generatedName = useMemo(
     () => buildProductName({ productType, kitType, team, season, type: shirtType }),
@@ -124,6 +149,22 @@ export default function AdminProductEditForm({
     };
 
     void loadProductOptions();
+
+    const token = readAuthToken();
+    if (!token) return;
+
+    void Promise.all([
+      adminSalesApi.getAssignableUsers(token),
+      adminSalesApi.getExternalSellers(token),
+    ]).then(([usersResponse, sellersResponse]) => {
+      if (!isMounted) return;
+      if (usersResponse.data?.users) {
+        setAssignableUsers(usersResponse.data.users);
+      }
+      if (sellersResponse.data?.sellers) {
+        setExternalSellers(sellersResponse.data.sellers);
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -167,6 +208,9 @@ export default function AdminProductEditForm({
     setPrice(String(product.price));
     setSizeRows(productToRows(product));
     setInventoryError("");
+    setReservationError("");
+    setReserveProduct(productHasCatalogReservations(product));
+    setReservationRows(reservationRowsFromProduct(product, currentUserId));
     setFieldError("");
     setShirtType(shirtTypeValue);
     setIsActive(product.is_active);
@@ -174,7 +218,7 @@ export default function AdminProductEditForm({
     setNewFiles([]);
     setImageError("");
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [product, productOptions]);
+  }, [product, productOptions, currentUserId]);
 
   const removeCurrentImage = (index: number) => {
     setCurrentImageUrls((prev) => prev.filter((_, i) => i !== index));
@@ -248,6 +292,7 @@ export default function AdminProductEditForm({
     e.preventDefault();
     setImageError("");
     setInventoryError("");
+    setReservationError("");
     setFieldError("");
 
     const requiredError = validateRequiredProductFields({ name });
@@ -261,6 +306,17 @@ export default function AdminProductEditForm({
     const inventory = rowsToPayload(sizeRows, { allowEmpty: true });
     if (!inventory) {
       setInventoryError("Revisá el stock de cada talle (número ≥ 0).");
+      return;
+    }
+
+    const reservationValidationError = validateProductCatalogReservations(
+      reserveProduct,
+      reservationRows,
+      sizeRows,
+      canAssignUser
+    );
+    if (reservationValidationError) {
+      setReservationError(reservationValidationError);
       return;
     }
 
@@ -304,6 +360,13 @@ export default function AdminProductEditForm({
       type: shirtType,
       is_active: isActive,
       image_urls: finalUrls,
+      reserved_by_sizes: reserveProduct
+        ? reservedBySizesFromCatalogReservationRows(
+            reservationRows,
+            sizeRows,
+            canAssignUser
+          )
+        : {},
     };
     onSave(payload);
   };
@@ -387,6 +450,27 @@ export default function AdminProductEditForm({
         </Div>
 
         <Div spacing="md">
+          <AdminProductReservationFields
+            idPrefix="edit-reservation"
+            reserveProduct={reserveProduct}
+            onReserveProductChange={(nextReserveProduct) => {
+              setReserveProduct(nextReserveProduct);
+              if (!nextReserveProduct) {
+                setReservationRows([]);
+              }
+            }}
+            reservationRows={reservationRows}
+            onReservationRowsChange={setReservationRows}
+            stockRows={sizeRows}
+            assignableUsers={assignableUsers}
+            externalSellers={externalSellers}
+            canAssignUser={canAssignUser}
+            currentUserId={currentUserId}
+            disabled={isSubmitting}
+          />
+        </Div>
+
+        <Div spacing="md">
           <FormField label="Imágenes actuales">
             {currentImageUrls.length === 0 && newFiles.length === 0 ? (
               <Typography variant="body2" color="muted">
@@ -418,10 +502,10 @@ export default function AdminProductEditForm({
           </FormField>
         </Div>
 
-        {(error || fieldError || imageError || inventoryError) && (
+        {(error || fieldError || imageError || inventoryError || reservationError) && (
           <InlineAlert variant="destructive">
             <Typography variant="body2" color="destructive">
-              {error || fieldError || imageError || inventoryError}
+              {error || fieldError || imageError || inventoryError || reservationError}
             </Typography>
           </InlineAlert>
         )}

@@ -1,4 +1,13 @@
 import type { SupplierOrderLineItem } from "@/lib/api";
+import type { SaleSellerFormValue } from "@/lib/sale-seller";
+import { createDefaultSaleSellerValue } from "@/lib/sale-seller";
+import {
+  getReservationSellerKey,
+  reservationSellerFieldsFromCommissionPayload,
+  reservationSellerFieldsFromFormValue,
+  sellerFormValueFromReservationFields,
+  type ReservationSellerPayload,
+} from "@/lib/reservation-seller";
 import { sortSizeEntries, sortSizeLabels, sortSizeLabelText } from "@/lib/product-inventory";
 
 function newRowId(): string {
@@ -18,14 +27,29 @@ export type SupplierOrderSizeReservationRow = {
   id: string;
   size: string;
   quantity: string;
+  reservationSellerValue: SaleSellerFormValue;
+};
+
+export type SupplierOrderLineItemReservationEntry = {
+  size: string;
+  quantity: number;
+  reserved_seller_type?: "internal" | "external";
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
 };
 
 export function emptySupplierOrderSizeRow(): SupplierOrderSizeQuantityRow {
   return { id: newRowId(), size: "", quantity: "1" };
 }
 
-export function emptySizeReservationRow(): SupplierOrderSizeReservationRow {
-  return { id: newRowId(), size: "", quantity: "1" };
+export function emptySizeReservationRow(currentUserId: string | null): SupplierOrderSizeReservationRow {
+  return {
+    id: newRowId(),
+    size: "",
+    quantity: "1",
+    reservationSellerValue: createDefaultSaleSellerValue(currentUserId),
+  };
 }
 
 export function getOrderSizeLimits(
@@ -151,18 +175,89 @@ export function draftHasSizeReservations(
   );
 }
 
+export function reservationEntriesFromRows(
+  reservationRows: SupplierOrderSizeReservationRow[],
+  orderSizeRows: SupplierOrderSizeQuantityRow[],
+  resolveSeller: (row: SupplierOrderSizeReservationRow) => ReservationSellerPayload
+): SupplierOrderLineItemReservationEntry[] {
+  const entries: SupplierOrderLineItemReservationEntry[] = [];
+
+  for (const row of reservationRows) {
+    const size = row.size.trim();
+    const quantity = Number(row.quantity);
+    if (!size || !Number.isInteger(quantity) || quantity <= 0) continue;
+
+    const maxQuantity = getMaxReservationQuantityForRow(row, reservationRows, orderSizeRows);
+    if (maxQuantity <= 0) continue;
+
+    entries.push({
+      size,
+      quantity: Math.min(quantity, maxQuantity),
+      ...resolveSeller(row),
+    });
+  }
+
+  return entries;
+}
+
+export function validateReservationRowsSellerConsistency(
+  reservationRows: SupplierOrderSizeReservationRow[]
+): string | null {
+  const sellerBySize = new Map<string, string>();
+
+  for (const row of reservationRows) {
+    const size = row.size.trim();
+    const quantity = Number(row.quantity);
+    if (!size || !Number.isInteger(quantity) || quantity <= 0) continue;
+
+    const sizeKey = size.toLocaleLowerCase();
+    const sellerKey = getReservationSellerKey(row.reservationSellerValue);
+    const existing = sellerBySize.get(sizeKey);
+
+    if (existing && existing !== sellerKey) {
+      return `El talle ${size} no puede reservarse para más de un vendedor.`;
+    }
+
+    sellerBySize.set(sizeKey, sellerKey);
+  }
+
+  return null;
+}
+
 export function reservationRowsFromLineItem(
   item: Pick<
     SupplierOrderLineItem,
-    "reserved" | "reserved_sizes" | "reserved_quantity_by_sizes" | "quantity_by_sizes" | "quantity" | "sizes"
-  >
+    | "reserved"
+    | "reserved_sizes"
+    | "reserved_quantity_by_sizes"
+    | "reservation_entries"
+    | "quantity_by_sizes"
+    | "quantity"
+    | "sizes"
+    | "reserved_for_user_id"
+    | "reserved_for_external_seller_id"
+    | "reserved_for_external_seller_name"
+  >,
+  currentUserId: string | null
 ): SupplierOrderSizeReservationRow[] {
+  if (item.reservation_entries && item.reservation_entries.length > 0) {
+    return item.reservation_entries.map((entry) => ({
+      id: newRowId(),
+      size: entry.size,
+      quantity: String(entry.quantity),
+      reservationSellerValue: sellerFormValueFromReservationFields(entry, currentUserId),
+    }));
+  }
+
+  const legacySeller = sellerFormValueFromReservationFields(item, currentUserId);
   const reservedQtyBySize = item.reserved_quantity_by_sizes ?? {};
+
   if (Object.keys(reservedQtyBySize).length > 0) {
     return sortSizeEntries(Object.entries(reservedQtyBySize)).map(([size, quantity]) => ({
       id: newRowId(),
       size,
       quantity: String(quantity),
+      reservationSellerValue: legacySeller,
     }));
   }
 
@@ -181,6 +276,7 @@ export function reservationRowsFromLineItem(
       id: newRowId(),
       size,
       quantity: String(quantity),
+      reservationSellerValue: legacySeller,
     }));
 }
 

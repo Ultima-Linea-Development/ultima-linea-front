@@ -107,6 +107,7 @@ export function commissionItemsToSupplierOrderItems(
       reserved: item.reserved,
       reserved_sizes: item.reserved_sizes,
       reserved_quantity_by_sizes: item.reserved_quantity_by_sizes,
+      reservation_entries: item.reservation_entries,
       reserved_for_user_id: item.reserved_for_user_id,
       reserved_for_external_seller_id: item.reserved_for_external_seller_id,
       reserved_for_external_seller_name: item.reserved_for_external_seller_name,

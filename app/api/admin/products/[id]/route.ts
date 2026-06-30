@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureIndexes, getProductsCollection } from "@/lib/server/db";
+import { ensureIndexes, getExternalSellersCollection, getProductsCollection } from "@/lib/server/db";
 import {
+  ExternalSellerDocument,
   generateSKUBase,
   normalizeProductUpdates,
   ProductDocument,
@@ -20,6 +21,10 @@ import {
   toProductResponse,
 } from "@/lib/server/products";
 import { trackAdminAction } from "@/lib/server/admin-history";
+import {
+  PRODUCT_RESERVATION_UNSET_FIELDS,
+  resolveProductReservedBySizes,
+} from "@/lib/server/product-reservation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -104,13 +109,56 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (updates.image_urls?.length > 0) setFields.image_urls = updates.image_urls;
     if (updates.is_active !== undefined) setFields.is_active = updates.is_active;
 
+    const nextStockBySizes =
+      updates.stock_by_sizes !== undefined
+        ? (updates.stock_by_sizes as Record<string, number>)
+        : currentProduct.stock_by_sizes ?? {};
+
+    if ("reserved_by_sizes" in updates) {
+      const resolved = await resolveProductReservedBySizes(
+        await getExternalSellersCollection<ExternalSellerDocument>(),
+        nextStockBySizes,
+        updates.reserved_by_sizes
+      );
+
+      if ("error" in resolved) {
+        return jsonError(resolved.error, 400);
+      }
+
+      setFields.reserved_by_sizes = resolved.reserved_by_sizes;
+    } else if (updates.stock_by_sizes !== undefined) {
+      const filteredReservedBySizes = Object.fromEntries(
+        Object.entries(currentProduct.reserved_by_sizes ?? {}).filter(([size]) => {
+          const stock = nextStockBySizes[size] ??
+            Object.entries(nextStockBySizes).find(
+              ([existingSize]) =>
+                existingSize.trim().toLocaleLowerCase() === size.trim().toLocaleLowerCase()
+            )?.[1];
+          return typeof stock === "number" && stock > 0;
+        })
+      );
+      setFields.reserved_by_sizes = filteredReservedBySizes;
+    }
+
+    const reservationTouched =
+      "reserved_by_sizes" in updates || updates.stock_by_sizes !== undefined;
+
     if (needsSKUUpdate) {
       const skuBase = generateSKUBase(team, productType);
       const variant = await getNextSKUVariant(collection, skuBase);
       setFields.sku = `${skuBase}-${variant}`;
     }
 
-    const result = await collection.updateOne({ _id: id }, { $set: setFields });
+    const updateDoc: {
+      $set: Record<string, unknown>;
+      $unset?: typeof PRODUCT_RESERVATION_UNSET_FIELDS;
+    } = { $set: setFields };
+
+    if (reservationTouched) {
+      updateDoc.$unset = PRODUCT_RESERVATION_UNSET_FIELDS;
+    }
+
+    const result = await collection.updateOne({ _id: id }, updateDoc);
     if (result.matchedCount === 0) {
       return jsonError("Product not found", 404);
     }

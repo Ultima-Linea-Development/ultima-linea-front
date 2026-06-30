@@ -264,7 +264,16 @@ export type CreateProductRequest = {
   is_active?: boolean;
 };
 
-export type UpdateProductRequest = Partial<CreateProductRequest>;
+export type UpdateProductRequest = Partial<CreateProductRequest> & {
+  reserved_by_sizes?: Record<
+    string,
+    {
+      reserved_for_user_id?: string;
+      reserved_for_external_seller_id?: string;
+      reserved_for_external_seller_name?: string;
+    }
+  > | null;
+};
 
 export type SaleLineItem = {
   product_id: string;
@@ -317,6 +326,14 @@ export type SupplierOrderLineItem = {
   reserved?: boolean;
   reserved_sizes?: string[];
   reserved_quantity_by_sizes?: Record<string, number>;
+  reservation_entries?: Array<{
+    size: string;
+    quantity: number;
+    reserved_seller_type?: "internal" | "external";
+    reserved_for_user_id?: string;
+    reserved_for_external_seller_id?: string;
+    reserved_for_external_seller_name?: string;
+  }>;
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;
   reserved_for_external_seller_name?: string;
@@ -382,6 +399,14 @@ export type CreateSupplierOrderItemRequest = {
   reserved?: boolean;
   reserved_sizes?: string[];
   reserved_quantity_by_sizes?: Record<string, number>;
+  reservation_entries?: Array<{
+    size: string;
+    quantity: number;
+    reserved_seller_type?: SaleSellerType;
+    reserved_for_user_id?: string;
+    reserved_for_external_seller_id?: string;
+    reserved_for_external_seller_name?: string;
+  }>;
   reserved_seller_type?: SaleSellerType;
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;

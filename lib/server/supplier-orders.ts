@@ -47,6 +47,14 @@ export type SupplierOrderLineItemInput = {
   reserved?: boolean;
   reserved_sizes?: string[];
   reserved_quantity_by_sizes?: Record<string, number>;
+  reservation_entries?: Array<{
+    size?: string;
+    quantity?: number;
+    reserved_seller_type?: SaleSellerType;
+    reserved_for_user_id?: string;
+    reserved_for_external_seller_id?: string;
+    reserved_for_external_seller_name?: string;
+  }>;
   reserved_seller_type?: SaleSellerType;
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;
@@ -174,6 +182,42 @@ function parseReservedQuantityBySizes(
   return Object.keys(parsed).length > 0 ? parsed : null;
 }
 
+function parseReservationEntries(
+  value:
+    | Array<{
+        size?: string;
+        quantity?: number;
+        reserved_seller_type?: SaleSellerType;
+        reserved_for_user_id?: string;
+        reserved_for_external_seller_id?: string;
+        reserved_for_external_seller_name?: string;
+      }>
+    | undefined
+): import("@/lib/server/models").SupplierOrderLineItemReservationEntry[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+
+  const parsed: import("@/lib/server/models").SupplierOrderLineItemReservationEntry[] = [];
+
+  for (const entry of value) {
+    const size = entry.size?.trim();
+    const quantity = Number(entry.quantity);
+
+    if (!size) return null;
+    if (!Number.isInteger(quantity) || quantity <= 0) return null;
+
+    parsed.push({
+      size,
+      quantity,
+      reserved_seller_type: entry.reserved_seller_type,
+      reserved_for_user_id: trimOptional(entry.reserved_for_user_id),
+      reserved_for_external_seller_id: trimOptional(entry.reserved_for_external_seller_id),
+      reserved_for_external_seller_name: trimOptional(entry.reserved_for_external_seller_name),
+    });
+  }
+
+  return parsed.length > 0 ? parsed : null;
+}
+
 export function parseSupplierOrderLineItems(
   items: SupplierOrderLineItemInput[] | undefined
 ): { items: Array<SupplierOrderLineItem & LineItemReservationInput> } | { error: string } {
@@ -247,6 +291,7 @@ export function parseSupplierOrderLineItems(
         : undefined,
       reserved_quantity_by_sizes:
         parseReservedQuantityBySizes(item.reserved_quantity_by_sizes) ?? undefined,
+      reservation_entries: parseReservationEntries(item.reservation_entries) ?? undefined,
       reserved_seller_type: item.reserved_seller_type,
       reserved_for_user_id: trimOptional(item.reserved_for_user_id),
       reserved_for_external_seller_id: trimOptional(item.reserved_for_external_seller_id),

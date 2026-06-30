@@ -78,6 +78,15 @@ export type SupplierOrderItemType = "FAN" | "PLAYER" | "RETRO";
 
 export type SupplierOrderStatus = "draft" | "sent" | "partial" | "completed" | "cancelled";
 
+export type SupplierOrderLineItemReservationEntry = {
+  size: string;
+  quantity: number;
+  reserved_seller_type?: "internal" | "external";
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
+};
+
 export type SupplierOrderLineItem = {
   id: string;
   product_id?: string;
@@ -101,6 +110,7 @@ export type SupplierOrderLineItem = {
   reserved?: boolean;
   reserved_sizes?: string[];
   reserved_quantity_by_sizes?: Record<string, number>;
+  reservation_entries?: SupplierOrderLineItemReservationEntry[];
   reserved_for_user_id?: string;
   reserved_for_external_seller_id?: string;
   reserved_for_external_seller_name?: string;

@@ -23,11 +23,18 @@ import {
   emptySupplierOrderSizeRow,
   draftHasSizeReservations,
   getReservedQuantityBySizesFromReservationRows,
+  reservationEntriesFromRows,
+  validateReservationRowsSellerConsistency,
   getSupplierOrderLineItemQuantity,
   sizeRowsToPayload,
   type SupplierOrderSizeQuantityRow,
   type SupplierOrderSizeReservationRow,
 } from "@/lib/supplier-order-sizes";
+import {
+  reservationSellerFieldsFromCommissionPayload,
+  reservationSellerFieldsFromFormValue,
+} from "@/lib/reservation-seller";
+import { validateSaleSellerValue } from "@/lib/sale-seller";
 import { normalizeSupplierOrderPriceValue } from "@/lib/supplier-order-price-allocation";
 import {
   buildProductName,
@@ -45,7 +52,6 @@ import {
   saleToSellerFormValue,
   type SaleSellerFormValue,
 } from "@/lib/sale-seller";
-import { lineItemReservationToPayload } from "@/lib/product-reservation";
 
 export type SupplierOrderLineItemDraft = {
   key: string;
@@ -136,11 +142,15 @@ export function getSupplierOrderLineItemDraftTotal(item: SupplierOrderLineItemDr
 
 export function getSupplierOrderLineItemReservationRequestFields(
   item: SupplierOrderLineItemDraft,
-  sellerPayload?: {
-    seller_type?: "internal" | "external";
-    seller_user_id?: string;
-    external_seller_id?: string;
-    external_seller_name?: string;
+  options?: {
+    mode?: "inherit" | "line";
+    canAssignUser?: boolean;
+    sellerPayload?: {
+      seller_type?: "internal" | "external";
+      seller_user_id?: string;
+      external_seller_id?: string;
+      external_seller_name?: string;
+    };
   }
 ) {
   const reservedQuantityBySizes = item.reserveProduct
@@ -153,23 +163,68 @@ export function getSupplierOrderLineItemReservationRequestFields(
       reserved: false,
       reserved_sizes: [] as string[],
       reserved_quantity_by_sizes: {} as Record<string, number>,
+      reservation_entries: [] as ReturnType<typeof reservationEntriesFromRows>,
     };
   }
 
-  const reservation = lineItemReservationToPayload(
-    { reserved: true, productId: item.productId },
-    sellerPayload
+  const resolveSeller =
+    options?.mode === "inherit" && options.sellerPayload
+      ? () => reservationSellerFieldsFromCommissionPayload(options.sellerPayload!)
+      : (row: SupplierOrderSizeReservationRow) =>
+          reservationSellerFieldsFromFormValue(
+            row.reservationSellerValue,
+            options?.canAssignUser ?? false
+          );
+
+  const reservationEntries = reservationEntriesFromRows(
+    item.reservationRows,
+    item.sizeRows,
+    resolveSeller
   );
+
+  const primaryEntry = reservationEntries[0];
 
   return {
     reserved: true,
     reserved_sizes: reservedSizes,
     reserved_quantity_by_sizes: reservedQuantityBySizes,
-    reserved_seller_type: sellerPayload?.seller_type,
-    reserved_for_user_id: reservation.reserved_for_user_id,
-    reserved_for_external_seller_id: reservation.reserved_for_external_seller_id,
-    reserved_for_external_seller_name: reservation.reserved_for_external_seller_name,
+    reservation_entries: reservationEntries,
+    reserved_seller_type: primaryEntry?.reserved_seller_type,
+    reserved_for_user_id: primaryEntry?.reserved_for_user_id,
+    reserved_for_external_seller_id: primaryEntry?.reserved_for_external_seller_id,
+    reserved_for_external_seller_name: primaryEntry?.reserved_for_external_seller_name,
   };
+}
+
+export function validateSupplierOrderLineItemReservations(
+  item: SupplierOrderLineItemDraft,
+  canAssignUser: boolean,
+  mode: "inherit" | "line" = "line"
+): string | null {
+  if (!item.reserveProduct || !item.productId) return null;
+
+  if (!lineItemDraftHasReservationEnabled(item)) {
+    return `Indicá cuántas unidades reservar por talle en ${item.productName}.`;
+  }
+
+  const sellerConsistencyError = validateReservationRowsSellerConsistency(item.reservationRows);
+  if (sellerConsistencyError) {
+    return `${item.productName}: ${sellerConsistencyError}`;
+  }
+
+  if (mode === "line") {
+    for (const row of item.reservationRows) {
+      const quantity = Number(row.quantity);
+      if (!row.size.trim() || !Number.isInteger(quantity) || quantity <= 0) continue;
+
+      const sellerError = validateSaleSellerValue(row.reservationSellerValue, canAssignUser);
+      if (sellerError) {
+        return `Reserva de ${item.productName} (${row.size}): ${sellerError}`;
+      }
+    }
+  }
+
+  return null;
 }
 
 export function createLineItemReservationSellerValue(
@@ -513,7 +568,7 @@ export default function AdminSupplierOrderLineItemRow({
       />
 
       {showReservationSection && reservationConfig && (
-        <Box display="flex" direction="col" gap="3" className="w-full min-w-0">
+        <Box display="flex" direction="col" gap="3" align="stretch" className="w-full min-w-0 self-stretch">
           <AdminLineItemReservationField
             idPrefix={`order-reservation-${item.key}`}
             reserved={item.reserveProduct}
@@ -532,7 +587,7 @@ export default function AdminSupplierOrderLineItemRow({
                 ? reservationConfig.inheritSellerLabel
                 : undefined
             }
-            showSellerField={reservationConfig.mode === "line"}
+            showSellerField={false}
           />
 
           {item.reserveProduct && (
@@ -545,6 +600,11 @@ export default function AdminSupplierOrderLineItemRow({
               orderSizeRows={item.sizeRows}
               disabled={isSubmitting}
               catalogProduct={matchedProduct}
+              showSellerField={reservationConfig.mode === "line"}
+              assignableUsers={reservationConfig.assignableUsers}
+              externalSellers={reservationConfig.externalSellers}
+              canAssignUser={reservationConfig.canAssignUser}
+              currentUserId={reservationConfig.currentUserId}
             />
           )}
         </Box>

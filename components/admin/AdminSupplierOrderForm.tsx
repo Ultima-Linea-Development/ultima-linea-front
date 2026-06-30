@@ -19,7 +19,7 @@ import AdminSupplierOrderLineItemRow, {
   getSupplierOrderLineItemIdentityRequestFields,
   getSupplierOrderLineItemDraftTotal,
   getSupplierOrderLineItemReservationRequestFields,
-  lineItemDraftHasReservationEnabled,
+  validateSupplierOrderLineItemReservations,
   validateSupplierOrderLineItemIdentity,
   type SupplierOrderLineItemDraft,
 } from "@/components/admin/AdminSupplierOrderLineItemRow";
@@ -60,8 +60,7 @@ import {
 import { parseSupplierOrderOptionalCost } from "@/lib/supplier-order-costs";
 import { getTodaySaleDateDisplayValue, saleDateInputToApiValue } from "@/lib/sale-date";
 import { formatPrice } from "@/lib/utils";
-import { commissionSellerValueToPayload } from "@/lib/commission-seller";
-import { createDefaultSaleSellerValue, validateSaleSellerValue } from "@/lib/sale-seller";
+import { createDefaultSaleSellerValue } from "@/lib/sale-seller";
 
 const fieldLabelClassName = "w-full min-w-0";
 
@@ -88,10 +87,10 @@ function draftToRequestItem(item: SupplierOrderLineItemDraft, canAssignUser: boo
     product_id: item.productId,
     shirt_name: item.productName.trim(),
     ...getSupplierOrderLineItemIdentityRequestFields(item),
-    ...getSupplierOrderLineItemReservationRequestFields(
-      item,
-      commissionSellerValueToPayload(item.reservationSellerValue, canAssignUser)
-    ),
+    ...getSupplierOrderLineItemReservationRequestFields(item, {
+      mode: "line",
+      canAssignUser,
+    }),
     quantity: sizesPayload.quantity,
     type: item.type,
     sizes: sizesPayload.sizes,
@@ -130,14 +129,12 @@ function validateLineItems(
     }
 
     if (item.reserveProduct && item.productId) {
-      if (!lineItemDraftHasReservationEnabled(item)) {
-        return `Indicá cuántas unidades reservar por talle en ${item.productName}.`;
-      }
-
-      const sellerError = validateSaleSellerValue(item.reservationSellerValue, canAssignUser);
-      if (sellerError) {
-        return `Reserva de ${item.productName}: ${sellerError}`;
-      }
+      const reservationError = validateSupplierOrderLineItemReservations(
+        item,
+        canAssignUser,
+        "line"
+      );
+      if (reservationError) return reservationError;
     }
   }
 

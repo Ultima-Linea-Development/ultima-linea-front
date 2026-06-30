@@ -7,9 +7,11 @@ import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
 import Select from "@/components/ui/Select";
 import { Button } from "@/components/ui/button";
-import type { Product } from "@/lib/api";
+import AdminCommissionSellerField from "@/components/admin/AdminCommissionSellerField";
+import type { ExternalSeller, Product, SaleAssignableUser } from "@/lib/api";
 import { adminIconTriggerClassName } from "@/lib/admin-interactive-styles";
 import { isSizeReserved } from "@/lib/product-reservation";
+import type { SaleSellerFormValue } from "@/lib/sale-seller";
 import {
   emptySizeReservationRow,
   getMaxReservationQuantityForRow,
@@ -25,6 +27,11 @@ type AdminLineItemSizeReservationFieldsProps = {
   onReservationRowsChange: (rows: SupplierOrderSizeReservationRow[]) => void;
   orderSizeRows: SupplierOrderSizeQuantityRow[];
   disabled?: boolean;
+  showSellerField?: boolean;
+  assignableUsers?: SaleAssignableUser[];
+  externalSellers?: ExternalSeller[];
+  canAssignUser?: boolean;
+  currentUserId?: string | null;
   catalogProduct?: Pick<
     Product,
     | "reserved_by_sizes"
@@ -48,6 +55,11 @@ export default function AdminLineItemSizeReservationFields({
   onReservationRowsChange,
   orderSizeRows,
   disabled = false,
+  showSellerField = false,
+  assignableUsers = [],
+  externalSellers = [],
+  canAssignUser = false,
+  currentUserId = null,
   catalogProduct,
 }: AdminLineItemSizeReservationFieldsProps) {
   const orderSizeOptions = getOrderSizeOptions(orderSizeRows);
@@ -61,7 +73,7 @@ export default function AdminLineItemSizeReservationFields({
   }
 
   const addRow = () => {
-    onReservationRowsChange([...reservationRows, emptySizeReservationRow()]);
+    onReservationRowsChange([...reservationRows, emptySizeReservationRow(currentUserId)]);
   };
 
   const removeRow = (rowId: string) => {
@@ -70,7 +82,7 @@ export default function AdminLineItemSizeReservationFields({
 
   const updateRow = (
     rowId: string,
-    updates: Partial<Pick<SupplierOrderSizeReservationRow, "size" | "quantity">>
+    updates: Partial<Pick<SupplierOrderSizeReservationRow, "size" | "quantity" | "reservationSellerValue">>
   ) => {
     onReservationRowsChange(
       reservationRows.map((row) => {
@@ -120,8 +132,9 @@ export default function AdminLineItemSizeReservationFields({
     <Box
       display="flex"
       direction="col"
-      gap="3"
-      className="w-full min-w-0 rounded-sm border border-amber-200 bg-amber-50/40 p-3"
+      gap="4"
+      align="stretch"
+      className="w-full min-w-0 self-stretch rounded-sm border border-amber-200 bg-amber-50/40 p-3"
     >
       <Typography variant="body2" className="font-medium text-amber-950">
         Talles a reservar
@@ -143,64 +156,89 @@ export default function AdminLineItemSizeReservationFields({
           isSizeReserved(catalogProduct!, row.size);
 
         return (
-          <div key={row.id} className="flex w-full min-w-0 items-end gap-2">
-            <div className="min-w-0 flex-1">
-              <FormField htmlFor={sizeId} label="Talle">
-                <Select
-                  id={sizeId}
-                  value={row.size}
-                  onChange={(event) => updateRow(row.id, { size: event.target.value })}
-                  disabled={disabled || selectableSizes.length === 0}
-                  required
-                >
-                  <option value="">Seleccioná un talle</option>
-                  {selectableSizes.map(({ size, maxQuantity: orderMax }) => (
-                    <option key={size} value={size}>
-                      {size} ({orderMax} en el pedido)
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              {catalogSizeReserved ? (
-                <Typography variant="caption" className="mt-1 block text-amber-800">
-                  Ya reservado en catálogo
-                </Typography>
-              ) : null}
+          <Box
+            key={row.id}
+            display="flex"
+            direction="col"
+            gap="3"
+            align="stretch"
+            className="w-full min-w-0 border-b border-amber-200/70 pb-4 last:border-b-0 last:pb-0"
+          >
+            <div className="flex w-full min-w-0 items-end gap-2">
+              <div className="min-w-0 flex-1">
+                <FormField htmlFor={sizeId} label="Talle">
+                  <Select
+                    id={sizeId}
+                    value={row.size}
+                    onChange={(event) => updateRow(row.id, { size: event.target.value })}
+                    disabled={disabled || selectableSizes.length === 0}
+                    required
+                  >
+                    <option value="">Seleccioná un talle</option>
+                    {selectableSizes.map(({ size, maxQuantity: orderMax }) => (
+                      <option key={size} value={size}>
+                        {size} ({orderMax} en el pedido)
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+                {catalogSizeReserved ? (
+                  <Typography variant="caption" className="mt-1 block text-amber-800">
+                    Ya reservado en catálogo
+                  </Typography>
+                ) : null}
+              </div>
+
+              <div className="w-[120px] shrink-0">
+                <FormField htmlFor={quantityId} label="A reservar">
+                  <Input
+                    id={quantityId}
+                    type="number"
+                    min={1}
+                    max={maxQuantity || undefined}
+                    value={row.quantity}
+                    onChange={(event) => updateRow(row.id, { quantity: event.target.value })}
+                    onBlur={() => {
+                      if (row.quantity === "" || maxQuantity <= 0) {
+                        updateRow(row.id, { quantity: maxQuantity > 0 ? "1" : "0" });
+                      }
+                    }}
+                    disabled={disabled || !row.size.trim() || maxQuantity <= 0}
+                    required
+                  />
+                </FormField>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => removeRow(row.id)}
+                disabled={disabled}
+                aria-label={`Quitar talle reservado ${index + 1}`}
+                className={cn(
+                  adminIconTriggerClassName,
+                  "mb-0.5 shrink-0 text-muted-foreground hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
+                )}
+              >
+                <Icon name="delete" className="size-5" />
+              </button>
             </div>
 
-            <div className="w-[120px] shrink-0">
-              <FormField htmlFor={quantityId} label="A reservar">
-                <Input
-                  id={quantityId}
-                  type="number"
-                  min={1}
-                  max={maxQuantity || undefined}
-                  value={row.quantity}
-                  onChange={(event) => updateRow(row.id, { quantity: event.target.value })}
-                  onBlur={() => {
-                    if (row.quantity === "" || maxQuantity <= 0) {
-                      updateRow(row.id, { quantity: maxQuantity > 0 ? "1" : "0" });
-                    }
-                  }}
-                  disabled={disabled || !row.size.trim() || maxQuantity <= 0}
-                  required
+            {showSellerField ? (
+              <div className="w-full min-w-0 self-stretch">
+                <AdminCommissionSellerField
+                  value={row.reservationSellerValue}
+                  onChange={(reservationSellerValue: SaleSellerFormValue) =>
+                    updateRow(row.id, { reservationSellerValue })
+                  }
+                  assignableUsers={assignableUsers}
+                  externalSellers={externalSellers}
+                  canAssignUser={canAssignUser}
+                  currentUserId={currentUserId}
+                  disabled={disabled}
                 />
-              </FormField>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => removeRow(row.id)}
-              disabled={disabled}
-              aria-label={`Quitar talle reservado ${index + 1}`}
-              className={cn(
-                adminIconTriggerClassName,
-                "mb-0.5 shrink-0 text-muted-foreground hover:text-destructive disabled:pointer-events-none disabled:opacity-50"
-              )}
-            >
-              <Icon name="delete" className="size-5" />
-            </button>
-          </div>
+              </div>
+            ) : null}
+          </Box>
         );
       })}
 

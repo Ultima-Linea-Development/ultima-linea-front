@@ -22,11 +22,29 @@ import {
 } from "@/lib/server/products";
 import { trackAdminAction } from "@/lib/server/admin-history";
 import {
-  PRODUCT_RESERVATION_UNSET_FIELDS,
-  resolveProductReservedBySizes,
+  PRODUCT_CATALOG_RESERVATION_UNSET_FIELDS,
+  resolveCatalogReservationEntries,
 } from "@/lib/server/product-reservation";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+function stockForSize(stockBySizes: Record<string, number>, size: string): number {
+  const trimmed = size.trim();
+  if (!trimmed) return 0;
+
+  if (stockBySizes[trimmed] != null) {
+    return Math.max(0, stockBySizes[trimmed]);
+  }
+
+  const normalized = trimmed.toLocaleLowerCase();
+  for (const [stockSize, stock] of Object.entries(stockBySizes)) {
+    if (stockSize.trim().toLocaleLowerCase() === normalized) {
+      return Math.max(0, stock);
+    }
+  }
+
+  return 0;
+}
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const auth = requireStaff(requireAuth(request));
@@ -114,34 +132,27 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         ? (updates.stock_by_sizes as Record<string, number>)
         : currentProduct.stock_by_sizes ?? {};
 
-    if ("reserved_by_sizes" in updates) {
-      const resolved = await resolveProductReservedBySizes(
+    if ("catalog_reservation_entries" in updates) {
+      const resolved = await resolveCatalogReservationEntries(
         await getExternalSellersCollection<ExternalSellerDocument>(),
         nextStockBySizes,
-        updates.reserved_by_sizes
+        updates.catalog_reservation_entries
       );
 
       if ("error" in resolved) {
         return jsonError(resolved.error, 400);
       }
 
-      setFields.reserved_by_sizes = resolved.reserved_by_sizes;
-    } else if (updates.stock_by_sizes !== undefined) {
-      const filteredReservedBySizes = Object.fromEntries(
-        Object.entries(currentProduct.reserved_by_sizes ?? {}).filter(([size]) => {
-          const stock = nextStockBySizes[size] ??
-            Object.entries(nextStockBySizes).find(
-              ([existingSize]) =>
-                existingSize.trim().toLocaleLowerCase() === size.trim().toLocaleLowerCase()
-            )?.[1];
-          return typeof stock === "number" && stock > 0;
-        })
+      setFields.catalog_reservation_entries = resolved.catalog_reservation_entries;
+    } else if (updates.stock_by_sizes !== undefined && currentProduct.catalog_reservation_entries?.length) {
+      const filteredEntries = currentProduct.catalog_reservation_entries.filter(
+        (entry) => stockForSize(nextStockBySizes, entry.size) > 0
       );
-      setFields.reserved_by_sizes = filteredReservedBySizes;
+      setFields.catalog_reservation_entries = filteredEntries;
     }
 
     const reservationTouched =
-      "reserved_by_sizes" in updates || updates.stock_by_sizes !== undefined;
+      "catalog_reservation_entries" in updates || updates.stock_by_sizes !== undefined;
 
     if (needsSKUUpdate) {
       const skuBase = generateSKUBase(team, productType);
@@ -151,11 +162,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     const updateDoc: {
       $set: Record<string, unknown>;
-      $unset?: typeof PRODUCT_RESERVATION_UNSET_FIELDS;
+      $unset?: typeof PRODUCT_CATALOG_RESERVATION_UNSET_FIELDS;
     } = { $set: setFields };
 
     if (reservationTouched) {
-      updateDoc.$unset = PRODUCT_RESERVATION_UNSET_FIELDS;
+      updateDoc.$unset = PRODUCT_CATALOG_RESERVATION_UNSET_FIELDS;
     }
 
     const result = await collection.updateOne({ _id: id }, updateDoc);

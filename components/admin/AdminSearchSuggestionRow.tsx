@@ -16,7 +16,7 @@ export default function AdminSearchSuggestionRow({
     <>
       <span className="flex min-w-0 flex-1 items-center gap-3">
         <AdminProductImagePreview imageUrl={imageUrl} size="sm" />
-        <span className="min-w-0">{children}</span>
+        <span className="flex min-w-0 flex-col items-start">{children}</span>
       </span>
       {trailing ? (
         <span className="shrink-0 text-muted-foreground text-xs">{trailing}</span>

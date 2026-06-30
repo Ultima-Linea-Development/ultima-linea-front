@@ -130,6 +130,14 @@ export type CompleteSetupRequest = {
   phone?: string;
 };
 
+export type CatalogReservationEntry = {
+  size: string;
+  quantity: number;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
+};
+
 export type Product = {
   id: string;
   slug?: string;
@@ -158,6 +166,7 @@ export type Product = {
       reserved_for_external_seller_name?: string;
     }
   >;
+  catalog_reservation_entries?: CatalogReservationEntry[];
   created_by?: string;
   created_at?: string;
   updated_at?: string;
@@ -273,6 +282,7 @@ export type UpdateProductRequest = Partial<CreateProductRequest> & {
       reserved_for_external_seller_name?: string;
     }
   > | null;
+  catalog_reservation_entries?: CatalogReservationEntry[] | null;
 };
 
 export type SaleLineItem = {

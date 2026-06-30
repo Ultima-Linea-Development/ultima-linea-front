@@ -47,6 +47,19 @@ export const PRODUCT_RESERVATION_UNSET_FIELDS = {
   reserved_for_external_seller_name: "",
 } as const;
 
+export const PRODUCT_CATALOG_RESERVATION_UNSET_FIELDS = {
+  ...PRODUCT_RESERVATION_UNSET_FIELDS,
+  reserved_by_sizes: "",
+} as const;
+
+export type CatalogReservationEntry = {
+  size: string;
+  quantity: number;
+  reserved_for_user_id?: string;
+  reserved_for_external_seller_id?: string;
+  reserved_for_external_seller_name?: string;
+};
+
 function trimOptional(value?: string): string | undefined {
   const trimmed = value?.trim();
   return trimmed || undefined;
@@ -60,8 +73,79 @@ function reservationFieldsAreActive(reservation: ProductReservationFields): bool
   );
 }
 
-function sizeReservationKey(productId: string, size: string): string {
-  return `${productId}\0${size.toLocaleLowerCase()}`;
+function sizesMatch(left: string, right: string): boolean {
+  return left.trim().toLocaleLowerCase() === right.trim().toLocaleLowerCase();
+}
+
+function getCatalogReservationEntriesFromProduct(product: {
+  catalog_reservation_entries?: CatalogReservationEntry[];
+  reserved_by_sizes?: Record<string, ProductReservationFields>;
+  stock_by_sizes?: Record<string, number>;
+}): CatalogReservationEntry[] {
+  if (product.catalog_reservation_entries?.length) {
+    return product.catalog_reservation_entries.filter(
+      (entry) =>
+        entry.size.trim() &&
+        Number.isInteger(entry.quantity) &&
+        entry.quantity > 0 &&
+        reservationFieldsAreActive(entry)
+    );
+  }
+
+  if (product.reserved_by_sizes && Object.keys(product.reserved_by_sizes).length > 0) {
+    return Object.entries(product.reserved_by_sizes)
+      .filter(([, reservation]) => reservationFieldsAreActive(reservation))
+      .map(([size, reservation]) => ({
+        size,
+        quantity: Math.max(1, findStockForSize(product.stock_by_sizes ?? {}, size)),
+        ...reservation,
+      }));
+  }
+
+  return [];
+}
+
+function reservationFieldsMatchSeller(
+  reservation: ProductReservationFields,
+  seller: ResolvedSaleSeller
+): boolean {
+  const reservedForUser = trimOptional(reservation.reserved_for_user_id);
+  const reservedForExternalId = trimOptional(reservation.reserved_for_external_seller_id);
+  const reservedForExternalName = trimOptional(reservation.reserved_for_external_seller_name);
+  const saleExternalId = trimOptional(seller.external_seller_id);
+  const saleExternalName = trimOptional(seller.external_seller_name);
+
+  if (reservedForExternalId || reservedForExternalName) {
+    if (saleExternalId && reservedForExternalId && saleExternalId === reservedForExternalId) {
+      return true;
+    }
+
+    if (
+      saleExternalName &&
+      reservedForExternalName &&
+      saleExternalName.toLocaleLowerCase() === reservedForExternalName.toLocaleLowerCase()
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  return Boolean(reservedForUser && seller.created_by === reservedForUser);
+}
+
+function getReservedProductIds(
+  items: Array<LineItemReservationInput & { product_id?: string }>
+): Set<string> {
+  const ids = new Set<string>();
+
+  for (const item of items) {
+    if (!lineItemHasReservation(item)) continue;
+    const productId = item.product_id?.trim();
+    if (productId) ids.add(productId);
+  }
+
+  return ids;
 }
 
 function getLineItemReservationEntries(
@@ -357,10 +441,7 @@ export async function syncProductReservationsFromItems(
   products: Collection<ProductDocument>,
   items: Array<LineItemReservationInput & { product_id?: string }>
 ): Promise<void> {
-  const reservedByProduct = new Map<
-    string,
-    Array<{ size: string; reservation: ProductReservationFields }>
-  >();
+  const entriesByProduct = new Map<string, CatalogReservationEntry[]>();
 
   for (const item of items) {
     if (!lineItemHasReservation(item)) continue;
@@ -369,72 +450,64 @@ export async function syncProductReservationsFromItems(
     const entries = getLineItemReservationEntries(item);
     if (entries.length === 0) continue;
 
-    const sizeEntries = entries
+    const catalogEntries = entries
       .map((entry) => {
         const reservation = reservationFieldsFromEntry(entry);
         if (!reservation) return null;
-        return { size: entry.size.trim(), reservation };
+        return {
+          size: entry.size.trim(),
+          quantity: entry.quantity,
+          ...reservation,
+        };
       })
-      .filter((entry): entry is { size: string; reservation: ProductReservationFields } =>
-        Boolean(entry)
-      );
+      .filter((entry): entry is CatalogReservationEntry => Boolean(entry));
 
-    if (sizeEntries.length === 0) continue;
+    if (catalogEntries.length === 0) continue;
 
-    const existing = reservedByProduct.get(productId) ?? [];
-    reservedByProduct.set(productId, [...existing, ...sizeEntries]);
+    const existing = entriesByProduct.get(productId) ?? [];
+    entriesByProduct.set(productId, [...existing, ...catalogEntries]);
   }
 
   const now = new Date();
 
-  for (const [productId, sizeReservations] of reservedByProduct) {
-    const setFields: Record<string, unknown> = { updated_at: now };
-
-    for (const { size, reservation } of sizeReservations) {
-      setFields[`reserved_by_sizes.${size}`] = reservation;
-    }
-
+  for (const [productId, catalogEntries] of entriesByProduct) {
     await products.updateOne(
       { _id: productId, ...nonDeletedProductFilter },
       {
-        $set: setFields,
-        $unset: PRODUCT_RESERVATION_UNSET_FIELDS,
+        $set: {
+          catalog_reservation_entries: catalogEntries,
+          updated_at: now,
+        },
+        $unset: PRODUCT_CATALOG_RESERVATION_UNSET_FIELDS,
       }
     );
   }
+}
+
+export async function clearProductCatalogReservations(
+  products: Collection<ProductDocument>,
+  productId: string
+): Promise<void> {
+  await products.updateOne(
+    { _id: productId, ...nonDeletedProductFilter },
+    {
+      $set: {
+        catalog_reservation_entries: [],
+        updated_at: new Date(),
+      },
+      $unset: PRODUCT_CATALOG_RESERVATION_UNSET_FIELDS,
+    }
+  );
 }
 
 export async function clearProductSizeReservations(
   products: Collection<ProductDocument>,
   keys: ProductSizeReservationKey[]
 ): Promise<void> {
-  const byProduct = new Map<string, string[]>();
+  const productIds = new Set(keys.map(({ productId }) => productId.trim()).filter(Boolean));
 
-  for (const { productId, size } of keys) {
-    const trimmedProductId = productId.trim();
-    const trimmedSize = size.trim();
-    if (!trimmedProductId || !trimmedSize) continue;
-
-    const sizes = byProduct.get(trimmedProductId) ?? [];
-    sizes.push(trimmedSize);
-    byProduct.set(trimmedProductId, sizes);
-  }
-
-  const now = new Date();
-
-  for (const [productId, sizes] of byProduct) {
-    const unsetFields: Record<string, string> = {};
-    for (const size of sizes) {
-      unsetFields[`reserved_by_sizes.${size}`] = "";
-    }
-
-    await products.updateOne(
-      { _id: productId, ...nonDeletedProductFilter },
-      {
-        $unset: unsetFields as Record<string, "">,
-        $set: { updated_at: now },
-      }
-    );
+  for (const productId of productIds) {
+    await clearProductCatalogReservations(products, productId);
   }
 }
 
@@ -443,23 +516,16 @@ export async function reconcileProductReservations(
   previousItems: Array<LineItemReservationInput & { product_id?: string }>,
   nextItems: Array<LineItemReservationInput & { product_id?: string }>
 ): Promise<void> {
-  const previousKeys = new Set(
-    getReservedProductSizeKeys(previousItems).map(({ productId, size }) =>
-      sizeReservationKey(productId, size)
-    )
-  );
-  const nextKeys = new Set(
-    getReservedProductSizeKeys(nextItems).map(({ productId, size }) =>
-      sizeReservationKey(productId, size)
-    )
-  );
+  const previousProductIds = getReservedProductIds(previousItems);
+  const nextProductIds = getReservedProductIds(nextItems);
 
-  const toClear = getReservedProductSizeKeys(previousItems).filter(
-    ({ productId, size }) => !nextKeys.has(sizeReservationKey(productId, size))
-  );
-
-  await clearProductSizeReservations(products, toClear);
   await syncProductReservationsFromItems(products, nextItems);
+
+  for (const productId of previousProductIds) {
+    if (!nextProductIds.has(productId)) {
+      await clearProductCatalogReservations(products, productId);
+    }
+  }
 }
 
 function validateReservationForSeller(
@@ -527,49 +593,57 @@ function findStockForSize(
   return 0;
 }
 
-export async function resolveProductReservedBySizes(
+export async function resolveCatalogReservationEntries(
   externalSellers: Collection<ExternalSellerDocument>,
   stockBySizes: Record<string, number>,
   input: unknown
-): Promise<
-  { reserved_by_sizes: Record<string, ProductReservationFields> } | { error: string }
-> {
+): Promise<{ catalog_reservation_entries: CatalogReservationEntry[] } | { error: string }> {
   if (input == null) {
-    return { reserved_by_sizes: {} };
+    return { catalog_reservation_entries: [] };
   }
 
-  if (typeof input !== "object" || Array.isArray(input)) {
+  if (!Array.isArray(input)) {
     return { error: "Reservas inválidas" };
   }
 
-  const reservedBySizes: Record<string, ProductReservationFields> = {};
+  const reservedBySize = new Map<string, number>();
+  const catalogEntries: CatalogReservationEntry[] = [];
 
-  for (const [sizeKey, value] of Object.entries(input as Record<string, unknown>)) {
-    const size = sizeKey.trim();
-    if (!size) continue;
+  for (const rawEntry of input) {
+    if (!rawEntry || typeof rawEntry !== "object" || Array.isArray(rawEntry)) {
+      return { error: "Reservas inválidas" };
+    }
 
-    if (findStockForSize(stockBySizes, size) <= 0) {
+    const entry = rawEntry as Record<string, unknown>;
+    const size = typeof entry.size === "string" ? entry.size.trim() : "";
+    const quantity = Number(entry.quantity);
+
+    if (!size || !Number.isInteger(quantity) || quantity <= 0) {
+      return { error: "Indicá talle y cantidad válidos en cada reserva" };
+    }
+
+    const stockForSize = findStockForSize(stockBySizes, size);
+    if (stockForSize <= 0) {
       return { error: `No hay stock para reservar el talle ${size}` };
     }
 
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      return { error: `Reserva inválida para el talle ${size}` };
+    const usedForSize = reservedBySize.get(size.toLocaleLowerCase()) ?? 0;
+    if (usedForSize + quantity > stockForSize) {
+      return { error: `La cantidad reservada del talle ${size} supera el stock disponible` };
     }
+    reservedBySize.set(size.toLocaleLowerCase(), usedForSize + quantity);
 
-    const reservationInput = value as Record<string, unknown>;
     const reservation = await resolveReservationSeller(externalSellers, {
       reserved: true,
       reserved_for_user_id:
-        typeof reservationInput.reserved_for_user_id === "string"
-          ? reservationInput.reserved_for_user_id
-          : undefined,
+        typeof entry.reserved_for_user_id === "string" ? entry.reserved_for_user_id : undefined,
       reserved_for_external_seller_id:
-        typeof reservationInput.reserved_for_external_seller_id === "string"
-          ? reservationInput.reserved_for_external_seller_id
+        typeof entry.reserved_for_external_seller_id === "string"
+          ? entry.reserved_for_external_seller_id
           : undefined,
       reserved_for_external_seller_name:
-        typeof reservationInput.reserved_for_external_seller_name === "string"
-          ? reservationInput.reserved_for_external_seller_name
+        typeof entry.reserved_for_external_seller_name === "string"
+          ? entry.reserved_for_external_seller_name
           : undefined,
     });
 
@@ -577,27 +651,63 @@ export async function resolveProductReservedBySizes(
       return { error: `${reservation.error} (talle ${size})` };
     }
 
-    reservedBySizes[size] = reservation;
+    catalogEntries.push({
+      size,
+      quantity,
+      ...reservation,
+    });
   }
 
-  return { reserved_by_sizes: reservedBySizes };
+  return { catalog_reservation_entries: catalogEntries };
 }
 
 export function validateProductReservationForSale(
   product: ProductReservationFields & {
     name?: string;
+    stock_by_sizes?: Record<string, number>;
+    catalog_reservation_entries?: CatalogReservationEntry[];
     reserved_by_sizes?: Record<string, ProductReservationFields>;
   },
   seller: ResolvedSaleSeller,
-  saleSize?: string
+  saleSize?: string,
+  saleQuantity = 1
 ): string | null {
   const productName = product.name ?? "Este producto";
   const size = saleSize?.trim();
 
   if (size) {
+    const catalogEntries = getCatalogReservationEntriesFromProduct(product).filter((entry) =>
+      sizesMatch(entry.size, size)
+    );
+
+    if (catalogEntries.length > 0) {
+      const stockForSize = findStockForSize(product.stock_by_sizes ?? {}, size);
+      const totalReserved = catalogEntries.reduce((sum, entry) => sum + entry.quantity, 0);
+      const sellerReserved = catalogEntries
+        .filter((entry) => reservationFieldsMatchSeller(entry, seller))
+        .reduce((sum, entry) => sum + entry.quantity, 0);
+      const unreserved = Math.max(0, stockForSize - totalReserved);
+      const maxForSeller = sellerReserved + unreserved;
+
+      if (saleQuantity <= maxForSeller) {
+        return null;
+      }
+
+      if (sellerReserved > 0) {
+        return `Solo podés vender ${maxForSeller} unidad(es) del talle ${size} de ${productName} según las reservas.`;
+      }
+
+      return `El talle ${size} de ${productName} tiene unidades reservadas para otro vendedor.`;
+    }
+
     const sizeReservation = findSizeReservation(product.reserved_by_sizes, size);
     if (sizeReservation) {
       return validateReservationForSeller(sizeReservation, seller, productName, size);
+    }
+
+    const hasCatalogReservations = getCatalogReservationEntriesFromProduct(product).length > 0;
+    if (hasCatalogReservations) {
+      return null;
     }
   }
 
@@ -608,7 +718,7 @@ export function validateProductReservationForSale(
       )
   );
 
-  if (hasSizeReservations) {
+  if (hasSizeReservations || getCatalogReservationEntriesFromProduct(product).length > 0) {
     return null;
   }
 

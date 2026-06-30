@@ -221,7 +221,13 @@ export default function AdminSaleForm({
         listboxId="sale-product-listbox"
         suggestions={productSuggestions}
         getSuggestionKey={(product) => product.id}
-        renderSuggestion={(product) => <AdminProductSearchSuggestion product={product} />}
+        renderSuggestion={(product) => (
+          <AdminProductSearchSuggestion
+            product={product}
+            assignableUsers={assignableUsers}
+            externalSellers={externalSellers}
+          />
+        )}
         onSuggestionSelect={addProduct}
         emptyMessage="No hay productos"
         label={
@@ -239,6 +245,8 @@ export default function AdminSaleForm({
               key={item.key}
               item={item}
               isSubmitting={isSubmitting}
+              assignableUsers={assignableUsers}
+              externalSellers={externalSellers}
               onChange={updateLineItem}
               onRemove={removeLineItem}
             />

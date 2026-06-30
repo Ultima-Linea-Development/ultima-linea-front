@@ -24,7 +24,6 @@ import {
   draftHasSizeReservations,
   getReservedQuantityBySizesFromReservationRows,
   reservationEntriesFromRows,
-  validateReservationRowsSellerConsistency,
   getSupplierOrderLineItemQuantity,
   sizeRowsToPayload,
   type SupplierOrderSizeQuantityRow,
@@ -205,11 +204,6 @@ export function validateSupplierOrderLineItemReservations(
 
   if (!lineItemDraftHasReservationEnabled(item)) {
     return `Indicá cuántas unidades reservar por talle en ${item.productName}.`;
-  }
-
-  const sellerConsistencyError = validateReservationRowsSellerConsistency(item.reservationRows);
-  if (sellerConsistencyError) {
-    return `${item.productName}: ${sellerConsistencyError}`;
   }
 
   if (mode === "line") {

@@ -2,7 +2,6 @@ import type { SupplierOrderLineItem } from "@/lib/api";
 import type { SaleSellerFormValue } from "@/lib/sale-seller";
 import { createDefaultSaleSellerValue } from "@/lib/sale-seller";
 import {
-  getReservationSellerKey,
   reservationSellerFieldsFromCommissionPayload,
   reservationSellerFieldsFromFormValue,
   sellerFormValueFromReservationFields,
@@ -198,30 +197,6 @@ export function reservationEntriesFromRows(
   }
 
   return entries;
-}
-
-export function validateReservationRowsSellerConsistency(
-  reservationRows: SupplierOrderSizeReservationRow[]
-): string | null {
-  const sellerBySize = new Map<string, string>();
-
-  for (const row of reservationRows) {
-    const size = row.size.trim();
-    const quantity = Number(row.quantity);
-    if (!size || !Number.isInteger(quantity) || quantity <= 0) continue;
-
-    const sizeKey = size.toLocaleLowerCase();
-    const sellerKey = getReservationSellerKey(row.reservationSellerValue);
-    const existing = sellerBySize.get(sizeKey);
-
-    if (existing && existing !== sellerKey) {
-      return `El talle ${size} no puede reservarse para más de un vendedor.`;
-    }
-
-    sellerBySize.set(sizeKey, sellerKey);
-  }
-
-  return null;
 }
 
 export function reservationRowsFromLineItem(

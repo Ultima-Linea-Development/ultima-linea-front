@@ -30,6 +30,7 @@ export type ProductResponse = {
   reserved_for_external_seller_id?: string;
   reserved_for_external_seller_name?: string;
   reserved_by_sizes?: Product["reserved_by_sizes"];
+  catalog_reservation_entries?: Product["catalog_reservation_entries"];
   created_by?: string;
   deleted_at?: Date;
 };
@@ -61,6 +62,7 @@ export function toProductResponse(product: Product, maxImages: number): ProductR
     reserved_for_external_seller_id: product.reserved_for_external_seller_id,
     reserved_for_external_seller_name: product.reserved_for_external_seller_name,
     reserved_by_sizes: product.reserved_by_sizes,
+    catalog_reservation_entries: product.catalog_reservation_entries,
     created_by: product.created_by,
     deleted_at: product.deleted_at,
   };

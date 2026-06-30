@@ -1,6 +1,6 @@
-import type { Product } from "@/lib/api";
+import type { CatalogReservationEntry, Product } from "@/lib/api";
 import type { SizeStockRow } from "@/lib/product-inventory";
-import { getProductReservedSizeEntries } from "@/lib/product-reservation";
+import { getCatalogReservationEntries } from "@/lib/product-reservation";
 import {
   reservationSellerFieldsFromFormValue,
   sellerFormValueFromReservationFields,
@@ -8,12 +8,11 @@ import {
 import { validateSaleSellerValue } from "@/lib/sale-seller";
 import {
   draftHasSizeReservations,
+  emptySizeReservationRow,
   getMaxReservationQuantityForRow,
   reservationEntriesFromRows,
   type SupplierOrderSizeQuantityRow,
   type SupplierOrderSizeReservationRow,
-  validateReservationRowsSellerConsistency,
-  emptySizeReservationRow,
 } from "@/lib/supplier-order-sizes";
 
 export function stockRowsToOrderSizeRows(rows: SizeStockRow[]): SupplierOrderSizeQuantityRow[] {
@@ -33,64 +32,44 @@ export function stockRowsToOrderSizeRows(rows: SizeStockRow[]): SupplierOrderSiz
 }
 
 export function productHasCatalogReservations(product: Product): boolean {
-  return getProductReservedSizeEntries(product).length > 0;
+  return getCatalogReservationEntries(product).length > 0;
 }
 
 export function reservationRowsFromProduct(
   product: Product,
   currentUserId: string | null
 ): SupplierOrderSizeReservationRow[] {
-  const stockBySizes = product.stock_by_sizes ?? {};
-
-  return getProductReservedSizeEntries(product).map(({ size, reservation }) => ({
+  return getCatalogReservationEntries(product).map((entry) => ({
     ...emptySizeReservationRow(currentUserId),
-    size,
-    quantity: String(Math.max(1, stockBySizes[size] ?? 1)),
-    reservationSellerValue: sellerFormValueFromReservationFields(reservation, currentUserId),
+    size: entry.size,
+    quantity: String(entry.quantity),
+    reservationSellerValue: sellerFormValueFromReservationFields(entry, currentUserId),
   }));
 }
 
-export function reservedBySizesFromCatalogReservationRows(
+export function catalogReservationEntriesFromRows(
   reservationRows: SupplierOrderSizeReservationRow[],
   stockRows: SizeStockRow[],
   canAssignUser: boolean
-): Record<
-  string,
-  {
-    reserved_for_user_id?: string;
-    reserved_for_external_seller_id?: string;
-    reserved_for_external_seller_name?: string;
-  }
-> {
+): CatalogReservationEntry[] {
   const orderSizeRows = stockRowsToOrderSizeRows(stockRows);
   const entries = reservationEntriesFromRows(reservationRows, orderSizeRows, (row) =>
     reservationSellerFieldsFromFormValue(row.reservationSellerValue, canAssignUser)
   );
 
-  const reservedBySizes: Record<
-    string,
-    {
-      reserved_for_user_id?: string;
-      reserved_for_external_seller_id?: string;
-      reserved_for_external_seller_name?: string;
-    }
-  > = {};
-
-  for (const entry of entries) {
-    reservedBySizes[entry.size] = {
-      ...(entry.reserved_for_user_id
-        ? { reserved_for_user_id: entry.reserved_for_user_id }
-        : {}),
-      ...(entry.reserved_for_external_seller_id
-        ? { reserved_for_external_seller_id: entry.reserved_for_external_seller_id }
-        : {}),
-      ...(entry.reserved_for_external_seller_name
-        ? { reserved_for_external_seller_name: entry.reserved_for_external_seller_name }
-        : {}),
-    };
-  }
-
-  return reservedBySizes;
+  return entries.map((entry) => ({
+    size: entry.size,
+    quantity: entry.quantity,
+    ...(entry.reserved_for_user_id
+      ? { reserved_for_user_id: entry.reserved_for_user_id }
+      : {}),
+    ...(entry.reserved_for_external_seller_id
+      ? { reserved_for_external_seller_id: entry.reserved_for_external_seller_id }
+      : {}),
+    ...(entry.reserved_for_external_seller_name
+      ? { reserved_for_external_seller_name: entry.reserved_for_external_seller_name }
+      : {}),
+  }));
 }
 
 export function validateProductCatalogReservations(
@@ -105,9 +84,6 @@ export function validateProductCatalogReservations(
   if (orderSizeRows.length === 0) {
     return "Cargá stock por talle para definir reservas.";
   }
-
-  const sellerConsistencyError = validateReservationRowsSellerConsistency(reservationRows);
-  if (sellerConsistencyError) return sellerConsistencyError;
 
   if (!draftHasSizeReservations(true, reservationRows, orderSizeRows)) {
     return "Agregá al menos un talle para reservar.";

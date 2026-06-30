@@ -1,4 +1,4 @@
-import type { ExternalSeller, Product, SaleAssignableUser } from "@/lib/api";
+import type { CatalogReservationEntry, ExternalSeller, Product, SaleAssignableUser } from "@/lib/api";
 import { getAssignableUserLabel } from "@/lib/user-display";
 import { sortSizeEntries } from "@/lib/product-inventory";
 
@@ -31,38 +31,73 @@ function hasLegacyProductReservation(product: ProductReservationFields): boolean
   return reservationFieldsAreActive(product);
 }
 
-export function getProductReservedSizeEntries(
-  product: Pick<Product, "reserved_by_sizes" | "reserved_for_user_id" | "reserved_for_external_seller_id" | "reserved_for_external_seller_name">
-): Array<{ size: string; reservation: ProductReservationFields }> {
+function sizesMatch(left: string, right: string): boolean {
+  return left.trim().toLocaleLowerCase() === right.trim().toLocaleLowerCase();
+}
+
+type ProductReservationSource = Pick<
+  Product,
+  | "catalog_reservation_entries"
+  | "reserved_by_sizes"
+  | "stock_by_sizes"
+  | "reserved_for_user_id"
+  | "reserved_for_external_seller_id"
+  | "reserved_for_external_seller_name"
+>;
+
+export function getCatalogReservationEntries(
+  product: ProductReservationSource
+): CatalogReservationEntry[] {
+  if (product.catalog_reservation_entries?.length) {
+    return product.catalog_reservation_entries.filter(
+      (entry) =>
+        entry.size.trim() &&
+        Number.isInteger(entry.quantity) &&
+        entry.quantity > 0 &&
+        reservationFieldsAreActive(entry)
+    );
+  }
+
   if (product.reserved_by_sizes && Object.keys(product.reserved_by_sizes).length > 0) {
     return sortSizeEntries(Object.entries(product.reserved_by_sizes))
       .filter(([, reservation]) => reservationFieldsAreActive(reservation))
-      .map(([size, reservation]) => ({ size, reservation }));
+      .map(([size, reservation]) => ({
+        size,
+        quantity: Math.max(1, product.stock_by_sizes?.[size] ?? 1),
+        ...reservation,
+      }));
   }
 
   return [];
 }
 
+export function getProductReservedSizeEntries(
+  product: ProductReservationSource
+): Array<{ size: string; reservation: ProductReservationFields; quantity: number }> {
+  return getCatalogReservationEntries(product).map(({ size, quantity, ...reservation }) => ({
+    size,
+    quantity,
+    reservation,
+  }));
+}
+
 export function isProductReserved(
-  product: ProductReservationFields & { reserved_by_sizes?: SizeReservationMap }
+  product: ProductReservationFields & {
+    reserved_by_sizes?: SizeReservationMap;
+    catalog_reservation_entries?: CatalogReservationEntry[];
+  }
 ): boolean {
-  if (getProductReservedSizeEntries(product).length > 0) return true;
+  if (getCatalogReservationEntries(product).length > 0) return true;
   return hasLegacyProductReservation(product);
 }
 
-export function isSizeReserved(
-  product: Pick<Product, "reserved_by_sizes" | "reserved_for_user_id" | "reserved_for_external_seller_id" | "reserved_for_external_seller_name">,
-  size: string
-): boolean {
+export function isSizeReserved(product: ProductReservationSource, size: string): boolean {
   const trimmedSize = size.trim();
   if (!trimmedSize) return false;
 
-  const entries = getProductReservedSizeEntries(product);
+  const entries = getCatalogReservationEntries(product);
   if (entries.length > 0) {
-    return entries.some(
-      ({ size: reservedSize }) =>
-        reservedSize.trim().toLocaleLowerCase() === trimmedSize.toLocaleLowerCase()
-    );
+    return entries.some(({ size: reservedSize }) => sizesMatch(reservedSize, trimmedSize));
   }
 
   return hasLegacyProductReservation(product);
@@ -87,37 +122,29 @@ export function getProductReservationLabel(
   if (reservation.reserved_for_user_id) {
     const label = getAssignableUserLabel(assignableUsers, reservation.reserved_for_user_id);
     if (label !== "—") return label;
-    return reservation.reserved_for_user_id;
+    return "Usuario del sistema";
   }
 
   return "Vendedor desconocido";
 }
 
 export function getProductReservationSummary(
-  product: Pick<Product, "reserved_by_sizes" | "reserved_for_user_id" | "reserved_for_external_seller_id" | "reserved_for_external_seller_name">,
+  product: ProductReservationSource,
   assignableUsers: SaleAssignableUser[] = [],
   externalSellers: ExternalSeller[] = []
 ): string | null {
-  const entries = getProductReservedSizeEntries(product);
+  const entries = getCatalogReservationEntries(product);
 
   if (entries.length > 0) {
-    const labels = new Set(
-      entries.map(({ reservation }) =>
-        getProductReservationLabel(reservation, assignableUsers, externalSellers)
-      )
-    );
+    const detail = entries
+      .map((entry) => {
+        const sellerLabel = getProductReservationLabel(entry, assignableUsers, externalSellers);
+        const sizeLabel = entry.quantity > 1 ? `${entry.size} (${entry.quantity})` : entry.size;
+        return `${sizeLabel}: ${sellerLabel}`;
+      })
+      .join(" · ");
 
-    const sizesLabel = entries.map(({ size }) => size).join(", ");
-    const sellerLabel =
-      labels.size === 1
-        ? [...labels][0]
-        : entries
-            .map(({ size, reservation }) =>
-              `${size}: ${getProductReservationLabel(reservation, assignableUsers, externalSellers)}`
-            )
-            .join(" · ");
-
-    return `${sizesLabel} · ${sellerLabel}`;
+    return detail;
   }
 
   if (!hasLegacyProductReservation(product)) return null;
@@ -125,12 +152,16 @@ export function getProductReservationSummary(
   return getProductReservationLabel(product, assignableUsers, externalSellers);
 }
 
+function formatReservationSizeLabel(size: string, quantity: number): string {
+  return quantity > 1 ? `${size} (${quantity})` : size;
+}
+
 export function getProductReservationBadgeText(
-  product: Pick<Product, "reserved_by_sizes" | "reserved_for_user_id" | "reserved_for_external_seller_id" | "reserved_for_external_seller_name">,
+  product: ProductReservationSource,
   assignableUsers: SaleAssignableUser[] = [],
   externalSellers: ExternalSeller[] = []
 ): { label: string; title: string } | null {
-  const entries = getProductReservedSizeEntries(product);
+  const entries = getCatalogReservationEntries(product);
 
   if (entries.length === 0) {
     if (!hasLegacyProductReservation(product)) return null;
@@ -142,26 +173,63 @@ export function getProductReservationBadgeText(
     };
   }
 
-  const sizesLabel = entries.map(({ size }) => size).join(", ");
-  const sellerLabels = entries.map(({ reservation }) =>
-    getProductReservationLabel(reservation, assignableUsers, externalSellers)
+  const sellerLabels = entries.map((entry) =>
+    getProductReservationLabel(entry, assignableUsers, externalSellers)
   );
   const uniqueSellerLabels = new Set(sellerLabels);
 
   if (uniqueSellerLabels.size === 1) {
     const sellerLabel = sellerLabels[0];
+    const sizesLabel = entries
+      .map((entry) => formatReservationSizeLabel(entry.size, entry.quantity))
+      .join(", ");
     const label = `Reservado para ${sellerLabel} · ${sizesLabel}`;
     return { label, title: label };
   }
 
   const detail = entries
-    .map(({ size, reservation }) =>
-      `${size}: ${getProductReservationLabel(reservation, assignableUsers, externalSellers)}`
-    )
+    .map((entry) => {
+      const sellerLabel = getProductReservationLabel(entry, assignableUsers, externalSellers);
+      return `${formatReservationSizeLabel(entry.size, entry.quantity)}: ${sellerLabel}`;
+    })
     .join(" · ");
   const label = `Reservado · ${detail}`;
 
   return { label, title: label };
+}
+
+export function getSizeReservationDetailText(
+  product: ProductReservationSource,
+  size: string,
+  assignableUsers: SaleAssignableUser[] = [],
+  externalSellers: ExternalSeller[] = []
+): string | null {
+  const trimmedSize = size.trim();
+  if (!trimmedSize) return null;
+
+  const entries = getCatalogReservationEntries(product).filter((entry) =>
+    sizesMatch(entry.size, trimmedSize)
+  );
+
+  if (entries.length > 0) {
+    const detail = entries
+      .map((entry) => {
+        const sellerLabel = getProductReservationLabel(entry, assignableUsers, externalSellers);
+        return entry.quantity > 1
+          ? `${entry.quantity} u. para ${sellerLabel}`
+          : `1 u. para ${sellerLabel}`;
+      })
+      .join(" · ");
+
+    return `Talle ${trimmedSize} con stock reservado: ${detail}.`;
+  }
+
+  if (isSizeReserved(product, trimmedSize) && hasLegacyProductReservation(product)) {
+    const sellerLabel = getProductReservationLabel(product, assignableUsers, externalSellers);
+    return `Talle ${trimmedSize} reservado para ${sellerLabel}.`;
+  }
+
+  return null;
 }
 
 export function getLineItemReservationLabel(

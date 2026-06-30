@@ -50,6 +50,13 @@ export type Product = {
       reserved_for_external_seller_name?: string;
     }
   >;
+  catalog_reservation_entries?: Array<{
+    size: string;
+    quantity: number;
+    reserved_for_user_id?: string;
+    reserved_for_external_seller_id?: string;
+    reserved_for_external_seller_name?: string;
+  }>;
   created_by?: string;
   created_at: Date;
   updated_at: Date;

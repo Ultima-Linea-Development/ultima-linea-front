@@ -28,7 +28,7 @@ import { validateRequiredProductFields } from "@/lib/product-form-validation";
 import {
   productHasCatalogReservations,
   reservationRowsFromProduct,
-  reservedBySizesFromCatalogReservationRows,
+  catalogReservationEntriesFromRows,
   validateProductCatalogReservations,
 } from "@/lib/product-catalog-reservation";
 import { getCurrentUserId, getToken as readAuthToken, isAdmin } from "@/lib/auth";
@@ -376,13 +376,13 @@ export default function AdminProductEditForm({
       type: shirtType,
       is_active: isActive,
       image_urls: finalUrls,
-      reserved_by_sizes: reserveProduct
-        ? reservedBySizesFromCatalogReservationRows(
+      catalog_reservation_entries: reserveProduct
+        ? catalogReservationEntriesFromRows(
             reservationRows,
             sizeRows,
             canAssignUser
           )
-        : {},
+        : [],
     };
     onSave(payload);
   };

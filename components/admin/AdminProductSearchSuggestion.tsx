@@ -31,7 +31,7 @@ export default function AdminProductSearchSuggestion({
           externalSellers={externalSellers}
         />
       ) : null}
-      <Typography variant="body2" as="span">
+      <Typography variant="body2" as="span" className="block min-w-0 truncate">
         {product.name}
       </Typography>
     </AdminSearchSuggestionRow>

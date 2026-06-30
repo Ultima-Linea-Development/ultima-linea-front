@@ -8,10 +8,15 @@ import CurrencyInput from "@/components/ui/CurrencyInput";
 import FormField from "@/components/ui/FormField";
 import Typography from "@/components/ui/Typography";
 import Icon from "@/components/ui/Icons";
-import type { Product } from "@/lib/api";
+import type { ExternalSeller, Product, SaleAssignableUser } from "@/lib/api";
+import AdminProductReservationBadge from "@/components/admin/AdminProductReservationBadge";
 import { adminIconTriggerClassName } from "@/lib/admin-interactive-styles";
 import Select from "@/components/ui/Select";
 import { getProductTotalStock, orderedSizeEntries } from "@/lib/product-inventory";
+import {
+  getSizeReservationDetailText,
+  isProductReserved,
+} from "@/lib/product-reservation";
 import { cn, formatPrice, generateSlug } from "@/lib/utils";
 
 export type SaleLineItemDraft = {
@@ -26,6 +31,8 @@ export type SaleLineItemDraft = {
 type AdminSaleLineItemRowProps = {
   item: SaleLineItemDraft;
   isSubmitting: boolean;
+  assignableUsers?: SaleAssignableUser[];
+  externalSellers?: ExternalSeller[];
   onChange: (key: string, updates: Partial<Pick<SaleLineItemDraft, "size" | "quantity" | "unitPrice" | "skipStockDeduction">>) => void;
   onRemove: (key: string) => void;
 };
@@ -60,6 +67,8 @@ export function getSaleLineItemDraftTotal(item: SaleLineItemDraft): number {
 export default function AdminSaleLineItemRow({
   item,
   isSubmitting,
+  assignableUsers = [],
+  externalSellers = [],
   onChange,
   onRemove,
 }: AdminSaleLineItemRowProps) {
@@ -73,6 +82,9 @@ export default function AdminSaleLineItemRow({
 
   const productHref = `/product/${(item.product.slug || generateSlug(item.product.name))}-${item.product.id}`;
   const lineTotal = getSaleLineItemDraftTotal(item);
+  const sizeReservationNotice = item.size
+    ? getSizeReservationDetailText(item.product, item.size, assignableUsers, externalSellers)
+    : null;
 
   return (
     <Box display="flex" direction="col" gap="3" className="relative w-full min-w-0 border border-border p-3 pr-10">
@@ -111,6 +123,14 @@ export default function AdminSaleLineItemRow({
             <span className="text-muted-foreground text-xs">—</span>
           )}
           <Box display="flex" direction="col" gap="1" className="min-w-0">
+            {isProductReserved(item.product) ? (
+              <AdminProductReservationBadge
+                product={item.product}
+                size="sm"
+                assignableUsers={assignableUsers}
+                externalSellers={externalSellers}
+              />
+            ) : null}
             <Link
               href={productHref}
               target="_blank"
@@ -127,6 +147,16 @@ export default function AdminSaleLineItemRow({
           </Box>
         </Box>
       </Box>
+
+      {sizeReservationNotice ? (
+        <Typography variant="caption" className="block text-amber-800">
+          {sizeReservationNotice}
+        </Typography>
+      ) : isProductReserved(item.product) && !item.size ? (
+        <Typography variant="caption" className="block text-amber-800">
+          Este producto tiene stock reservado. Seleccioná un talle para ver el detalle.
+        </Typography>
+      ) : null}
 
       <div className="grid w-full grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(140px,1fr)_120px_120px_minmax(180px,1.25fr)]">
         {productSizes.length > 0 ? (

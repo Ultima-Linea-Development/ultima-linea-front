@@ -72,12 +72,29 @@ export default function ProductCarousel({
     };
   }, [products, updateCarouselMetrics]);
 
-  const scrollByViewport = (direction: -1 | 1) => {
+  const scrollByItem = (direction: -1 | 1) => {
     const element = scrollRef.current;
     if (!element) return;
 
-    element.scrollBy({
-      left: direction * element.clientWidth,
+    const firstItem = element.querySelector(":scope > div");
+    if (!(firstItem instanceof HTMLElement)) return;
+
+    const gap = Number.parseFloat(getComputedStyle(element).columnGap) || 0;
+    const itemStride = firstItem.offsetWidth + gap;
+    if (itemStride <= 0) return;
+
+    const currentIndex = Math.round(element.scrollLeft / itemStride);
+    const maxIndex = Math.max(
+      0,
+      Math.round((element.scrollWidth - element.clientWidth) / itemStride)
+    );
+    const targetIndex = Math.min(
+      maxIndex,
+      Math.max(0, currentIndex + direction)
+    );
+
+    element.scrollTo({
+      left: targetIndex * itemStride,
       behavior: "smooth",
     });
   };
@@ -86,23 +103,23 @@ export default function ProductCarousel({
 
   const showNavigation = canScrollPrev || canScrollNext;
 
+  const renderSeeAllButton = (className?: string) =>
+    seeAllHref ? (
+      <Button variant="ctaOutline" size="cta" className={className} asChild>
+        <Link href={seeAllHref}>Ver todo</Link>
+      </Button>
+    ) : null;
+
   return (
     <Box display="flex" direction="col" gap="2" className={cn("w-full min-w-0", className)}>
       <Box
         display="flex"
-        className="items-end justify-between gap-4 flex-wrap w-full"
+        className="items-end justify-between gap-4 w-full"
       >
         <Typography variant="h2" uppercase>
           {title}
         </Typography>
-        {seeAllHref ? (
-          <Link
-            href={seeAllHref}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Ver todos
-          </Link>
-        ) : null}
+        {renderSeeAllButton("hidden shrink-0 sm:inline-flex")}
       </Box>
 
       <div ref={containerRef} className="relative w-full min-w-0 px-5">
@@ -113,7 +130,7 @@ export default function ProductCarousel({
               variant="outline"
               size="icon"
               disabled={!canScrollPrev}
-              onClick={() => scrollByViewport(-1)}
+              onClick={() => scrollByItem(-1)}
               aria-label="Ver productos anteriores"
               className="absolute left-5 inline-flex -translate-x-1/2 -translate-y-1/2 bg-background shadow-sm"
               style={{
@@ -128,7 +145,7 @@ export default function ProductCarousel({
               variant="outline"
               size="icon"
               disabled={!canScrollNext}
-              onClick={() => scrollByViewport(1)}
+              onClick={() => scrollByItem(1)}
               aria-label="Ver más productos"
               className="absolute right-5 inline-flex translate-x-1/2 -translate-y-1/2 bg-background shadow-sm"
               style={{
@@ -163,6 +180,12 @@ export default function ProductCarousel({
           ))}
         </div>
       </div>
+
+      {seeAllHref ? (
+        <div className="w-full px-5 sm:hidden">
+          {renderSeeAllButton("flex w-full min-w-0")}
+        </div>
+      ) : null}
     </Box>
   );
 }

@@ -100,7 +100,7 @@ async function SearchResults({ query, page }: { query: string; page: number }) {
           [{total}]
         </Typography>
       </Box>
-      <Box display="grid" cols={4} gap={8} className="w-full">
+      <Box display="grid" cols={4} gap={8} className="w-full grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         {results.map((product) => (
           <ProductCard
             key={product.id}
